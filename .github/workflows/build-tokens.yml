@@ -1,0 +1,36 @@
+name: Build design tokens
+
+on:
+  push:
+    branches: [chore/design-system] # 현재 작업 중인 브랜치명에 맞게 유지
+    paths:
+      - 'tokens.json' # 토큰 파일이 바뀐 push에만 반응
+
+permissions:
+  contents: write # 봇이 커밋할 수 있도록 권한 부여
+
+jobs:
+  build-tokens:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm # pnpm 대신 npm 캐시 사용
+
+      # package-lock.json을 기반으로 정확한 의존성 설치
+      - run: npm ci
+
+      # 토큰 빌드 파이프라인 실행 (build-tailwind-tokens.ts 등을 실행하는 스크립트)
+      - run: npm run build:tokens
+
+      # 생성된 파일(예: src/styles/tokens.css 등)이 변경됐으면 자동 커밋
+      - name: Commit generated token files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --staged --quiet || git commit -m "chore: rebuild design tokens"
+          git push
