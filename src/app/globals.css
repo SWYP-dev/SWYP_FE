@@ -2,5 +2,5 @@
   text-box: trim-both cap alphabetic;
 }
 
-@import 'tailwindcss';
-@import '../styles/tokens.css';
+@import "tailwindcss";
+@import "../styles/tokens.css";

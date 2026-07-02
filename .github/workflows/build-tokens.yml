@@ -4,7 +4,7 @@ on:
   push:
     branches: [chore/design-system] # 현재 작업 중인 브랜치명에 맞게 유지
     paths:
-      - 'tokens.json' # 토큰 파일이 바뀐 push에만 반응
+      - "tokens.json" # 토큰 파일이 바뀐 push에만 반응
 
 permissions:
   contents: write # 봇이 커밋할 수 있도록 권한 부여

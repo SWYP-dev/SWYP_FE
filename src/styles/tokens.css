@@ -92,7 +92,8 @@
   --shadow-normal-small: 0 2px 4px -2px #2121230f, 0 4px 6px -1px #2121230f;
   --shadow-normal-medium: 0 4px 6px -2px #21212312, 0 10px 15px -3px #21212312;
   --shadow-normal-large: 0 6px 10px -4px #21212314, 0 16px 24px -6px #21212314;
-  --shadow-normal-xlarge: 0 10px 15px -5px #2121231a, 0 24px 38px -10px #2121231f;
+  --shadow-normal-xlarge:
+    0 10px 15px -5px #2121231a, 0 24px 38px -10px #2121231f;
   --shadow-spread-small: 0 0 60px 0 #2121231a;
   --shadow-spread-medium: 0 15px 75px 0 #21212329;
   --text-0: 11px;
@@ -159,4 +160,3 @@
   --color-icon-default: #212123;
   --color-surface-card: #f6f6f7;
 }
-
