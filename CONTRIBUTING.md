@@ -64,7 +64,28 @@ chore: prettier 설정 추가
 
 ## Pull Request 워크플로우
 
-PR 생성 시 [`.github/PULL_REQUEST_TEMPLATE.md`](./.github/PULL_REQUEST_TEMPLATE.md)가 자동으로 적용됩니다.
+PR 생성 시 base 브랜치는 **반드시 `develop`** 으로 설정합니다. (`main`은 배포 브랜치이므로 기능/문서 PR의 병합 대상이 아닙니다.)
+
+PR 본문은 [`.github/PULL_REQUEST_TEMPLATE.md`](./.github/PULL_REQUEST_TEMPLATE.md)를 따릅니다.
+
+### GitHub 저장소 설정 (최초 1회, 관리자)
+
+| 설정 | 권장값 | 이유 |
+|------|--------|------|
+| **Default branch for pull requests** | `develop` | PR 생성 시 base가 `main`으로 잡히는 것 방지 |
+| **Default branch** | `develop` 권장 | PR 템플릿 자동 적용 조건 충족 (아래 참고) |
+
+> **PR 템플릿 자동 적용 조건**  
+> GitHub는 PR 템플릿을 **저장소 default branch**(`main` 또는 `develop`)에 있는 파일만 읽습니다.  
+> feature 브랜치에만 있으면 PR 생성 화면에 자동으로 채워지지 않습니다.  
+> `develop`에 머지된 뒤에도 default branch가 `main`이면, `develop → main` 병합 전까지는 자동 적용되지 않습니다.  
+> git-flow를 쓰는 경우 default branch를 `develop`으로 두는 것을 권장합니다.
+
+**PR 생성 링크 예시** (base=`develop` 고정):
+
+```
+https://github.com/SWYP-dev/SWYP_FE/compare/develop...<브랜치명>?expand=1
+```
 
 ### 1. PR 생성 전 체크리스트
 
