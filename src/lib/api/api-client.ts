@@ -1,4 +1,4 @@
-import type { ApiError, ApiResponse } from '@/types/api';
+import type { ApiResponse } from '@/types/api';
 import { clearTokens, getAccessToken, getRefreshToken, setAccessToken } from './token';
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -8,10 +8,10 @@ export class ApiClientError extends Error {
   code: string;
   status: number;
 
-  constructor(status: number, error: ApiError) {
-    super(error.message);
+  constructor(status: number, code: string, message: string) {
+    super(message);
     this.name = 'ApiClientError';
-    this.code = error.code;
+    this.code = code;
     this.status = status;
   }
 }
@@ -78,10 +78,7 @@ export async function apiFetch<T>(
   const json: ApiResponse<T> = await res.json();
 
   if (!res.ok || !json.success) {
-    throw new ApiClientError(
-      res.status,
-      json.error ?? { code: 'UNKNOWN', message: '알 수 없는 오류' }
-    );
+    throw new ApiClientError(res.status, json.code ?? 'UNKNOWN', json.message ?? '알 수 없는 오류');
   }
 
   return json.data as T;
