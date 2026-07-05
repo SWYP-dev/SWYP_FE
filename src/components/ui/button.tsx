@@ -9,23 +9,23 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   size?: ButtonSize;
 }
 
-// 토큰(token.css) 기준 색상 매핑. disabled는 각 variant의 disabled 토큰을 사용.
+// Figma Modal/ModalFooter 스펙 확인 결과 반영: primary는 SemiBold, 나머지는 Medium
 const VARIANT_CLASS: Record<ButtonVariant, string> = {
   primary:
-    'bg-fill-primary text-base-white hover:bg-action-primary-hover disabled:bg-action-primary-disabled',
+    'bg-fill-primary text-base-white font-semibold hover:bg-action-primary-hover disabled:bg-action-primary-disabled',
   secondary:
-    'bg-base-white text-label-base border border-line-secondary hover:bg-action-secondary-hover disabled:text-label-secondary-disabled',
+    'bg-base-white text-label-base font-medium border border-line-secondary hover:bg-action-secondary-hover disabled:text-label-secondary-disabled',
   ghost:
-    'bg-transparent text-label-primary hover:bg-action-secondary-hover disabled:text-label-primary-disabled',
+    'bg-transparent text-label-primary font-medium hover:bg-action-secondary-hover disabled:text-label-primary-disabled',
   danger:
-    'bg-status-negative text-base-white hover:opacity-90 disabled:bg-fill-negative-light disabled:text-status-negative',
+    'bg-status-negative text-base-white font-semibold hover:opacity-90 disabled:bg-fill-negative-light disabled:text-status-negative',
 };
 
-// 뱃지와 동일하게 text-N 토큰 사용, 버튼은 패딩이 더 필요해서 spacing 토큰 조합
+// lg 사이즈는 Figma ModalFooter 버튼 실측값(px-28/py-12/text-16) 그대로 반영
 const SIZE_CLASS: Record<ButtonSize, string> = {
   sm: 'px-4 py-2 text-2',
   md: 'px-5 py-3 text-3',
-  lg: 'px-6 py-3 text-4',
+  lg: 'px-[28px] py-4 text-5', // py-4 = --spacing-4(12px), text-5 = 16px
 };
 
 export function Button({
@@ -38,7 +38,7 @@ export function Button({
 }: ButtonProps) {
   return (
     <button
-      className={`inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors disabled:cursor-not-allowed ${VARIANT_CLASS[variant]} ${SIZE_CLASS[size]} ${className}`}
+      className={`inline-flex items-center justify-center gap-2 rounded-xl transition-colors disabled:cursor-not-allowed ${VARIANT_CLASS[variant]} ${SIZE_CLASS[size]} ${className}`}
       disabled={disabled}
       {...rest}
     >
