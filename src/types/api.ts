@@ -1,15 +1,13 @@
 // ===================================
 // 공통 응답 포맷 (API 명세서 "응답 포맷" 섹션 기준)
 // ===================================
+
+// v1.6 명세서 기준 - 실제 백엔드 구현은 error 객체 없이 code/message가 최상위로 평탄화되어 내려옴
 export interface ApiResponse<T> {
   success: boolean;
   data: T | null;
-  error: ApiError | null;
-}
-
-export interface ApiError {
-  code: string;
-  message: string;
+  code: string | null;
+  message: string | null;
 }
 
 // 목록 API들이 공통으로 쓰는 커서 페이지네이션 형태
@@ -119,7 +117,7 @@ export type DocumentItem =
       type: 'FILE';
       name: string;
       version: number;
-      size?: number; // 업로드 응답에만 있음
+      size?: number; // 3.4 칸반 카드 상세 조회 응답의 documents에는 없음 (4.1 업로드, 4.4 목록 조회에는 있음)
       uploadedAt: string;
     }
   | {
@@ -190,4 +188,67 @@ export interface UserMe {
   storageUsed: number; // byte 단위
   storageLimit: number; // byte 단위
   createdAt: string;
+}
+
+// ===================================
+// 액션(수정/등록/삭제) 응답 타입
+// ===================================
+
+// 2.3 / 2.4 즐겨찾기 추가/해제
+export interface FavoriteToggleResponse {
+  postingId: number;
+  isFavorite: boolean;
+}
+
+// 3.2 칸반 카드 등록
+export interface KanbanCardRegisterResponse {
+  cardId: number;
+  stageId: number;
+  stageName: string;
+  postingId: number;
+  companyName: string;
+  jobTitle: string;
+  deadline: string;
+}
+
+// 3.3 칸반 카드 스테이지 이동
+export interface KanbanCardMoveResponse {
+  cardId: number;
+  stageId: number;
+  stageName: string;
+  position: number;
+}
+
+// 3.5 칸반 카드 메모 수정
+export interface KanbanCardMemoResponse {
+  cardId: number;
+  memo: string;
+}
+
+// 3.7 스테이지 추가
+export interface KanbanStageCreateResponse {
+  id: number;
+  name: string;
+  position: number;
+  isDefault: boolean;
+}
+
+// 3.8 스테이지 수정
+export interface KanbanStageUpdateResponse {
+  id: number;
+  name: string;
+  position: number;
+}
+
+// 3.9 스테이지 삭제
+export interface KanbanStageDeleteResponse {
+  movedCardCount: number;
+}
+
+// 5.2 알림 설정 수정 (NotificationSettings와 동일 구조지만 email 필드 없음)
+export type NotificationSettingsUpdateResponse = Omit<NotificationSettings, 'email'>;
+
+// 5.5 인앱 알림 읽음 처리
+export interface NotificationReadResponse {
+  updatedCount: number;
 }
