@@ -10,10 +10,21 @@ export interface ApiResponse<T> {
   message: string | null;
 }
 
-// 목록 API들이 공통으로 쓰는 커서 페이지네이션 형태
+// 커서 기반 페이지네이션 — 5.3 알림 발송 이력 조회 등 무한 스크롤 API가 계속 사용
 export interface CursorPage<T> {
   items: T[];
   nextCursor: string | null;
+  hasNext: boolean;
+}
+
+// 페이지 번호 기반 페이지네이션 (v1.9 신규)
+// 2.1 공고 피드 조회, 2.5 스크랩 목록 조회가 cursor 방식에서 전환되면서 사용
+export interface PageResponse<T> {
+  items: T[];
+  page: number; // 0부터 시작
+  size: number;
+  totalPages: number;
+  totalElements: number;
   hasNext: boolean;
 }
 
@@ -25,9 +36,24 @@ export type JobCategory =
   'BACKEND' | 'FRONTEND' | 'FULLSTACK' | 'DESIGN' | 'PM' | 'DATA' | 'DEVOPS' | 'OTHER';
 export type Career = 'NEW' | 'EXPERIENCED';
 
+// 2.1 공고 피드 조회 - 쿼리 파라미터 (신규)
+// v1.8: region 추가, jobCategory/career 다중 선택(콤마 구분) 지원
+// v1.9: cursor → page 전환
+export interface FeedQueryParams {
+  page?: number; // 0부터 시작, 기본 0
+  size?: number; // 기본 20, 최대 50
+  sort?: 'LATEST' | 'DEADLINE';
+  platform?: string; // 콤마 구분 다중 선택 (예: "SARAMIN,WORKNET")
+  jobCategory?: string; // 콤마 구분 다중 선택
+  career?: string; // 콤마 구분 다중 선택
+  region?: string; // 콤마 구분 다중 선택 (v1.8 추가, 예: "판교,강남")
+  deadlineSoon?: boolean;
+  keyword?: string;
+}
+
 // 2.1 공고 피드 조회 - 목록 아이템
 export interface FeedItem {
-  id: number;
+  id: number; // feed id (job_feed.id) — 피드 탐색 중에만 쓰는 임시성 ID, 스크랩 이후엔 jobPostingId를 써야 함
   platform: Platform;
   companyName: string;
   jobTitle: string;
@@ -36,7 +62,7 @@ export interface FeedItem {
   deadline: string; // "2026-07-15"
   thumbnailUrl: string;
   originalUrl: string;
-  isFavorite: boolean;
+  isScrapped: boolean; // v1.9: isFavorite → isScrapped
   isExpired: boolean;
   createdAt: string;
 }
@@ -47,16 +73,18 @@ export interface FeedDetail extends Omit<FeedItem, 'isExpired'> {
   isKanbanRegistered: boolean;
 }
 
-// 2.5 즐겨찾기 목록 조회 - 아이템 (피드보다 필드가 적음)
-export interface FavoriteItem {
-  id: number;
+// 2.5 스크랩 목록 조회 - 아이템 (피드보다 필드가 적음)
+// v1.7: 식별자 id → jobPostingId (job_postings 사본 ID, 원본 피드 만료와 무관하게 영구 보존)
+// v1.9: FavoriteItem → ScrapItem 개명, favoritedAt → scrappedAt
+export interface ScrapItem {
+  jobPostingId: number;
   companyName: string;
   jobTitle: string;
   deadline: string;
   thumbnailUrl: string;
   originalUrl: string;
   isKanbanRegistered: boolean;
-  favoritedAt: string;
+  scrappedAt: string;
 }
 
 // ===================================
@@ -64,6 +92,10 @@ export interface FavoriteItem {
 // ===================================
 
 // 3.1 칸반 카드 (스테이지 안에 중첩됨)
+// ⚠️ 확인 필요: API 명세서 3.1에 "메모 제거 — 카드/수정창은 회사명·공고명·회사링크·지원일만
+// 사용" 이라는 변경 메모가 추가됐는데, 바로 아래 Response 예시 JSON에는 여전히 memo·deadline·
+// thumbnailUrl 필드가 남아있어 명세 자체가 정리 중인 상태로 보임. 실제 응답 필드 확정되면
+// (특히 memo 유지 여부) 반영 필요. 우선 타입은 기존 그대로 유지.
 export interface KanbanCard {
   id: number;
   postingId: number;
@@ -194,13 +226,26 @@ export interface UserMe {
 // 액션(수정/등록/삭제) 응답 타입
 // ===================================
 
-// 2.3 / 2.4 즐겨찾기 추가/해제
-export interface FavoriteToggleResponse {
-  postingId: number;
-  isFavorite: boolean;
+// 2.3 스크랩 추가
+// v1.7: jobPostingId 추가 — 이후 해제·목록 조회에 쓰는 안정적인 ID
+// v1.9: endpoint POST /feed/{postingId}/scrap 로 변경, isFavorite → isScrapped
+export interface ScrapAddResponse {
+  postingId: number; // 요청에 쓴 feed id (echo)
+  jobPostingId: number;
+  isScrapped: boolean;
+}
+
+// 2.4 스크랩 해제
+// v1.9: endpoint DELETE /feed/scraps/{jobPostingId} 로 변경, isFavorite → isScrapped
+export interface ScrapRemoveResponse {
+  jobPostingId: number;
+  isScrapped: boolean;
 }
 
 // 3.2 칸반 카드 등록
+// ⚠️ 참고: 명세서 v1.9 노트에 "3장 칸반 등록의 '스크랩 선행' 정책 문구·POSTING_NOT_FAVORITED
+// 에러코드 정합화는 별도 후속으로 처리 예정"이라고 되어 있어, 에러코드명은 아직 변경하지
+// 않았습니다. 후속 명세 업데이트 시 확인 필요.
 export interface KanbanCardRegisterResponse {
   cardId: number;
   stageId: number;
