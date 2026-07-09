@@ -22,9 +22,9 @@ const VARIANT_CLASS: Record<ButtonVariant, string> = {
 
 // md: Figma Button 컴포넌트 실측(px-12/py-8/text-14/radius-8) 그대로 반영.
 // lg: Modal ModalFooter 버튼 실측(px-28/py-12/text-16/radius-12) 반영.
-// sm: 아직 Figma 확인 전 (추후 확인 필요).
+// sm: Card 컴포넌트(node 27:3610)에서 실측 확인.
 const SIZE_CLASS: Record<ButtonSize, string> = {
-  sm: 'px-4 py-2 text-2 rounded-lg', // 미확인
+  sm: 'px-4 py-3 text-3 rounded-[10px]',
   md: 'px-4 py-3 text-3 rounded-lg',
   lg: 'px-[28px] py-4 text-5 rounded-xl',
 };

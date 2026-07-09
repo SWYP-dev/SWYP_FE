@@ -1,7 +1,8 @@
 import type { NextPage } from 'next';
 import Image from 'next/image';
-import { DeadlineBadge } from '@/components/ui/badge';
 import { Sidebar } from '@/components/layout/sidebar';
+import { Header } from '@/components/layout/header';
+import { JobCard } from '@/components/ui/job-card';
 
 /* ──────────────────────────────────────────────
    토큰 매핑 기준 (src/styles/tokens.css — Tailwind v4 @theme)
@@ -14,14 +15,18 @@ import { Sidebar } from '@/components/layout/sidebar';
 
 const FILTERS = ['플랫폼', '직무', '지역', '경력'];
 
-// TODO: API 연동 전 임시 데이터
+// TODO: API 연동 전 임시 데이터 (실제 API 연동 시 FeedItem 타입으로 교체)
 const JOBS = Array.from({ length: 12 }, (_, i) => ({
   id: i,
   company: '와탭랩스',
   title: 'Java/Spring Boot 백엔드 개발자 채용',
-  deadline: '~07.02(수)',
-  deadlineIso: '2026-07-08', // TODO: 실제 API 연동 시 FeedItem.deadline("YYYY-MM-DD")으로 대체
-  meta: '부산 부산진구 • 경력 3-10년',
+  jobCategory: '백엔드 개발자',
+  platformLabel: '사람인',
+  region: '부산 부산진구',
+  career: '경력 3-10년',
+  deadlineText: '~7.2 (수)',
+  deadlineIso: '2026-07-08',
+  originalUrl: 'https://example.com',
   thumbnail: '/images/job-thumbnail.png',
 }));
 
@@ -40,38 +45,6 @@ const FilterChip = ({ label, hasDropdown = true }: { label: string; hasDropdown?
   </div>
 );
 
-const JobCard = ({ job }: { job: (typeof JOBS)[number] }) => (
-  <div className="flex-1 flex flex-col items-start gap-4">
-    <div
-      className="self-stretch h-[160px] rounded-xl overflow-hidden shrink-0 flex flex-col p-4 bg-cover bg-no-repeat bg-top"
-      style={{ backgroundImage: `url(${job.thumbnail})` }}
-    >
-      <div className="self-stretch flex items-center justify-between gap-6">
-        <DeadlineBadge deadline={job.deadlineIso} />
-        <Image
-          src="/icons/star.svg"
-          alt="즐겨찾기 추가"
-          width={20}
-          height={20}
-          className="shrink-0"
-        />
-      </div>
-    </div>
-    <div className="self-stretch flex flex-col items-start gap-4">
-      <div className="self-stretch flex flex-col items-start gap-1">
-        <div className="self-stretch text-3 font-medium text-label-body">{job.company}</div>
-        <div className="self-stretch text-6 font-semibold text-label-base line-clamp-2">
-          {job.title}
-        </div>
-      </div>
-      <div className="self-stretch flex flex-col items-start gap-2 text-1 font-medium text-label-description">
-        <div className="self-stretch">{job.deadline}</div>
-        <div className="self-stretch">{job.meta}</div>
-      </div>
-    </div>
-  </div>
-);
-
 const Component1: NextPage = () => {
   return (
     <div className="w-full min-h-[64rem] relative bg-base-white overflow-hidden flex items-start text-left text-label-base font-pretendard">
@@ -83,21 +56,8 @@ const Component1: NextPage = () => {
 
       {/* ── Main ── */}
       <main className="self-stretch flex-1 flex flex-col text-3">
-        {/* Search */}
-        <header className="bg-base-white flex flex-col items-end justify-center py-6 px-11">
-          <div className="w-[255px] rounded-max bg-base-white border border-line-secondary overflow-hidden flex items-center py-2 px-6">
-            <div className="flex-1 flex items-center justify-between min-h-7">
-              <div className="flex-1 text-1 text-label-placeholder">텍스트를 입력해 주세요.</div>
-              <Image
-                src="/icons/search.svg"
-                alt="검색"
-                width={18}
-                height={18}
-                className="shrink-0"
-              />
-            </div>
-          </div>
-        </header>
+        {/* TODO: API 연동 시 onSearch를 실제 검색 로직으로 교체 */}
+        <Header />
 
         {/* Filter & Sort */}
         <div className="flex items-center justify-between pt-11 px-11 pb-5 gap-6 text-center">
@@ -114,10 +74,22 @@ const Component1: NextPage = () => {
           </div>
         </div>
 
-        {/* Job Grid */}
-        <div className="flex-1 bg-surface-card grid grid-cols-4 content-start py-7 px-11 gap-x-5 gap-y-11 text-label-body">
+        {/* Job List */}
+        <div className="flex-1 flex flex-col gap-2 py-7 px-11 bg-surface-card">
           {JOBS.map((job) => (
-            <JobCard key={job.id} job={job} />
+            <JobCard
+              key={job.id}
+              thumbnailUrl={job.thumbnail}
+              deadlineIso={job.deadlineIso}
+              deadlineText={job.deadlineText}
+              company={job.company}
+              title={job.title}
+              jobCategory={job.jobCategory}
+              platformLabel={job.platformLabel}
+              region={job.region}
+              career={job.career}
+              originalUrl={job.originalUrl}
+            />
           ))}
         </div>
       </main>
