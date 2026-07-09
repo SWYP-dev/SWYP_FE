@@ -1,7 +1,8 @@
 'use client';
 
-import { Popover, popoverPanelChrome, usePopoverTrigger } from '@/components/ui/popover';
+import { popoverPanelChrome, Popover, usePopoverTrigger } from '@/components/ui/popover';
 import { CAREER_LABELS, MAX_STEP, Slider } from '@/components/ui/slider';
+import { FilterTriggerButton } from '@/components/ui/filter-trigger-button';
 
 interface CareerFilterChipProps {
   /** URL 쿼리와 동기화된, 실제 적용 중인 값 (step index, 0~15) */
@@ -26,18 +27,9 @@ export function CareerFilterChip({ appliedRange, onApply }: CareerFilterChipProp
 
   return (
     <>
-      <button
-        ref={triggerRef}
-        onClick={toggle}
-        aria-expanded={isOpen}
-        className={`inline-flex items-center gap-1 rounded-[var(--radius-max)] border px-[var(--spacing-5)] py-[var(--spacing-3)] text-[length:var(--text-3)] whitespace-nowrap ${
-          isOpen || !isFullRange
-            ? 'border-[var(--color-line-primary)] text-[var(--color-label-primary)]'
-            : 'border-[var(--color-line-secondary)] text-[var(--color-label-body)]'
-        }`}
-      >
-        {formatChipLabel(appliedRange[0], appliedRange[1])} ▾
-      </button>
+      <FilterTriggerButton ref={triggerRef} onClick={toggle} isActive={isOpen || !isFullRange}>
+        {formatChipLabel(appliedRange[0], appliedRange[1])}
+      </FilterTriggerButton>
 
       <Popover
         isOpen={isOpen}
