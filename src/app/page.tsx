@@ -1,8 +1,12 @@
+'use client';
+
+import { useState } from 'react';
 import type { NextPage } from 'next';
 import Image from 'next/image';
 import { Sidebar } from '@/components/layout/sidebar';
 import { Header } from '@/components/layout/header';
 import { JobCard } from '@/components/ui/job-card';
+import { Pagination } from '@/components/ui/pagination';
 
 /* ──────────────────────────────────────────────
    토큰 매핑 기준 (src/styles/tokens.css — Tailwind v4 @theme)
@@ -46,6 +50,8 @@ const FilterChip = ({ label, hasDropdown = true }: { label: string; hasDropdown?
 );
 
 const Component1: NextPage = () => {
+  const [currentPage, setCurrentPage] = useState(0);
+
   return (
     <div className="w-full min-h-[64rem] relative bg-base-white overflow-hidden flex items-start text-left text-label-base font-pretendard">
       <Sidebar
@@ -91,6 +97,11 @@ const Component1: NextPage = () => {
               originalUrl={job.originalUrl}
             />
           ))}
+        </div>
+
+        {/* Pagination — totalPages는 API 연동 시 실제 값으로 교체 */}
+        <div className="flex justify-center py-11">
+          <Pagination currentPage={currentPage} totalPages={5} onPageChange={setCurrentPage} />
         </div>
       </main>
     </div>
