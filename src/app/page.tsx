@@ -1,6 +1,7 @@
 import type { NextPage } from 'next';
 import Image from 'next/image';
 import { DeadlineBadge } from '@/components/ui/badge';
+import { Sidebar } from '@/components/layout/sidebar';
 
 /* ──────────────────────────────────────────────
    토큰 매핑 기준 (src/styles/tokens.css — Tailwind v4 @theme)
@@ -10,13 +11,6 @@ import { DeadlineBadge } from '@/components/ui/badge';
      반드시 arbitrary([Npx])로 표기
    - 타이포: text-N에 행간 내장 (leading-* 불필요)
    ────────────────────────────────────────────── */
-
-const NAV_ITEMS = [
-  { icon: '/icons/search.svg', label: '통합 공고 탐색', active: true },
-  { icon: '/icons/bookmark.svg', label: '즐겨찾기', active: false },
-  { icon: '/icons/kanban.svg', label: '지원 현황 관리', active: false },
-  { icon: '/icons/calendar.svg', label: '일정 관리', active: false },
-];
 
 const FILTERS = ['플랫폼', '직무', '지역', '경력'];
 
@@ -30,17 +24,6 @@ const JOBS = Array.from({ length: 12 }, (_, i) => ({
   meta: '부산 부산진구 • 경력 3-10년',
   thumbnail: '/images/job-thumbnail.png',
 }));
-
-const NavItem = ({ icon, label, active }: { icon: string; label: string; active?: boolean }) => (
-  <div
-    className={`h-9 rounded-xl flex items-center py-4 px-5 gap-3 ${
-      active ? 'bg-base-gray border border-line-secondary text-label-base' : 'text-label-body'
-    }`}
-  >
-    <Image src={icon} alt="" width={16} height={16} className="shrink-0" />
-    <div className="flex-1 font-medium truncate">{label}</div>
-  </div>
-);
 
 const FilterChip = ({ label, hasDropdown = true }: { label: string; hasDropdown?: boolean }) => (
   <div
@@ -92,39 +75,11 @@ const JobCard = ({ job }: { job: (typeof JOBS)[number] }) => (
 const Component1: NextPage = () => {
   return (
     <div className="w-full min-h-[64rem] relative bg-base-white overflow-hidden flex items-start text-left text-label-base font-pretendard">
-      {/* ── Left Navigation ── */}
-      <aside className="self-stretch w-[256px] bg-base-white border-r border-line-secondary flex flex-col justify-between">
-        <div className="flex flex-col">
-          <div className="h-12 flex flex-col justify-center py-3 px-7">
-            <b className="text-8">CHWIHAP</b>
-          </div>
-          <nav className="px-5 text-3">
-            <div className="flex flex-col gap-2">
-              {NAV_ITEMS.map((item) => (
-                <NavItem key={item.label} {...item} />
-              ))}
-            </div>
-          </nav>
-        </div>
-        {/* Profile */}
-        <div className="p-5 text-3">
-          <div className="flex items-center gap-4">
-            <div className="h-8 w-8 rounded-max bg-base-gray border border-line-secondary overflow-hidden shrink-0 flex items-center justify-center">
-              <Image
-                src="/images/avatar.png"
-                alt="프로필 이미지"
-                width={32}
-                height={32}
-                className="rounded-max object-cover"
-              />
-            </div>
-            <div className="flex-1 flex flex-col min-w-0">
-              <div className="font-semibold truncate">손진영</div>
-              <div className="text-1 text-label-body truncate">sonjinyoung9849@gmail.com</div>
-            </div>
-          </div>
-        </div>
-      </aside>
+      <Sidebar
+        userName="손진영"
+        userEmail="sonjinyoung9849@gmail.com"
+        avatarUrl="/images/avatar.png"
+      />
 
       {/* ── Main ── */}
       <main className="self-stretch flex-1 flex flex-col text-3">
