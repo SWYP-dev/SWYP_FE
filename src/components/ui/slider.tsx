@@ -68,3 +68,5 @@ export function Slider({ minValue, maxValue, onChange }: SliderProps) {
     </div>
   );
 }
+
+export { CAREER_LABELS, MAX_STEP };
