@@ -2,6 +2,7 @@ import type { NextPage } from 'next';
 import Image from 'next/image';
 import { DeadlineBadge } from '@/components/ui/badge';
 import { Sidebar } from '@/components/layout/sidebar';
+import { Header } from '@/components/layout/header';
 
 /* ──────────────────────────────────────────────
    토큰 매핑 기준 (src/styles/tokens.css — Tailwind v4 @theme)
@@ -83,21 +84,8 @@ const Component1: NextPage = () => {
 
       {/* ── Main ── */}
       <main className="self-stretch flex-1 flex flex-col text-3">
-        {/* Search */}
-        <header className="bg-base-white flex flex-col items-end justify-center py-6 px-11">
-          <div className="w-[255px] rounded-max bg-base-white border border-line-secondary overflow-hidden flex items-center py-2 px-6">
-            <div className="flex-1 flex items-center justify-between min-h-7">
-              <div className="flex-1 text-1 text-label-placeholder">텍스트를 입력해 주세요.</div>
-              <Image
-                src="/icons/search.svg"
-                alt="검색"
-                width={18}
-                height={18}
-                className="shrink-0"
-              />
-            </div>
-          </div>
-        </header>
+        {/* TODO: API 연동 시 onSearch를 실제 검색 로직으로 교체 */}
+        <Header />
 
         {/* Filter & Sort */}
         <div className="flex items-center justify-between pt-11 px-11 pb-5 gap-6 text-center">
