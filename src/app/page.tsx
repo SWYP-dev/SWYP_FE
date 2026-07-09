@@ -7,6 +7,12 @@ import { Sidebar } from '@/components/layout/sidebar';
 import { Header } from '@/components/layout/header';
 import { JobCard } from '@/components/ui/job-card';
 import { Pagination } from '@/components/ui/pagination';
+import { MAX_STEP } from '@/components/ui/slider';
+import type { SelectionValue } from '@/components/ui/selection-modal';
+import { CareerFilterChip } from '@/features/feed/components/CareerFilterChip';
+import { RegionFilterButton } from '@/features/feed/components/RegionFilterButton';
+import { JobCategoryFilterButton } from '@/features/feed/components/JobCategoryFilterButton';
+import { DeadlineSoonFilterButton } from '@/features/feed/components/DeadlineSoonFilterButton';
 
 /* ──────────────────────────────────────────────
    토큰 매핑 기준 (src/styles/tokens.css — Tailwind v4 @theme)
@@ -16,8 +22,6 @@ import { Pagination } from '@/components/ui/pagination';
      반드시 arbitrary([Npx])로 표기
    - 타이포: text-N에 행간 내장 (leading-* 불필요)
    ────────────────────────────────────────────── */
-
-const FILTERS = ['플랫폼', '직무', '지역', '경력'];
 
 // TODO: API 연동 전 임시 데이터 (실제 API 연동 시 FeedItem 타입으로 교체)
 const JOBS = Array.from({ length: 12 }, (_, i) => ({
@@ -34,6 +38,8 @@ const JOBS = Array.from({ length: 12 }, (_, i) => ({
   thumbnail: '/images/job-thumbnail.png',
 }));
 
+// TODO: "플랫폼" 필터 — 아직 실제 컴포넌트 없음. Figma 스펙상으로는 이 드롭다운이 아니라
+// 별도의 알약형 탭("전체/사람인/원티드")이어야 할 가능성이 높아 임의로 손 안 대고 그대로 둠.
 const FilterChip = ({ label, hasDropdown = true }: { label: string; hasDropdown?: boolean }) => (
   <div
     className={`rounded-lg bg-base-white inset-ring inset-ring-line-secondary flex items-center justify-center py-3 ${
@@ -52,6 +58,13 @@ const FilterChip = ({ label, hasDropdown = true }: { label: string; hasDropdown?
 const Component1: NextPage = () => {
   const [currentPage, setCurrentPage] = useState(0);
 
+  // 필터 상태 — TODO: URL 쿼리 파라미터(region/jobCategory/career/deadlineSoon)와
+  // 연결하고 /api/v1/feed 호출에 반영하는 작업 별도 진행 예정
+  const [careerRange, setCareerRange] = useState<[number, number]>([0, MAX_STEP]);
+  const [regionValue, setRegionValue] = useState<SelectionValue | null>(null);
+  const [jobCategoryValue, setJobCategoryValue] = useState<SelectionValue | null>(null);
+  const [isDeadlineSoon, setIsDeadlineSoon] = useState(false);
+
   return (
     <div className="w-full min-h-[64rem] relative bg-base-white overflow-hidden flex items-start text-left text-label-base font-pretendard">
       <Sidebar
@@ -68,10 +81,11 @@ const Component1: NextPage = () => {
         {/* Filter & Sort */}
         <div className="flex items-center justify-between pt-11 px-11 pb-5 gap-6 text-center">
           <div className="flex items-center gap-3">
-            {FILTERS.map((label) => (
-              <FilterChip key={label} label={label} />
-            ))}
-            <FilterChip label="마감일 임박" hasDropdown={false} />
+            <FilterChip label="플랫폼" />
+            <JobCategoryFilterButton value={jobCategoryValue} onApply={setJobCategoryValue} />
+            <RegionFilterButton value={regionValue} onApply={setRegionValue} />
+            <CareerFilterChip appliedRange={careerRange} onApply={setCareerRange} />
+            <DeadlineSoonFilterButton isActive={isDeadlineSoon} onToggle={setIsDeadlineSoon} />
           </div>
           <div className="flex items-start gap-2 text-label-body">
             <div className="font-semibold text-label-base">최신순</div>
