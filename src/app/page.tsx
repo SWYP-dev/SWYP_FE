@@ -56,7 +56,7 @@ const Component1: NextPage = () => {
   const [platformFilter, setPlatformFilter] = useState<PlatformFilter>('ALL');
 
   return (
-    <div className="w-full min-h-[64rem] relative bg-base-white overflow-hidden flex items-start text-left text-label-base font-pretendard">
+    <div className="w-full h-screen relative bg-base-white overflow-hidden flex text-left text-label-base font-pretendard">
       <Sidebar
         userName="손진영"
         userEmail="sonjinyoung9849@gmail.com"
@@ -64,7 +64,7 @@ const Component1: NextPage = () => {
       />
 
       {/* ── Main ── */}
-      <main className="self-stretch flex-1 flex flex-col text-3 overflow-y-auto">
+      <main className="self-stretch flex-1 flex flex-col text-3 min-h-0 overflow-y-auto">
         {/* 요구사항 1: 검색바(Header) + 필터/정렬 행을 하나의 블록으로 묶어 sticky 처리 */}
         <div className="sticky top-0 z-10 flex flex-col bg-base-white">
           <Header />
@@ -84,34 +84,45 @@ const Component1: NextPage = () => {
           </div>
         </div>
 
-        {/* Platform Tabs (전체/사람인/원티드) — Figma ButtonWrapper 스펙.
-            사람인/원티드는 정책 확정 전까지 disabled */}
-        <div className="px-11 pt-5">
-          <PlatformTabs value={platformFilter} onChange={setPlatformFilter} />
-        </div>
+        {/* Container(36:559) — 회색 배경. 자식은 Wrapper 하나뿐이라 gap 의미 없음 */}
+        <div className="flex-1 flex flex-col px-11 py-5 bg-surface-card">
+          {/* Wrapper(36:560) — 플랫폼탭 ~ 카드리스트 사이 gap: 20px(spacing/6) */}
+          <div className="flex flex-col gap-6">
+            {/* Platform Tabs (전체/사람인/원티드) — Figma ButtonWrapper 스펙.
+                사람인/원티드는 정책 확정 전까지 disabled */}
+            <PlatformTabs value={platformFilter} onChange={setPlatformFilter} />
 
-        {/* Job List */}
-        <div className="flex-1 flex flex-col gap-2 py-7 px-11 bg-surface-card">
-          {JOBS.map((job) => (
-            <JobCard
-              key={job.id}
-              thumbnailUrl={job.thumbnail}
-              deadlineIso={job.deadlineIso}
-              deadlineText={job.deadlineText}
-              company={job.company}
-              title={job.title}
-              jobCategory={formatJobCategories(job.jobCategories)}
-              platformLabel={job.platformLabel}
-              region={job.region}
-              career={job.career}
-              originalUrl={job.originalUrl}
-            />
-          ))}
-        </div>
+            {/* ContentWrapper(36:565) — 카드리스트 ~ 페이지네이션 사이 gap: 32px(spacing/8) */}
+            <div className="flex flex-col gap-8">
+              {/* Job List — 흰 배경 박스 (36:566) */}
+              <div className="flex flex-col items-center gap-3 p-3 bg-base-white border border-line-secondary rounded-[20px]">
+                {JOBS.map((job) => (
+                  <JobCard
+                    key={job.id}
+                    thumbnailUrl={job.thumbnail}
+                    deadlineIso={job.deadlineIso}
+                    deadlineText={job.deadlineText}
+                    company={job.company}
+                    title={job.title}
+                    jobCategory={formatJobCategories(job.jobCategories)}
+                    platformLabel={job.platformLabel}
+                    region={job.region}
+                    career={job.career}
+                    originalUrl={job.originalUrl}
+                  />
+                ))}
+              </div>
 
-        {/* Pagination — totalPages는 API 연동 시 실제 값으로 교체 */}
-        <div className="flex justify-center py-11">
-          <Pagination currentPage={currentPage} totalPages={5} onPageChange={setCurrentPage} />
+              {/* Pagination — totalPages는 API 연동 시 실제 값으로 교체 */}
+              <div className="flex justify-center">
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={5}
+                  onPageChange={setCurrentPage}
+                />
+              </div>
+            </div>
+          </div>
         </div>
       </main>
     </div>
