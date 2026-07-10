@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import type { NextPage } from 'next';
-import Image from 'next/image';
 import { Sidebar } from '@/components/layout/sidebar';
 import { Header } from '@/components/layout/header';
 import { JobCard } from '@/components/ui/job-card';
@@ -13,6 +12,9 @@ import { CareerFilterChip } from '@/features/feed/components/CareerFilterChip';
 import { RegionFilterButton } from '@/features/feed/components/RegionFilterButton';
 import { JobCategoryFilterButton } from '@/features/feed/components/JobCategoryFilterButton';
 import { DeadlineSoonFilterButton } from '@/features/feed/components/DeadlineSoonFilterButton';
+import { PlatformTabs } from '@/features/feed/components/PlatformTabs';
+import { formatJobCategories } from '@/features/feed/utils/formatJobCategories';
+import type { PlatformFilter } from '@/features/feed/types/feed';
 
 /* ──────────────────────────────────────────────
    토큰 매핑 기준 (src/styles/tokens.css — Tailwind v4 @theme)
@@ -23,12 +25,15 @@ import { DeadlineSoonFilterButton } from '@/features/feed/components/DeadlineSoo
    - 타이포: text-N에 행간 내장 (leading-* 불필요)
    ────────────────────────────────────────────── */
 
-// TODO: API 연동 전 임시 데이터 (실제 API 연동 시 FeedItem 타입으로 교체)
-const JOBS = Array.from({ length: 12 }, (_, i) => ({
+// 요구사항 3: 실제로는 20개(PAGE_SIZE)가 1세트.
+const PAGE_SIZE = 20;
+
+// 요구사항 2: 직무가 여러 개인 경우 대비. TODO: API 연동 전 임시 데이터.
+const JOBS = Array.from({ length: PAGE_SIZE }, (_, i) => ({
   id: i,
   company: '와탭랩스',
   title: 'Java/Spring Boot 백엔드 개발자 채용',
-  jobCategory: '백엔드 개발자',
+  jobCategories: ['경영·비즈니스 기획', '웹 기획', '마케팅 기획', '브랜드기획', '사업기획'],
   platformLabel: '사람인',
   region: '부산 부산진구',
   career: '경력 3-10년',
@@ -38,32 +43,17 @@ const JOBS = Array.from({ length: 12 }, (_, i) => ({
   thumbnail: '/images/job-thumbnail.png',
 }));
 
-// TODO: "플랫폼" 필터 — 아직 실제 컴포넌트 없음. Figma 스펙상으로는 이 드롭다운이 아니라
-// 별도의 알약형 탭("전체/사람인/원티드")이어야 할 가능성이 높아 임의로 손 안 대고 그대로 둠.
-const FilterChip = ({ label, hasDropdown = true }: { label: string; hasDropdown?: boolean }) => (
-  <div
-    className={`rounded-lg bg-base-white inset-ring inset-ring-line-secondary flex items-center justify-center py-3 ${
-      hasDropdown ? 'pl-4 pr-[7px]' : 'px-4'
-    }`}
-  >
-    <div className="flex items-center justify-center gap-1 min-h-5">
-      <div className="font-medium">{label}</div>
-      {hasDropdown && (
-        <Image src="/icons/chevron-down.svg" alt="" width={16} height={16} className="shrink-0" />
-      )}
-    </div>
-  </div>
-);
-
 const Component1: NextPage = () => {
   const [currentPage, setCurrentPage] = useState(0);
 
-  // 필터 상태 — TODO: URL 쿼리 파라미터(region/jobCategory/career/deadlineSoon)와
-  // 연결하고 /api/v1/feed 호출에 반영하는 작업 별도 진행 예정
   const [careerRange, setCareerRange] = useState<[number, number]>([0, MAX_STEP]);
   const [regionValue, setRegionValue] = useState<SelectionValue | null>(null);
   const [jobCategoryValue, setJobCategoryValue] = useState<SelectionValue | null>(null);
   const [isDeadlineSoon, setIsDeadlineSoon] = useState(false);
+
+  // 요구사항 4: 진영님 코멘트 - 사람인/원티드는 정책 확정 전까지 UI만 배치, disabled.
+  // (PlatformTabs 내부에서 처리, 여기서는 값만 들고 있음)
+  const [platformFilter, setPlatformFilter] = useState<PlatformFilter>('ALL');
 
   return (
     <div className="w-full min-h-[64rem] relative bg-base-white overflow-hidden flex items-start text-left text-label-base font-pretendard">
@@ -74,24 +64,30 @@ const Component1: NextPage = () => {
       />
 
       {/* ── Main ── */}
-      <main className="self-stretch flex-1 flex flex-col text-3">
-        {/* TODO: API 연동 시 onSearch를 실제 검색 로직으로 교체 */}
-        <Header />
+      <main className="self-stretch flex-1 flex flex-col text-3 overflow-y-auto">
+        {/* 요구사항 1: 검색바(Header) + 필터/정렬 행을 하나의 블록으로 묶어 sticky 처리 */}
+        <div className="sticky top-0 z-10 flex flex-col bg-base-white">
+          <Header />
 
-        {/* Filter & Sort */}
-        <div className="flex items-center justify-between pt-11 px-11 pb-5 gap-6 text-center">
-          <div className="flex items-center gap-3">
-            <FilterChip label="플랫폼" />
-            <JobCategoryFilterButton value={jobCategoryValue} onApply={setJobCategoryValue} />
-            <RegionFilterButton value={regionValue} onApply={setRegionValue} />
-            <CareerFilterChip appliedRange={careerRange} onApply={setCareerRange} />
-            <DeadlineSoonFilterButton isActive={isDeadlineSoon} onToggle={setIsDeadlineSoon} />
+          <div className="flex items-center justify-between pt-11 px-11 pb-5 gap-6 text-center">
+            <div className="flex items-center gap-3">
+              <JobCategoryFilterButton value={jobCategoryValue} onApply={setJobCategoryValue} />
+              <RegionFilterButton value={regionValue} onApply={setRegionValue} />
+              <CareerFilterChip appliedRange={careerRange} onApply={setCareerRange} />
+              <DeadlineSoonFilterButton isActive={isDeadlineSoon} onToggle={setIsDeadlineSoon} />
+            </div>
+            <div className="flex items-start gap-2 text-label-body">
+              <div className="font-semibold text-label-base">최신순</div>
+              <div className="text-1">•</div>
+              <div>마감일순</div>
+            </div>
           </div>
-          <div className="flex items-start gap-2 text-label-body">
-            <div className="font-semibold text-label-base">최신순</div>
-            <div className="text-1">•</div>
-            <div>마감일순</div>
-          </div>
+        </div>
+
+        {/* Platform Tabs (전체/사람인/원티드) — Figma ButtonWrapper 스펙.
+            사람인/원티드는 정책 확정 전까지 disabled */}
+        <div className="px-11 pt-5">
+          <PlatformTabs value={platformFilter} onChange={setPlatformFilter} />
         </div>
 
         {/* Job List */}
@@ -104,7 +100,7 @@ const Component1: NextPage = () => {
               deadlineText={job.deadlineText}
               company={job.company}
               title={job.title}
-              jobCategory={job.jobCategory}
+              jobCategory={formatJobCategories(job.jobCategories)}
               platformLabel={job.platformLabel}
               region={job.region}
               career={job.career}
