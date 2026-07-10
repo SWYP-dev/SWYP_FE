@@ -84,35 +84,44 @@ const Component1: NextPage = () => {
           </div>
         </div>
 
-        {/* 회색 배경 영역: 플랫폼 탭 + 카드 리스트(흰 박스) + 페이지네이션을 통째로 감쌈.
-            Figma Container(36:559) 스펙 반영 — 카드 리스트만 흰 배경으로 분리 */}
-        <div className="flex-1 flex flex-col gap-11 px-11 py-5 bg-surface-card">
-          {/* Platform Tabs (전체/사람인/원티드) — Figma ButtonWrapper 스펙.
-              사람인/원티드는 정책 확정 전까지 disabled */}
-          <PlatformTabs value={platformFilter} onChange={setPlatformFilter} />
+        {/* Container(36:559) — 회색 배경. 자식은 Wrapper 하나뿐이라 gap 의미 없음 */}
+        <div className="flex-1 flex flex-col px-11 py-5 bg-surface-card">
+          {/* Wrapper(36:560) — 플랫폼탭 ~ 카드리스트 사이 gap: 20px(spacing/6) */}
+          <div className="flex flex-col gap-6">
+            {/* Platform Tabs (전체/사람인/원티드) — Figma ButtonWrapper 스펙.
+                사람인/원티드는 정책 확정 전까지 disabled */}
+            <PlatformTabs value={platformFilter} onChange={setPlatformFilter} />
 
-          {/* Job List — 흰 배경 박스 */}
-          <div className="flex flex-col items-center gap-3 p-3 bg-base-white border border-line-secondary rounded-[20px]">
-            {JOBS.map((job) => (
-              <JobCard
-                key={job.id}
-                thumbnailUrl={job.thumbnail}
-                deadlineIso={job.deadlineIso}
-                deadlineText={job.deadlineText}
-                company={job.company}
-                title={job.title}
-                jobCategory={formatJobCategories(job.jobCategories)}
-                platformLabel={job.platformLabel}
-                region={job.region}
-                career={job.career}
-                originalUrl={job.originalUrl}
-              />
-            ))}
-          </div>
+            {/* ContentWrapper(36:565) — 카드리스트 ~ 페이지네이션 사이 gap: 32px(spacing/8) */}
+            <div className="flex flex-col gap-8">
+              {/* Job List — 흰 배경 박스 (36:566) */}
+              <div className="flex flex-col items-center gap-3 p-3 bg-base-white border border-line-secondary rounded-[20px]">
+                {JOBS.map((job) => (
+                  <JobCard
+                    key={job.id}
+                    thumbnailUrl={job.thumbnail}
+                    deadlineIso={job.deadlineIso}
+                    deadlineText={job.deadlineText}
+                    company={job.company}
+                    title={job.title}
+                    jobCategory={formatJobCategories(job.jobCategories)}
+                    platformLabel={job.platformLabel}
+                    region={job.region}
+                    career={job.career}
+                    originalUrl={job.originalUrl}
+                  />
+                ))}
+              </div>
 
-          {/* Pagination — totalPages는 API 연동 시 실제 값으로 교체 */}
-          <div className="flex justify-center">
-            <Pagination currentPage={currentPage} totalPages={5} onPageChange={setCurrentPage} />
+              {/* Pagination — totalPages는 API 연동 시 실제 값으로 교체 */}
+              <div className="flex justify-center">
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={5}
+                  onPageChange={setCurrentPage}
+                />
+              </div>
+            </div>
           </div>
         </div>
       </main>
