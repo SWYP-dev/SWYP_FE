@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import type { NextPage } from 'next';
-import Image from 'next/image';
 import { Sidebar } from '@/components/layout/sidebar';
 import { Header } from '@/components/layout/header';
 import { JobCard } from '@/components/ui/job-card';
@@ -44,23 +43,6 @@ const JOBS = Array.from({ length: PAGE_SIZE }, (_, i) => ({
   thumbnail: '/images/job-thumbnail.png',
 }));
 
-// "플랫폼" 필터 — PM 정책 확정 대기 중(플랫폼 뱃지·필터 자체가 없어질 수도 있음).
-// 확정 전까지 손대지 않고 그대로 둠.
-const FilterChip = ({ label, hasDropdown = true }: { label: string; hasDropdown?: boolean }) => (
-  <div
-    className={`rounded-lg bg-base-white inset-ring inset-ring-line-secondary flex items-center justify-center py-3 ${
-      hasDropdown ? 'pl-4 pr-[7px]' : 'px-4'
-    }`}
-  >
-    <div className="flex items-center justify-center gap-1 min-h-5">
-      <div className="font-medium">{label}</div>
-      {hasDropdown && (
-        <Image src="/icons/chevron-down.svg" alt="" width={16} height={16} className="shrink-0" />
-      )}
-    </div>
-  </div>
-);
-
 const Component1: NextPage = () => {
   const [currentPage, setCurrentPage] = useState(0);
 
@@ -89,8 +71,6 @@ const Component1: NextPage = () => {
 
           <div className="flex items-center justify-between pt-11 px-11 pb-5 gap-6 text-center">
             <div className="flex items-center gap-3">
-              {/* 플랫폼 필터: PM 정책 확정 대기 중, 손대지 않음 */}
-              <FilterChip label="플랫폼" />
               <JobCategoryFilterButton value={jobCategoryValue} onApply={setJobCategoryValue} />
               <RegionFilterButton value={regionValue} onApply={setRegionValue} />
               <CareerFilterChip appliedRange={careerRange} onApply={setCareerRange} />
