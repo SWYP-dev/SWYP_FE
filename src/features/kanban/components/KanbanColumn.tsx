@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import type { KanbanStage } from '@/types/api';
+import { DragHandleIcon, EditIcon, TrashIcon, TriangleDownFillIcon } from '@/components/ui/icons';
 import { KanbanCard } from './KanbanCard';
 
 interface KanbanColumnProps {
@@ -52,7 +53,7 @@ export function KanbanColumn({ stage, onRenameStage, onDeleteStage }: KanbanColu
       <div className="flex w-full items-start p-4">
         <div className="flex min-h-7 flex-1 items-center justify-between">
           <div className="flex items-center gap-2">
-            <ChevronDecorativeIcon />
+            <TriangleDownFillIcon />
             {isEditingName ? (
               <input
                 autoFocus
@@ -93,7 +94,7 @@ export function KanbanColumn({ stage, onRenameStage, onDeleteStage }: KanbanColu
               }}
               className="flex size-4 items-center justify-center text-icon-gray"
             >
-              <PencilSmallIcon />
+              <EditIcon />
             </button>
             {!stage.isDefault && (
               <button
@@ -102,7 +103,7 @@ export function KanbanColumn({ stage, onRenameStage, onDeleteStage }: KanbanColu
                 onClick={() => onDeleteStage?.(stage.id)}
                 className="flex size-4 items-center justify-center text-icon-gray"
               >
-                <TrashSmallIcon />
+                <TrashIcon />
               </button>
             )}
           </div>
@@ -123,59 +124,5 @@ export function KanbanColumn({ stage, onRenameStage, onDeleteStage }: KanbanColu
         </div>
       </div>
     </div>
-  );
-}
-
-function ChevronDecorativeIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path
-        d="M5 6.5 8 10l3-3.5"
-        stroke="#212123"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function DragHandleIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="6" cy="4" r="1.1" fill="currentColor" />
-      <circle cx="10" cy="4" r="1.1" fill="currentColor" />
-      <circle cx="6" cy="8" r="1.1" fill="currentColor" />
-      <circle cx="10" cy="8" r="1.1" fill="currentColor" />
-      <circle cx="6" cy="12" r="1.1" fill="currentColor" />
-      <circle cx="10" cy="12" r="1.1" fill="currentColor" />
-    </svg>
-  );
-}
-
-function PencilSmallIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path
-        d="M11 2.5 13.5 5 5 13.5H2.5V11L11 2.5Z"
-        stroke="currentColor"
-        strokeWidth="1.3"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function TrashSmallIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path
-        d="M3 4.5h10M6.5 4.5V3a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v1.5M4.5 4.5 5 13a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1l.5-8.5"
-        stroke="currentColor"
-        strokeWidth="1.3"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
   );
 }
