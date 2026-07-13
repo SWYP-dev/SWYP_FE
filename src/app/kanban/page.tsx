@@ -23,9 +23,6 @@ export default function KanbanPage() {
         <div className="flex flex-1 flex-col overflow-hidden px-[80px] py-6">
           <KanbanBoard
             initialStages={MOCK_KANBAN_STAGES}
-            onAddStage={() => {
-              // TODO: 스테이지 추가 모달 연동 (최대 10개 제한 체크 포함, 3.7)
-            }}
             onRenameStage={(stageId: number, newName: string) => {
               void stageId;
               void newName;
