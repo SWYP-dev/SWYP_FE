@@ -3,44 +3,69 @@
 import { useState } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import type { KanbanStage } from '@/types/api';
-import { DragHandleIcon, EditIcon, TrashIcon, TriangleDownFillIcon } from '@/components/ui/icons';
 import { KanbanCard } from './KanbanCard';
+import { DragHandleIcon, EditIcon, TrashIcon, TriangleDownFillIcon } from '@/components/ui/icons';
 
 interface KanbanColumnProps {
   stage: KanbanStage;
+  /** 전형 단계 추가 직후의 임시(draft) 컬럼 여부 — 헤더 TextField가 열린 채로 시작 */
+  isDraft?: boolean;
   onRenameStage?: (stageId: number, newName: string) => void;
   onDeleteStage?: (stageId: number) => void;
+  /** draft 컬럼 이름 확정 (Figma 49:7797 흐름) */
+  onConfirmDraft?: (name: string) => void;
+  /** draft 컬럼 취소 (빈 값 커밋 or ESC) */
+  onCancelDraft?: () => void;
 }
 
-// Figma KanbanColumn 마스터 컴포넌트(node 50:14062) 스펙 반영.
-// hasTextField prop 확인 → 스테이지 이름 수정은 별도 팝오버가 아니라
-// 헤더 내 인라인 TextField(밑줄 스타일)로 처리하는 구조.
-//
-// 디자이너 코멘트: 세로/가로 스크롤은 직접 구현하지 않고 overflow-y/x: auto로 처리.
-//
-// ⚠️ 확인 필요: 헤더 스테이지명 옆 화살표 아이콘 — PRD v1.3.0에서 "카드 목록 접기" 기능
-// 삭제됨. 여기서는 비활성 장식용으로만 렌더링.
-// ⚠️ 확인 필요: ButtonGroup 아이콘 3개 — Figma 원본이 임시 asset URL이라 실제 의미 확인 불가.
-// [드래그 핸들 / 이름 수정 / 삭제] 순서로 가정. (이전 버전에 있던 "카드 추가" 버튼은
-// 마스터 컴포넌트에 존재하지 않아 제거함 — 카드 등록은 피드/스크랩의 "내 지원 현황에 추가"
-// 버튼으로만 이루어짐, API 명세서 3.2 기준)
-export function KanbanColumn({ stage, onRenameStage, onDeleteStage }: KanbanColumnProps) {
+// Figma KanbanColumn 마스터(50:14062) + "전형 단계 추가" 프레임(49:7797) 스펙 반영.
+// 추가/수정 모두 헤더 인라인 TextField 방식. TextField 마스터(49:7636)는 default/error 상태 관리.
+// ⚠️ 확인 필요: error 상태의 정확한 에러 메시지 문구 — 프레임 49:7822 단독 확인 후 보정 예정.
+export function KanbanColumn({
+  stage,
+  isDraft = false,
+  onRenameStage,
+  onDeleteStage,
+  onConfirmDraft,
+  onCancelDraft,
+}: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: stage.id,
     data: { stageId: stage.id },
   });
 
-  const [isEditingName, setIsEditingName] = useState(false);
-  const [draftName, setDraftName] = useState(stage.name);
+  const [isEditingName, setIsEditingName] = useState(isDraft);
+  const [draftName, setDraftName] = useState(isDraft ? '' : stage.name);
+  const [hasError, setHasError] = useState(false);
 
-  function commitRename() {
+  function commit() {
     const trimmed = draftName.trim();
+
+    if (isDraft) {
+      if (!trimmed) {
+        onCancelDraft?.();
+        return;
+      }
+      onConfirmDraft?.(trimmed);
+      return;
+    }
+
     setIsEditingName(false);
     if (trimmed && trimmed !== stage.name) {
       onRenameStage?.(stage.id, trimmed);
     } else {
       setDraftName(stage.name);
     }
+  }
+
+  function cancel() {
+    if (isDraft) {
+      onCancelDraft?.();
+      return;
+    }
+    setDraftName(stage.name);
+    setIsEditingName(false);
+    setHasError(false);
   }
 
   return (
@@ -55,27 +80,39 @@ export function KanbanColumn({ stage, onRenameStage, onDeleteStage }: KanbanColu
           <div className="flex items-center gap-2">
             <TriangleDownFillIcon />
             {isEditingName ? (
-              <input
-                autoFocus
-                value={draftName}
-                onChange={(e) => setDraftName(e.target.value)}
-                onBlur={commitRename}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') commitRename();
-                  if (e.key === 'Escape') {
-                    setDraftName(stage.name);
-                    setIsEditingName(false);
-                  }
-                }}
-                placeholder="텍스트를 입력해 주세요."
-                className="w-[168px] border-b-2 border-line-secondary bg-transparent pb-1 text-5 font-medium text-label-base placeholder:text-label-placeholder outline-none"
-              />
+              <div className="flex flex-col gap-1">
+                <input
+                  autoFocus
+                  value={draftName}
+                  onChange={(e) => {
+                    setDraftName(e.target.value);
+                    setHasError(false);
+                  }}
+                  onBlur={commit}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') commit();
+                    if (e.key === 'Escape') cancel();
+                  }}
+                  placeholder={isDraft ? '전형 단계를 입력하세요.' : '텍스트를 입력해 주세요.'}
+                  className={`w-[168px] border-b-2 bg-transparent pb-1 text-5 font-medium text-label-base placeholder:text-label-placeholder outline-none ${
+                    hasError ? 'border-status-negative' : 'border-line-secondary'
+                  }`}
+                />
+                {hasError && (
+                  <p className="text-1 font-medium text-status-negative">
+                    {/* ⚠️ 확인 필요: 실제 에러 문구는 Figma 49:7822 확인 후 교체 */}
+                    전형 단계 이름을 입력해 주세요.
+                  </p>
+                )}
+              </div>
             ) : (
               <p className="whitespace-nowrap text-6 font-semibold text-label-base">{stage.name}</p>
             )}
-            <p className="whitespace-nowrap text-5 font-medium text-label-body">
-              {stage.cards.length}
-            </p>
+            {!isDraft && (
+              <p className="whitespace-nowrap text-5 font-medium text-label-body">
+                {stage.cards.length}
+              </p>
+            )}
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -116,7 +153,7 @@ export function KanbanColumn({ stage, onRenameStage, onDeleteStage }: KanbanColu
           {stage.cards.map((card) => (
             <KanbanCard key={card.id} card={card} stageId={stage.id} />
           ))}
-          {stage.cards.length === 0 && (
+          {!isDraft && stage.cards.length === 0 && (
             <div className="flex w-full items-center justify-center rounded-xl border border-dashed border-line-secondary py-8 text-2 text-label-description">
               등록된 공고가 없어요
             </div>
