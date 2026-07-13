@@ -6,6 +6,7 @@ import type { KanbanStage } from '@/types/api';
 import { KanbanColumn } from './KanbanColumn';
 import { AddStageButton } from './AddStageButton';
 import { Toast } from '@/components/ui/toast';
+import { DeleteStageModal } from './DeleteStageModal';
 
 const MAX_STAGES = 10; // PRD 4.2.3: 최대 10개 단계
 
@@ -30,6 +31,7 @@ export function KanbanBoard({
   const [stages, setStages] = useState(initialStages);
   const [isAddingStage, setIsAddingStage] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [deletingStage, setDeletingStage] = useState<KanbanStage | null>(null);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
@@ -87,6 +89,15 @@ export function KanbanBoard({
     onCreateStage?.(name);
   }
 
+  function handleConfirmDelete(stageId: number) {
+    setStages((prev) => prev.filter((s) => s.id !== stageId));
+    setDeletingStage(null);
+    // TODO: DELETE /api/v1/kanban/stages/{stageId} 연동 (3.9)
+    // ⚠️ 카드 있는 스테이지 삭제 시 moveToStageId 선택 팝업 추가 필요
+    setToastMessage('전형 단계가 삭제되었어요.');
+    onDeleteStage?.(stageId);
+  }
+
   // draft 컬럼 렌더링용 임시 스테이지 객체
   const draftStage: KanbanStage = {
     id: -1,
@@ -107,7 +118,10 @@ export function KanbanBoard({
               key={stage.id}
               stage={stage}
               onRenameStage={onRenameStage}
-              onDeleteStage={onDeleteStage}
+              onDeleteStage={(stageId) => {
+                const target = stages.find((s) => s.id === stageId);
+                if (target) setDeletingStage(target);
+              }}
             />
           ))}
         {isAddingStage && (
@@ -127,6 +141,13 @@ export function KanbanBoard({
         message={toastMessage ?? ''}
         isVisible={toastMessage !== null}
         onDismiss={dismissToast}
+      />
+
+      <DeleteStageModal
+        isOpen={deletingStage !== null}
+        stage={deletingStage}
+        onClose={() => setDeletingStage(null)}
+        onConfirm={handleConfirmDelete}
       />
     </DndContext>
   );

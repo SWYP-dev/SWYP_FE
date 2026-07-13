@@ -20,7 +20,6 @@ interface KanbanColumnProps {
 
 // Figma KanbanColumn 마스터(50:14062) + "전형 단계 추가" 프레임(49:7797) 스펙 반영.
 // 추가/수정 모두 헤더 인라인 TextField 방식. TextField 마스터(49:7636)는 default/error 상태 관리.
-// ⚠️ 확인 필요: error 상태의 정확한 에러 메시지 문구 — 프레임 49:7822 단독 확인 후 보정 예정.
 export function KanbanColumn({
   stage,
   isDraft = false,
