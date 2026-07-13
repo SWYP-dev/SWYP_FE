@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import type { KanbanStage } from '@/types/api';
 import { KanbanCard } from './KanbanCard';
-import { DragHandleIcon, EditIcon, TrashIcon, TriangleDownFillIcon } from '@/components/ui/icons';
+import { DragHandleIcon, EditIcon, PlusSmallIcon, TrashIcon, TriangleDownFillIcon } from '@/components/ui/icons';
 
 interface KanbanColumnProps {
   stage: KanbanStage;
@@ -16,6 +16,7 @@ interface KanbanColumnProps {
   onConfirmDraft?: (name: string) => void;
   /** draft 컬럼 취소 (빈 값 커밋 or ESC) */
   onCancelDraft?: () => void;
+  onAddCard?: (stageId: number) => void;
 }
 
 // Figma KanbanColumn 마스터(50:14062) + "전형 단계 추가" 프레임(49:7797) 스펙 반영.
@@ -27,6 +28,7 @@ export function KanbanColumn({
   onDeleteStage,
   onConfirmDraft,
   onCancelDraft,
+  onAddCard,
 }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: stage.id,
@@ -114,6 +116,16 @@ export function KanbanColumn({
             )}
           </div>
           <div className="flex items-center gap-2">
+            {!isDraft && (
+              <button
+                type="button"
+                aria-label="지원 내역 추가"
+                onClick={() => onAddCard?.(stage.id)}
+                className="flex size-4 items-center justify-center text-icon-gray"
+              >
+                <PlusSmallIcon />
+              </button>
+            )}
             <button
               type="button"
               aria-label="스테이지 순서 이동"

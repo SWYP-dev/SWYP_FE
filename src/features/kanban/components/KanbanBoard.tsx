@@ -7,6 +7,7 @@ import { KanbanColumn } from './KanbanColumn';
 import { AddStageButton } from './AddStageButton';
 import { Toast } from '@/components/ui/toast';
 import { DeleteStageModal } from './DeleteStageModal';
+import { AddCardModal } from './AddCardModal';
 
 const MAX_STAGES = 10; // PRD 4.2.3: 최대 10개 단계
 
@@ -32,6 +33,7 @@ export function KanbanBoard({
   const [isAddingStage, setIsAddingStage] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [deletingStage, setDeletingStage] = useState<KanbanStage | null>(null);
+  const [addCardStageId, setAddCardStageId] = useState<number | null>(null);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
@@ -122,6 +124,7 @@ export function KanbanBoard({
                 const target = stages.find((s) => s.id === stageId);
                 if (target) setDeletingStage(target);
               }}
+              onAddCard={(stageId) => setAddCardStageId(stageId)}
             />
           ))}
         {isAddingStage && (
@@ -148,6 +151,41 @@ export function KanbanBoard({
         stage={deletingStage}
         onClose={() => setDeletingStage(null)}
         onConfirm={handleConfirmDelete}
+      />
+
+      <AddCardModal
+        isOpen={addCardStageId !== null}
+        stageId={addCardStageId ?? 0}
+        onClose={() => setAddCardStageId(null)}
+        onConfirm={(data) => {
+          setStages((prev) =>
+            prev.map((s) =>
+              s.id === data.stageId
+                ? {
+                    ...s,
+                    cards: [
+                      ...s.cards,
+                      {
+                        // TODO: POST /api/v1/kanban/cards(3.2) 연동 시 서버 반환 id로 교체
+                        id: Date.now(),
+                        postingId: 0,
+                        companyName: data.companyName,
+                        jobTitle: data.jobTitle,
+                        deadline: data.deadline,
+                        thumbnailUrl: '',
+                        originalUrl: data.originalUrl,
+                        deadlineChanged: false,
+                        memo: '',
+                        registeredAt: new Date().toISOString(),
+                      },
+                    ],
+                  }
+                : s
+            )
+          );
+          setAddCardStageId(null);
+          setToastMessage('지원 내역이 추가되었어요.');
+        }}
       />
     </DndContext>
   );

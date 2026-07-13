@@ -91,6 +91,14 @@ export function CloseIcon({ size = 16 }: { size?: number }) {
   );
 }
 
+export function PlusSmallIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M8 3.5v9M3.5 8h9" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 // name="triangle-down-fill" — KanbanColumn 헤더 장식용 화살표.
 // PRD v1.3.0에서 "카드 목록 접기" 기능이 삭제되어 현재는 비활성 장식 아이콘으로만 사용.
 export function TriangleDownFillIcon() {
