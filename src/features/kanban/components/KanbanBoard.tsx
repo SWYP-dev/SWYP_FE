@@ -94,14 +94,6 @@ export function KanbanBoard({
     onCreateStage?.(name);
   }
 
-  function handleConfirmDelete(stageId: number) {
-    setStages((prev) => prev.filter((s) => s.id !== stageId));
-    setDeletingStage(null);
-    // TODO: DELETE /api/v1/kanban/stages/{stageId} 연동 (3.9)
-    // ⚠️ 카드 있는 스테이지 삭제 시 moveToStageId 선택 팝업 추가 필요
-    setToastMessage('전형 단계가 삭제되었어요.');
-    onDeleteStage?.(stageId);
-  }
 
   function handleConfirmEditCard(data: {
     companyName: string;
@@ -140,13 +132,6 @@ export function KanbanBoard({
     setToastMessage('지원 내역이 삭제되었어요.');
   }
 
-  function findCard(cardId: number): KanbanCard | undefined {
-    for (const s of stages) {
-      const found = s.cards.find((c) => c.id === cardId);
-      if (found) return found;
-    }
-  }
-
   // draft 컬럼 렌더링용 임시 스테이지 객체
   const draftStage: KanbanStage = {
     id: -1,
@@ -172,14 +157,8 @@ export function KanbanBoard({
                 if (target) setDeletingStage(target);
               }}
               onAddCard={(stageId) => setAddCardStageId(stageId)}
-              onEditCard={(cardId) => {
-                const card = findCard(cardId);
-                if (card) setEditingCard(card);
-              }}
-              onDeleteCard={(cardId) => {
-                const card = findCard(cardId);
-                if (card) setDeletingCard(card);
-              }}
+              onEditCard={(card) => setEditingCard(card)}
+              onDeleteCard={(card) => setDeletingCard(card)}
             />
           ))}
         {isAddingStage && (
@@ -204,8 +183,29 @@ export function KanbanBoard({
       <DeleteStageModal
         isOpen={deletingStage !== null}
         stage={deletingStage}
+        otherStages={stages.filter((s) => s.id !== deletingStage?.id)}
         onClose={() => setDeletingStage(null)}
-        onConfirm={handleConfirmDelete}
+        onConfirm={(stageId, moveToStageId) => {
+          setStages((prev) => {
+            if (moveToStageId !== undefined) {
+              // 카드 있는 경우: 카드를 대상 스테이지로 이동 후 삭제
+              const targetCards = prev.find((s) => s.id === stageId)?.cards ?? [];
+              return prev
+                .filter((s) => s.id !== stageId)
+                .map((s) =>
+                  s.id === moveToStageId
+                    ? { ...s, cards: [...s.cards, ...targetCards] }
+                    : s
+                );
+            }
+            // 카드 없는 경우: 바로 삭제
+            return prev.filter((s) => s.id !== stageId);
+          });
+          setDeletingStage(null);
+          // TODO: DELETE /api/v1/kanban/stages/{stageId} 연동 (3.9)
+          setToastMessage('전형 단계가 삭제되었어요.');
+          onDeleteStage?.(stageId);
+        }}
       />
 
       <AddCardModal

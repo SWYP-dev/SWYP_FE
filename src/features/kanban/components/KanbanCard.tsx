@@ -20,12 +20,7 @@ function CalendarSmallIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
       <rect x="2" y="3" width="10" height="9" rx="1.2" stroke="#9E9EA1" strokeWidth="1.2" />
-      <path
-        d="M2 5.5h10M4.5 1.5v3M9.5 1.5v3"
-        stroke="#9E9EA1"
-        strokeWidth="1.2"
-        strokeLinecap="round"
-      />
+      <path d="M2 5.5h10M4.5 1.5v3M9.5 1.5v3" stroke="#9E9EA1" strokeWidth="1.2" strokeLinecap="round" />
     </svg>
   );
 }
@@ -44,10 +39,11 @@ function ExternalLinkIcon() {
   );
 }
 
-// Figma Card 컴포넌트(node 49:7685 등) 스펙 반영.
-// 통합 공고 피드의 JobCard와 달리 썸네일/뱃지 없이 회사명·공고명·마감일·원본링크만 노출
-// (API 명세서 3.1 변경 메모: 칸반 카드는 memo 미노출 확정).
-// TODO: 카드 클릭 시 상세 슬라이드 패널(3.4) 오픈 — 해당 Figma 프레임 받으면 연동.
+// Figma Card 컴포넌트(node 49:7685) 스펙 반영.
+// 드래그 핸들과 버튼 클릭 충돌 방지:
+//   - 드래그: 카드 전체 영역 (listeners/attributes)
+//   - 수정/삭제 버튼: e.stopPropagation()으로 드래그 이벤트 차단
+// deadlineChanged: true일 경우 마감일 옆에 경고 표시
 export function KanbanCard({ card, stageId, onEdit, onDelete }: KanbanCardProps) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: card.id,
@@ -68,6 +64,7 @@ export function KanbanCard({ card, stageId, onEdit, onDelete }: KanbanCardProps)
     >
       <div className="flex w-full items-start rounded-xl bg-base-white px-6 pb-3 pt-4">
         <div className="flex min-w-0 flex-1 flex-col gap-[2px]">
+          {/* 타이틀 영역 */}
           <div className="flex flex-col gap-1">
             <div className="flex flex-col">
               <p className="text-3 font-medium text-label-body">{card.companyName}</p>
@@ -75,13 +72,21 @@ export function KanbanCard({ card, stageId, onEdit, onDelete }: KanbanCardProps)
                 {card.jobTitle}
               </p>
             </div>
+            {/* 마감일 + deadlineChanged 경고 */}
             <div className="flex items-center gap-1">
               <CalendarSmallIcon />
               <span className="flex-1 text-1 font-medium text-label-description">
                 {formatDeadlineText(card.deadline)}
               </span>
+              {card.deadlineChanged && (
+                <span className="rounded px-1 py-[1px] text-0 font-medium bg-fill-negative-light text-status-negative">
+                  마감일 변경
+                </span>
+              )}
             </div>
           </div>
+
+          {/* 원본 공고 이동 */}
           <a
             href={card.originalUrl}
             target="_blank"
@@ -92,19 +97,29 @@ export function KanbanCard({ card, stageId, onEdit, onDelete }: KanbanCardProps)
             원본 공고 이동
             <ExternalLinkIcon />
           </a>
-          <div className="flex items-center gap-3 pt-1">
+
+          {/* 수정 / 삭제 버튼 */}
+          <div className="flex items-center gap-2 pt-1 border-t border-line-secondary mt-1">
             <button
               type="button"
-              onClick={(e) => { e.stopPropagation(); onEdit?.(); }}
-              className="text-1 font-medium text-label-description hover:text-label-body"
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit?.();
+              }}
+              className="flex-1 py-1 text-1 font-medium text-label-body hover:text-label-base"
             >
               수정
             </button>
-            <span className="text-1 text-line-secondary">|</span>
+            <div className="h-3 w-px bg-line-secondary" />
             <button
               type="button"
-              onClick={(e) => { e.stopPropagation(); onDelete?.(); }}
-              className="text-1 font-medium text-status-negative"
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete?.();
+              }}
+              className="flex-1 py-1 text-1 font-medium text-status-negative hover:opacity-70"
             >
               삭제
             </button>
