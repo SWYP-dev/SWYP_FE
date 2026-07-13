@@ -8,6 +8,8 @@ import { formatDeadlineText } from '../utils/formatDeadline';
 interface KanbanCardProps {
   card: KanbanCardType;
   stageId: number;
+  onEdit?: () => void;
+  onDelete?: () => void;
 }
 
 function handleOriginalLinkClick(event: React.MouseEvent<HTMLAnchorElement>) {
@@ -46,7 +48,7 @@ function ExternalLinkIcon() {
 // 통합 공고 피드의 JobCard와 달리 썸네일/뱃지 없이 회사명·공고명·마감일·원본링크만 노출
 // (API 명세서 3.1 변경 메모: 칸반 카드는 memo 미노출 확정).
 // TODO: 카드 클릭 시 상세 슬라이드 패널(3.4) 오픈 — 해당 Figma 프레임 받으면 연동.
-export function KanbanCard({ card, stageId }: KanbanCardProps) {
+export function KanbanCard({ card, stageId, onEdit, onDelete }: KanbanCardProps) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: card.id,
     data: { stageId, card },
@@ -90,6 +92,23 @@ export function KanbanCard({ card, stageId }: KanbanCardProps) {
             원본 공고 이동
             <ExternalLinkIcon />
           </a>
+          <div className="flex items-center gap-3 pt-1">
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onEdit?.(); }}
+              className="text-1 font-medium text-label-description hover:text-label-body"
+            >
+              수정
+            </button>
+            <span className="text-1 text-line-secondary">|</span>
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onDelete?.(); }}
+              className="text-1 font-medium text-status-negative"
+            >
+              삭제
+            </button>
+          </div>
         </div>
       </div>
     </div>

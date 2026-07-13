@@ -2,12 +2,13 @@
 
 import { useState, useCallback } from 'react';
 import { DndContext, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
-import type { KanbanStage } from '@/types/api';
+import type { KanbanCard, KanbanStage } from '@/types/api';
 import { KanbanColumn } from './KanbanColumn';
 import { AddStageButton } from './AddStageButton';
 import { Toast } from '@/components/ui/toast';
 import { DeleteStageModal } from './DeleteStageModal';
 import { AddCardModal } from './AddCardModal';
+import { DeleteCardModal } from './DeleteCardModal';
 
 const MAX_STAGES = 10; // PRD 4.2.3: 최대 10개 단계
 
@@ -34,6 +35,8 @@ export function KanbanBoard({
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [deletingStage, setDeletingStage] = useState<KanbanStage | null>(null);
   const [addCardStageId, setAddCardStageId] = useState<number | null>(null);
+  const [editingCard, setEditingCard] = useState<KanbanCard | null>(null);
+  const [deletingCard, setDeletingCard] = useState<KanbanCard | null>(null);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
@@ -100,6 +103,50 @@ export function KanbanBoard({
     onDeleteStage?.(stageId);
   }
 
+  function handleConfirmEditCard(data: {
+    companyName: string;
+    jobTitle: string;
+    originalUrl: string;
+    deadline: string;
+    stageId: number;
+    cardId?: number;
+  }) {
+    if (!data.cardId) return;
+    setStages((prev) =>
+      prev.map((s) =>
+        s.id === data.stageId
+          ? {
+              ...s,
+              cards: s.cards.map((c) =>
+                c.id === data.cardId
+                  ? { ...c, companyName: data.companyName, jobTitle: data.jobTitle, originalUrl: data.originalUrl, deadline: data.deadline }
+                  : c
+              ),
+            }
+          : s
+      )
+    );
+    setEditingCard(null);
+    // TODO: PATCH /api/v1/kanban/cards/{cardId} 연동
+    setToastMessage('지원 내역이 수정되었어요.');
+  }
+
+  function handleConfirmDeleteCard(cardId: number) {
+    setStages((prev) =>
+      prev.map((s) => ({ ...s, cards: s.cards.filter((c) => c.id !== cardId) }))
+    );
+    setDeletingCard(null);
+    // TODO: DELETE /api/v1/kanban/cards/{cardId} 연동
+    setToastMessage('지원 내역이 삭제되었어요.');
+  }
+
+  function findCard(cardId: number): KanbanCard | undefined {
+    for (const s of stages) {
+      const found = s.cards.find((c) => c.id === cardId);
+      if (found) return found;
+    }
+  }
+
   // draft 컬럼 렌더링용 임시 스테이지 객체
   const draftStage: KanbanStage = {
     id: -1,
@@ -125,6 +172,14 @@ export function KanbanBoard({
                 if (target) setDeletingStage(target);
               }}
               onAddCard={(stageId) => setAddCardStageId(stageId)}
+              onEditCard={(cardId) => {
+                const card = findCard(cardId);
+                if (card) setEditingCard(card);
+              }}
+              onDeleteCard={(cardId) => {
+                const card = findCard(cardId);
+                if (card) setDeletingCard(card);
+              }}
             />
           ))}
         {isAddingStage && (
@@ -154,7 +209,9 @@ export function KanbanBoard({
       />
 
       <AddCardModal
+        key={`add-${addCardStageId}`}
         isOpen={addCardStageId !== null}
+        mode="add"
         stageId={addCardStageId ?? 0}
         onClose={() => setAddCardStageId(null)}
         onConfirm={(data) => {
@@ -186,6 +243,24 @@ export function KanbanBoard({
           setAddCardStageId(null);
           setToastMessage('지원 내역이 추가되었어요.');
         }}
+      />
+      <AddCardModal
+        key={`edit-${editingCard?.id}`}
+        isOpen={editingCard !== null}
+        mode="edit"
+        stageId={
+          stages.find((s) => s.cards.some((c) => c.id === editingCard?.id))?.id ?? 0
+        }
+        card={editingCard ?? undefined}
+        onClose={() => setEditingCard(null)}
+        onConfirm={handleConfirmEditCard}
+      />
+
+      <DeleteCardModal
+        isOpen={deletingCard !== null}
+        card={deletingCard}
+        onClose={() => setDeletingCard(null)}
+        onConfirm={handleConfirmDeleteCard}
       />
     </DndContext>
   );

@@ -4,7 +4,13 @@ import { useState } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import type { KanbanStage } from '@/types/api';
 import { KanbanCard } from './KanbanCard';
-import { DragHandleIcon, EditIcon, PlusSmallIcon, TrashIcon, TriangleDownFillIcon } from '@/components/ui/icons';
+import {
+  DragHandleIcon,
+  EditIcon,
+  PlusSmallIcon,
+  TrashIcon,
+  TriangleDownFillIcon,
+} from '@/components/ui/icons';
 
 interface KanbanColumnProps {
   stage: KanbanStage;
@@ -17,6 +23,8 @@ interface KanbanColumnProps {
   /** draft 컬럼 취소 (빈 값 커밋 or ESC) */
   onCancelDraft?: () => void;
   onAddCard?: (stageId: number) => void;
+  onEditCard?: (cardId: number, stageId: number) => void;
+  onDeleteCard?: (cardId: number, stageId: number) => void;
 }
 
 // Figma KanbanColumn 마스터(50:14062) + "전형 단계 추가" 프레임(49:7797) 스펙 반영.
@@ -29,6 +37,8 @@ export function KanbanColumn({
   onConfirmDraft,
   onCancelDraft,
   onAddCard,
+  onEditCard,
+  onDeleteCard,
 }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: stage.id,
@@ -162,7 +172,13 @@ export function KanbanColumn({
       <div ref={setNodeRef} className="w-full flex-1 overflow-y-auto overflow-x-hidden">
         <div className="flex flex-col gap-3 px-4 pb-4">
           {stage.cards.map((card) => (
-            <KanbanCard key={card.id} card={card} stageId={stage.id} />
+            <KanbanCard
+              key={card.id}
+              card={card}
+              stageId={stage.id}
+              onEdit={() => onEditCard?.(card.id, stage.id)}
+              onDelete={() => onDeleteCard?.(card.id, stage.id)}
+            />
           ))}
           {!isDraft && stage.cards.length === 0 && (
             <div className="flex w-full items-center justify-center rounded-xl border border-dashed border-line-secondary py-8 text-2 text-label-description">

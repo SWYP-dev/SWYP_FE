@@ -3,10 +3,16 @@
 import { useState } from 'react';
 import { CloseIcon } from '@/components/ui/icons';
 import { DatePicker } from '@/components/ui/date-picker';
+import type { KanbanCard } from '@/types/api';
+
+type ModalMode = 'add' | 'edit';
 
 interface AddCardModalProps {
   isOpen: boolean;
+  mode: ModalMode;
   stageId: number;
+  /** 수정 모드일 때 기존 카드 데이터 */
+  card?: KanbanCard;
   onClose: () => void;
   onConfirm: (data: {
     companyName: string;
@@ -14,6 +20,7 @@ interface AddCardModalProps {
     originalUrl: string;
     deadline: string;
     stageId: number;
+    cardId?: number; // 수정 모드일 때만
   }) => void;
 }
 
@@ -31,17 +38,28 @@ interface FormErrors {
   deadline?: string;
 }
 
-// Figma "지원 내역 추가" 모달(node 49:8042) 스펙 반영.
-// PRD v1.4.0: 마감일 설정 필수 팝업 삭제 → 이 모달 자체가 입력 창.
-// 4개 필드 전부 필수(*): 회사명 / 공고명 / 공고 링크 / 지원 마감일
-// 확인 버튼: 미입력 시 action/primary-disabled(비활성), 전체 입력 시 fill/primary(활성)
-// 지원 마감일 필드 우측 캘린더 아이콘 클릭 시 DatePicker 드롭다운 노출.
-export function AddCardModal({ isOpen, stageId, onClose, onConfirm }: AddCardModalProps) {
+// Figma "지원 내역 추가"(49:8042) / "지원 내역 수정"(49:8083) 모달 스펙 반영.
+// 두 화면이 동일한 4개 필드 구조 + 동일한 레이아웃 → mode prop으로 구분.
+// 추가: 전체 빈 상태 → 확인 버튼 비활성(disabled)
+// 수정: 기존 값 채워진 상태로 열림 → 확인 버튼 처음부터 활성
+export function AddCardModal({
+  isOpen,
+  mode,
+  stageId,
+  card,
+  onClose,
+  onConfirm,
+}: AddCardModalProps) {
+  const parseDeadline = (iso: string) => {
+    const [year, month, day] = iso.split('-').map(Number);
+    return new Date(year, month - 1, day);
+  };
+
   const [form, setForm] = useState<FormState>({
-    companyName: '',
-    jobTitle: '',
-    originalUrl: '',
-    deadline: null,
+    companyName: card?.companyName ?? '',
+    jobTitle: card?.jobTitle ?? '',
+    originalUrl: card?.originalUrl ?? '',
+    deadline: card?.deadline ? parseDeadline(card.deadline) : null,
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -66,29 +84,29 @@ export function AddCardModal({ isOpen, stageId, onClose, onConfirm }: AddCardMod
 
   function handleConfirm() {
     if (!validate()) return;
-    const deadline = form.deadline!;
+    const d = form.deadline!;
     onConfirm({
       companyName: form.companyName.trim(),
       jobTitle: form.jobTitle.trim(),
       originalUrl: form.originalUrl.trim(),
-      deadline: `${deadline.getFullYear()}-${String(deadline.getMonth() + 1).padStart(2, '0')}-${String(deadline.getDate()).padStart(2, '0')}`,
+      deadline: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`,
       stageId,
+      cardId: mode === 'edit' ? card?.id : undefined,
     });
-    // 폼 초기화
-    setForm({ companyName: '', jobTitle: '', originalUrl: '', deadline: null });
-    setErrors({});
-    setShowDatePicker(false);
   }
 
   function handleClose() {
-    setForm({ companyName: '', jobTitle: '', originalUrl: '', deadline: null });
-    setErrors({});
     setShowDatePicker(false);
     onClose();
   }
 
+  // Figma 마감일 표시 형식: "2026. 7. 2"
+  const deadlineText = form.deadline
+    ? `${form.deadline.getFullYear()}. ${form.deadline.getMonth() + 1}. ${form.deadline.getDate()}`
+    : '';
+
   const FIELDS: {
-    key: keyof FormState;
+    key: keyof Pick<FormState, 'companyName' | 'jobTitle' | 'originalUrl'>;
     label: string;
     placeholder: string;
     type?: string;
@@ -103,24 +121,21 @@ export function AddCardModal({ isOpen, stageId, onClose, onConfirm }: AddCardMod
     },
   ];
 
-  const deadlineText = form.deadline
-    ? `${form.deadline.getFullYear()}.${String(form.deadline.getMonth() + 1).padStart(2, '0')}.${String(form.deadline.getDate()).padStart(2, '0')}`
-    : '';
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-base-dimmed" onClick={handleClose} aria-hidden="true" />
-
-      <div className="relative flex w-[394px] flex-col gap-6 overflow-hidden rounded-[20px] bg-base-white py-6 shadow-spread-small">
+      <div className="relative flex w-[394px] flex-col gap-6 overflow-visible rounded-[20px] bg-base-white py-6 shadow-spread-small">
         {/* 헤더 */}
         <div className="flex items-center justify-between px-8">
-          <p className="text-7 font-semibold text-label-base">지원 내역 추가</p>
+          <p className="text-7 font-semibold text-label-base">
+            {mode === 'add' ? '지원 내역 추가' : '지원 내역 수정'}
+          </p>
           <button type="button" onClick={handleClose} aria-label="닫기" className="text-label-base">
             <CloseIcon size={24} />
           </button>
         </div>
 
-        {/* 폼 필드 */}
+        {/* 폼 */}
         <div className="flex flex-col gap-5 px-8">
           {FIELDS.map(({ key, label, placeholder, type }) => (
             <div key={key} className="flex flex-col gap-2">
@@ -130,7 +145,7 @@ export function AddCardModal({ isOpen, stageId, onClose, onConfirm }: AddCardMod
               </div>
               <input
                 type={type ?? 'text'}
-                value={form[key] as string}
+                value={form[key]}
                 onChange={(e) => {
                   setForm((prev) => ({ ...prev, [key]: e.target.value }));
                   if (errors[key]) setErrors((prev) => ({ ...prev, [key]: undefined }));
@@ -189,7 +204,9 @@ export function AddCardModal({ isOpen, stageId, onClose, onConfirm }: AddCardMod
             onClick={handleConfirm}
             disabled={!isAllFilled}
             className={`flex w-full items-center justify-center rounded-xl py-3 text-5 font-semibold text-base-white transition-colors ${
-              isAllFilled ? 'bg-fill-primary' : 'bg-action-primary-disabled cursor-not-allowed'
+              isAllFilled
+                ? 'bg-fill-primary hover:bg-action-primary-hover'
+                : 'bg-action-primary-disabled cursor-not-allowed'
             }`}
           >
             확인
