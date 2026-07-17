@@ -52,7 +52,6 @@ const Component1: NextPage = () => {
   const [isDeadlineSoon, setIsDeadlineSoon] = useState(false);
 
   // 요구사항 4: 진영님 코멘트 - 사람인/원티드는 정책 확정 전까지 UI만 배치, disabled.
-  // (PlatformTabs 내부에서 처리, 여기서는 값만 들고 있음)
   const [platformFilter, setPlatformFilter] = useState<PlatformFilter>('ALL');
 
   return (
@@ -69,7 +68,8 @@ const Component1: NextPage = () => {
         <div className="sticky top-0 z-10 flex flex-col bg-base-white">
           <Header />
 
-          <div className="flex items-center justify-between pt-11 px-11 pb-5 gap-6 text-center">
+          {/* Container(36:549) 스펙: pt-[24px] px-[80px] pb-[16px], justify-between (gap 없음) */}
+          <div className="flex items-center justify-between pt-7 px-12 pb-5 text-center">
             <div className="flex items-center gap-3">
               <JobCategoryFilterButton value={jobCategoryValue} onApply={setJobCategoryValue} />
               <RegionFilterButton value={regionValue} onApply={setRegionValue} />
