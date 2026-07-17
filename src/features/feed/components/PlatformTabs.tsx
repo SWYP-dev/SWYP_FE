@@ -12,6 +12,7 @@ interface PlatformTabsProps {
  * → 정책 확정 전까지 UI만 배치하고 disabled 처리. 클릭 시 아무 동작 없음.
  * 정책 확정되면 disabled prop만 제거하면 바로 활성화되도록 구성.
  */
+
 export function PlatformTabs({ value, onChange }: PlatformTabsProps) {
   return (
     <div className="flex w-full items-start gap-2">
@@ -41,7 +42,7 @@ function TabButton({
       title={disabled ? '제휴 정책 확정 후 오픈 예정' : undefined}
       className={`flex items-center justify-center rounded-max border px-4 py-2 ${
         active ? 'border-line-primary bg-fill-primary-light' : 'border-line-secondary bg-neutral-0'
-      } ${disabled ? 'cursor-not-allowed opacity-40' : ''}`}
+      } ${disabled ? 'cursor-not-allowed' : ''}`}
     >
       <span className={`text-3 font-medium ${active ? 'text-label-primary' : 'text-label-body'}`}>
         {label}
