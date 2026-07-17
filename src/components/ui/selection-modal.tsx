@@ -36,7 +36,10 @@ interface SelectionModalProps {
  * 지역 선택(36:766 등) / 직군·직무 선택(36:905 등) 공용 모달.
  * Figma 확인 사항:
  * - 왼쪽 그룹은 단일 선택. 그룹 클릭 시 해당 그룹의 "전체"가 기본 선택됨.
- * - 오른쪽은 다중 선택 체크박스. "OO 전체"가 항상 첫 줄.
+ * - 왼쪽 그룹 목록은 2열 그리드 (Figma Wrapper 행마다 MenuItem 2개).
+ *   기존 flex-wrap + 고정폭(184px) 조합은 컨테이너 실제 폭이 padding/border에
+ *   따라 근소하게 달라지면 줄바꿈이 깨지기 쉬워 grid-cols-2로 교체.
+ * - 오른쪽은 다중 선택 체크박스, 3열 그리드. "OO 전체"가 항상 첫 줄.
  * - 다른 그룹으로 전환하면 이전 그룹 선택은 사라짐 (그룹은 항상 1개만 활성).
  * - 하단 초기화/적용 버튼 있음. 선택 없으면 적용 비활성(label/primary-disabled).
  *
@@ -142,8 +145,8 @@ export function SelectionModal({
 
         <div className="flex flex-col items-start gap-5 px-[32px]">
           <div className="flex h-[331px] w-[1248px] items-stretch justify-between rounded-2xl border border-[var(--color-line-secondary)]">
-            {/* 좌측: 그룹(단일 선택) */}
-            <div className="flex flex-1 flex-wrap content-start items-start gap-x-0 gap-y-0 overflow-y-auto border-r border-[var(--color-line-secondary)] px-2 pt-2">
+            {/* 좌측: 그룹(단일 선택) — grid-cols-2로 폭 계산 없이 2열 고정 */}
+            <div className="grid flex-1 grid-cols-2 content-start items-start gap-x-0 gap-y-0 overflow-y-auto border-r border-[var(--color-line-secondary)] px-2 pt-2">
               {groups.map((group) => {
                 const isActive = group.id === draft?.groupId;
                 return (
@@ -151,7 +154,7 @@ export function SelectionModal({
                     key={group.id}
                     type="button"
                     onClick={() => selectGroup(group)}
-                    className={`flex h-10 w-[184px] items-center gap-2 rounded-lg px-4 py-3 text-left ${
+                    className={`flex h-10 w-full items-center gap-2 rounded-lg px-4 py-3 text-left ${
                       isActive
                         ? 'bg-[var(--color-fill-primary-light)]'
                         : 'bg-[var(--color-neutral-0)]'
@@ -172,7 +175,7 @@ export function SelectionModal({
               })}
             </div>
 
-            {/* 우측: 하위 항목(다중 선택 체크박스) */}
+            {/* 우측: 하위 항목(다중 선택 체크박스) — 3열, 기존과 동일 (수정 없음) */}
             <div className="flex w-[868px] flex-col items-start overflow-y-auto pt-10">
               {activeGroup && activeGroup.children.length > 0 ? (
                 <div className="flex flex-wrap content-start items-start">
