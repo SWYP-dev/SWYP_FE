@@ -13,46 +13,57 @@ import { RegionFilterButton } from '@/features/feed/components/RegionFilterButto
 import { JobCategoryFilterButton } from '@/features/feed/components/JobCategoryFilterButton';
 import { DeadlineSoonFilterButton } from '@/features/feed/components/DeadlineSoonFilterButton';
 import { PlatformTabs } from '@/features/feed/components/PlatformTabs';
-import { formatJobCategories } from '@/features/feed/utils/formatJobCategories';
 import type { PlatformFilter } from '@/features/feed/types/feed';
+import { useFeedQuery } from '@/features/feed/api/useFeedQuery';
+import type { FeedQueryParams } from '@/types/api';
 
-/* ──────────────────────────────────────────────
-   토큰 매핑 기준 (src/styles/tokens.css — Tailwind v4 @theme)
-   - spacing: 1=2px 2=4px 3=8px 4=12px 5=16px 6=20px
-              7=24px 8=32px 9=40px 10=48px 11=64px 12=80px
-   - --spacing: initial 상태이므로 스케일 밖 값(7px, 18px, 35px 등)은
-     반드시 arbitrary([Npx])로 표기
-   - 타이포: text-N에 행간 내장 (leading-* 불필요)
-   ────────────────────────────────────────────── */
+type SortOption = NonNullable<FeedQueryParams['sort']>;
 
-// 요구사항 3: 실제로는 20개(PAGE_SIZE)가 1세트.
-const PAGE_SIZE = 20;
+// 백엔드 JobCategory enum -> 화면 표시용 한글 라벨
+// TODO: 8개 전부 맞는지 진영님 확인 필요 (임시 매핑)
+const JOB_CATEGORY_LABELS: Record<string, string> = {
+  BACKEND: '백엔드 개발자',
+  FRONTEND: '프론트엔드 개발자',
+  FULLSTACK: '풀스택 개발자',
+  DESIGN: '디자이너',
+  PM: 'PM',
+  DATA: '데이터',
+  DEVOPS: 'DevOps',
+  OTHER: '기타',
+};
 
-// 요구사항 2: 직무가 여러 개인 경우 대비. TODO: API 연동 전 임시 데이터.
-const JOBS = Array.from({ length: PAGE_SIZE }, (_, i) => ({
-  id: i,
-  company: '와탭랩스',
-  title: 'Java/Spring Boot 백엔드 개발자 채용',
-  jobCategories: ['경영·비즈니스 기획', '웹 기획', '마케팅 기획', '브랜드기획', '사업기획'],
-  platformLabel: '사람인',
-  region: '부산 부산진구',
-  career: '경력 3-10년',
-  deadlineText: '~7.2 (수)',
-  deadlineIso: '2026-07-08',
-  originalUrl: 'https://example.com',
-  thumbnail: '/images/job-thumbnail.png',
-}));
+const PLATFORM_LABELS: Record<string, string> = {
+  SARAMIN: '사람인',
+  WANTED: '원티드',
+  WORKNET: '워크넷',
+  DIRECT: '직접등록',
+};
+
+function formatDeadline(deadline: string): string {
+  const date = new Date(deadline);
+  return `~${date.getMonth() + 1}.${date.getDate()} (${'일월화수목금토'[date.getDay()]})`;
+}
 
 const Component1: NextPage = () => {
   const [currentPage, setCurrentPage] = useState(0);
+  const [sort, setSort] = useState<SortOption>('LATEST');
+  const [deadlineSoon, setDeadlineSoon] = useState(false);
+  const [keyword, setKeyword] = useState('');
 
+  // ⚠️ 아래 3개는 UI 상태만 들고 있고 아직 API 파라미터로 안 보냄
+  // (백엔드/PM 확인 후 매핑 방식 정해지면 useFeedQuery params에 추가)
   const [careerRange, setCareerRange] = useState<[number, number]>([0, MAX_STEP]);
   const [regionValue, setRegionValue] = useState<SelectionValue | null>(null);
   const [jobCategoryValue, setJobCategoryValue] = useState<SelectionValue | null>(null);
-  const [isDeadlineSoon, setIsDeadlineSoon] = useState(false);
-
-  // 요구사항 4: 진영님 코멘트 - 사람인/원티드는 정책 확정 전까지 UI만 배치, disabled.
   const [platformFilter, setPlatformFilter] = useState<PlatformFilter>('ALL');
+
+  const { data, isLoading, isError } = useFeedQuery({
+    page: currentPage,
+    size: 20,
+    sort,
+    deadlineSoon: deadlineSoon || undefined,
+    keyword: keyword || undefined,
+  });
 
   return (
     <div className="w-full h-screen relative bg-base-white overflow-hidden flex text-left text-label-base font-pretendard">
@@ -62,65 +73,77 @@ const Component1: NextPage = () => {
         avatarUrl="/images/avatar.png"
       />
 
-      {/* ── Main ── */}
       <main className="self-stretch flex-1 flex flex-col text-3 min-h-0 overflow-y-auto">
-        {/* 요구사항 1: 검색바(Header) + 필터/정렬 행을 하나의 블록으로 묶어 sticky 처리 */}
         <div className="sticky top-0 z-10 flex flex-col bg-base-white">
-          <Header />
+          <Header onSearch={setKeyword} />
 
-          {/* Container(36:549) 스펙: pt-[24px] px-[80px] pb-[16px], justify-between (gap 없음) */}
           <div className="flex items-center justify-between pt-7 px-12 pb-5 text-center">
             <div className="flex items-center gap-3">
               <JobCategoryFilterButton value={jobCategoryValue} onApply={setJobCategoryValue} />
               <RegionFilterButton value={regionValue} onApply={setRegionValue} />
               <CareerFilterChip appliedRange={careerRange} onApply={setCareerRange} />
-              <DeadlineSoonFilterButton isActive={isDeadlineSoon} onToggle={setIsDeadlineSoon} />
+              <DeadlineSoonFilterButton isActive={deadlineSoon} onToggle={setDeadlineSoon} />
             </div>
             <div className="flex items-start gap-2 text-label-body">
-              <div className="font-semibold text-label-base">최신순</div>
+              <button
+                type="button"
+                onClick={() => setSort('LATEST')}
+                className={sort === 'LATEST' ? 'font-semibold text-label-base' : ''}
+              >
+                최신순
+              </button>
               <div className="text-1">•</div>
-              <div>마감일순</div>
+              <button
+                type="button"
+                onClick={() => setSort('DEADLINE')}
+                className={sort === 'DEADLINE' ? 'font-semibold text-label-base' : ''}
+              >
+                마감일순
+              </button>
             </div>
           </div>
         </div>
 
-        {/* Container(36:559) — 회색 배경. 자식은 Wrapper 하나뿐이라 gap 의미 없음 */}
         <div className="flex-1 flex flex-col px-11 py-5 bg-surface-card">
-          {/* Wrapper(36:560) — 플랫폼탭 ~ 카드리스트 사이 gap: 20px(spacing/6) */}
           <div className="flex flex-col gap-6">
-            {/* Platform Tabs (전체/사람인/원티드) — Figma ButtonWrapper 스펙.
-                사람인/원티드는 정책 확정 전까지 disabled */}
             <PlatformTabs value={platformFilter} onChange={setPlatformFilter} />
 
-            {/* ContentWrapper(36:565) — 카드리스트 ~ 페이지네이션 사이 gap: 32px(spacing/8) */}
             <div className="flex flex-col gap-8">
-              {/* Job List — 흰 배경 박스 (36:566) */}
               <div className="flex flex-col items-center gap-3 p-3 bg-base-white border border-line-secondary rounded-[20px]">
-                {JOBS.map((job) => (
-                  <JobCard
-                    key={job.id}
-                    thumbnailUrl={job.thumbnail}
-                    deadlineIso={job.deadlineIso}
-                    deadlineText={job.deadlineText}
-                    company={job.company}
-                    title={job.title}
-                    jobCategory={formatJobCategories(job.jobCategories)}
-                    platformLabel={job.platformLabel}
-                    region={job.region}
-                    career={job.career}
-                    originalUrl={job.originalUrl}
-                  />
-                ))}
+                {isLoading && <p className="py-11 text-label-description">불러오는 중...</p>}
+                {isError && (
+                  <p className="py-11 text-status-negative">
+                    공고를 불러오지 못했어요. 잠시 후 다시 시도해주세요.
+                  </p>
+                )}
+                {!isLoading &&
+                  !isError &&
+                  data?.items.map((job) => (
+                    <JobCard
+                      key={job.id}
+                      thumbnailUrl={job.thumbnailUrl}
+                      deadlineIso={job.deadline}
+                      deadlineText={formatDeadline(job.deadline)}
+                      company={job.companyName}
+                      title={job.jobTitle}
+                      jobCategory={JOB_CATEGORY_LABELS[job.jobCategory] ?? job.jobCategory}
+                      platformLabel={PLATFORM_LABELS[job.platform] ?? job.platform}
+                      region="" // TODO: region 필드가 API 응답에 없음. 백엔드 확인 필요
+                      career={job.career === 'NEW' ? '신입' : '경력'}
+                      originalUrl={job.originalUrl}
+                    />
+                  ))}
               </div>
 
-              {/* Pagination — totalPages는 API 연동 시 실제 값으로 교체 */}
-              <div className="flex justify-center">
-                <Pagination
-                  currentPage={currentPage}
-                  totalPages={5}
-                  onPageChange={setCurrentPage}
-                />
-              </div>
+              {data && (
+                <div className="flex justify-center">
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={data.totalPages}
+                    onPageChange={setCurrentPage}
+                  />
+                </div>
+              )}
             </div>
           </div>
         </div>
