@@ -2,5 +2,34 @@
   text-box: trim-both cap alphabetic;
 }
 
-@import "tailwindcss";
-@import "../styles/tokens.css";
+@import 'tailwindcss';
+@import '../styles/tokens.css';
+
+.range-thumb {
+  pointer-events: none;
+}
+.range-thumb::-webkit-slider-thumb {
+  pointer-events: auto;
+  appearance: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 9999px;
+  background: white;
+  border: 1px solid var(--color-neutral-200);
+  box-shadow:
+    0px 4px 6px 0px rgba(33, 33, 35, 0.07),
+    0px 10px 15px 0px rgba(33, 33, 35, 0.07);
+  cursor: pointer;
+}
+.range-thumb::-moz-range-thumb {
+  pointer-events: auto;
+  width: 26px;
+  height: 26px;
+  border-radius: 9999px;
+  background: white;
+  border: 1px solid var(--color-neutral-200);
+  box-shadow:
+    0px 4px 6px 0px rgba(33, 33, 35, 0.07),
+    0px 10px 15px 0px rgba(33, 33, 35, 0.07);
+  cursor: pointer;
+}

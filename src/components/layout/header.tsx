@@ -6,6 +6,8 @@ interface HeaderProps {
   onSearch?: (keyword: string) => void;
 }
 
+// Figma Header 컴포넌트(node 24:3480/25:3571) 스펙 반영.
+// SearchInput padding-y 8px, placeholder 14px medium 최신 스펙 적용 완료.
 export function Header({ onSearch }: HeaderProps) {
   const [keyword, setKeyword] = useState('');
 
