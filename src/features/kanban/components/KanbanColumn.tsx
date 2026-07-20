@@ -19,8 +19,8 @@ interface KanbanColumnProps {
 }
 
 // Figma KanbanColumn 마스터(50:14062) + 지원 현황 메인(49:7796) 스펙 반영.
-// 헤더 ButtonGroup 순서: + (추가) → ⠿ (드래그) → ✎ (수정) → 🗑 (삭제, 커스텀만)
-// 헤더 좌측 장식 아이콘: ▸ (chevron-right, 비활성 장식용)
+// 헤더 좌측 장식 아이콘: ⠿ (drag-handle, 비활성 장식용)
+// 헤더 우측 ButtonGroup 순서: + (추가) → ✎ (수정) → 🗑 (삭제)
 export function KanbanColumn({
   stage,
   isDraft = false,
@@ -80,7 +80,7 @@ export function KanbanColumn({
         <div className="flex min-h-7 flex-1 items-center justify-between">
           {/* 좌측: 장식 아이콘 + 스테이지명 + 카드 수 */}
           <div className="flex items-center gap-2">
-            <ChevronRightSmallIcon />
+            <DragHandleIcon size={20} />
             {isEditingName ? (
               <div className="flex flex-col gap-1">
                 <input
@@ -116,22 +116,15 @@ export function KanbanColumn({
             )}
           </div>
 
-          {/* 우측 ButtonGroup: + → ⠿ → ✎ → 🗑(커스텀만) */}
+          {/* 우측 ButtonGroup: + → ✎ → 🗑 */}
           <div className="flex items-center gap-2">
             <button
               type="button"
               aria-label="지원 내역 추가"
               onClick={() => onAddCard?.(stage.id)}
-              className="flex size-4 items-center justify-center text-icon-gray"
+              className="flex size-5 items-center justify-center text-icon-gray"
             >
-              <PlusSmallIcon />
-            </button>
-            <button
-              type="button"
-              aria-label="스테이지 순서 이동"
-              className="flex size-4 cursor-grab items-center justify-center text-icon-gray"
-            >
-              <DragHandleIcon />
+              <PlusSmallIcon size={20} />
             </button>
             <button
               type="button"
@@ -140,20 +133,18 @@ export function KanbanColumn({
                 setDraftName(stage.name);
                 setIsEditingName(true);
               }}
-              className="flex size-4 items-center justify-center text-icon-gray"
+              className="flex size-5 items-center justify-center text-icon-gray"
             >
-              <EditIcon />
+              <EditIcon size={20} />
             </button>
-            {!stage.isDefault && (
-              <button
-                type="button"
-                aria-label="스테이지 삭제"
-                onClick={() => onDeleteStage?.(stage.id)}
-                className="flex size-4 items-center justify-center text-icon-gray"
-              >
-                <TrashIcon />
-              </button>
-            )}
+            <button
+              type="button"
+              aria-label="스테이지 삭제"
+              onClick={() => onDeleteStage?.(stage.id)}
+              className="flex size-5 items-center justify-center text-icon-gray"
+            >
+              <TrashIcon size={20} />
+            </button>
           </div>
         </div>
       </div>
@@ -178,21 +169,5 @@ export function KanbanColumn({
         </div>
       </div>
     </div>
-  );
-}
-
-// Figma 헤더 좌측 장식 아이콘 — chevron-right(▸), 비활성 장식용
-// PRD v1.3.0에서 "카드 목록 접기" 기능 삭제 → 클릭 이벤트 없음
-function ChevronRightSmallIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path
-        d="M6 4.5L10 8L6 11.5"
-        stroke="#212123"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
   );
 }
