@@ -56,6 +56,7 @@ export interface FeedItem {
   id: number; // feed id (job_feed.id) — 피드 탐색 중에만 쓰는 임시성 ID, 스크랩 이후엔 jobPostingId를 써야 함
   platform: Platform;
   companyName: string;
+  region: string; // 백엔드 확인(2026-07-19) 후 추가된 필드
   jobTitle: string;
   jobCategory: JobCategory;
   career: Career;
