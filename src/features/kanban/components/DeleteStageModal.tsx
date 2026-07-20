@@ -47,7 +47,7 @@ export function DeleteStageModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-base-dimmed" onClick={handleClose} aria-hidden="true" />
 
-      <div className="relative flex w-[566px] flex-col gap-4 overflow-hidden rounded-[20px] bg-base-white py-6 shadow-spread-small">
+      <div className="relative flex w-[394px] flex-col gap-4 overflow-hidden rounded-[20px] bg-base-white py-6 shadow-spread-small">
         {/* 헤더 */}
         <div className="flex items-center justify-between px-8">
           <p className="text-7 font-semibold text-label-base">전형 단계 삭제</p>

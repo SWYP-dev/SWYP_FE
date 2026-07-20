@@ -18,18 +18,18 @@ export function CalendarIcon() {
 }
 
 // name="drag-handle" — KanbanColumn 헤더 버튼그룹에서 사용.
-export function DragHandleIcon() {
-  return <Image src="/icons/drag-handle.png" alt="" width={16} height={16} />;
+export function DragHandleIcon({ size = 16 }: { size?: number }) {
+  return <Image src="/icons/drag-handle.png" alt="" width={size} height={size} />;
 }
 
 // name="Edit" — KanbanColumn 헤더 버튼그룹에서 사용.
-export function EditIcon() {
-  return <Image src="/icons/edit.png" alt="" width={16} height={16} />;
+export function EditIcon({ size = 16 }: { size?: number }) {
+  return <Image src="/icons/edit.png" alt="" width={size} height={size} />;
 }
 
 // name="trash" — KanbanColumn 헤더 버튼그룹에서 사용.
-export function TrashIcon() {
-  return <Image src="/icons/trash.png" alt="" width={16} height={16} />;
+export function TrashIcon({ size = 16 }: { size?: number }) {
+  return <Image src="/icons/trash.png" alt="" width={size} height={size} />;
 }
 
 // name="close" — Drawer, Modal 등 닫기 버튼에서 공통 사용.
@@ -38,12 +38,12 @@ export function CloseIcon({ size = 16 }: { size?: number }) {
 }
 
 // name="plus" — KanbanColumn "지원 내역 추가" 버튼에서 사용.
-export function PlusSmallIcon() {
-  return <Image src="/icons/plus.png" alt="" width={16} height={16} />;
+export function PlusSmallIcon({ size = 16 }: { size?: number }) {
+  return <Image src="/icons/plus.png" alt="" width={size} height={size} />;
 }
 
 // name="triangle-down-fill" — KanbanColumn 헤더 장식용 화살표.
 // PRD v1.3.0에서 "카드 목록 접기" 기능이 삭제되어 현재는 비활성 장식 아이콘으로만 사용.
-export function TriangleDownFillIcon() {
-  return <Image src="/icons/triangle-down-fill.png" alt="" width={16} height={16} />;
+export function TriangleDownFillIcon({ size = 16 }: { size?: number }) {
+  return <Image src="/icons/triangle-down-fill.png" alt="" width={size} height={size} />;
 }
