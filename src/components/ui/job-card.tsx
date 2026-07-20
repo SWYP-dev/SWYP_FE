@@ -13,7 +13,7 @@ interface JobCardProps {
   platformLabel: string;
   region: string;
   career: string;
-  originalUrl: string;
+  originalUrl: string | null;
   onAddToKanban?: () => void;
 }
 
@@ -36,8 +36,15 @@ export function JobCard({
     // Card: gap-[20px](spacing/6) — Thumbnail ~ 안쪽 Wrapper 사이 간격
     <div className="flex w-full items-center gap-6 rounded-xl p-3 hover:bg-neutral-100">
       {/* Thumbnail */}
-      <div className="relative size-[100px] shrink-0 overflow-hidden rounded-lg">
-        <Image src={thumbnailUrl} alt="" fill className="object-cover" />
+      <div className="relative size-[100px] shrink-0 overflow-hidden rounded-lg bg-neutral-100">
+        {thumbnailUrl ? (
+          <Image src={thumbnailUrl} alt="" fill className="object-cover" />
+        ) : (
+          // 백엔드 확인(2026-07-19): 공공데이터포털 소스는 썸네일 필드 자체가 없음, 항상 null
+          <div className="flex size-full items-center justify-center text-1 text-label-description">
+            CHWIHAP
+          </div>
+        )}
         <div className="absolute left-[6px] top-[6px]">
           <DeadlineBadge deadline={deadlineIso} />
         </div>
@@ -61,7 +68,7 @@ export function JobCard({
           <div className="flex items-center gap-[6px]">
             <PinIcon />
             <span className="text-3 font-medium leading-[1.6] text-label-description">
-              {region}
+              {region || '지역 정보 없음'}
             </span>
           </div>
           <div className="flex items-center gap-[6px]">
@@ -78,15 +85,21 @@ export function JobCard({
           </div>
         </div>
 
-        {/* Buttons: 원본 공고로 이동 버튼에 w-full — 아래(내 지원 현황에 추가) 버튼 너비에 맞춰 늘어남.
-            NOTE: Button 컴포넌트가 className을 그대로 전달(forward)한다는 가정 하에 작성했습니다.
-            만약 className이 병합 안 되면 Button 내부 구현 확인 필요. */}
+        {/* Buttons */}
         <div className="flex h-full flex-col justify-center gap-[10px]">
-          <a href={originalUrl} target="_blank" rel="noreferrer" className="block w-full">
-            <Button variant="outline" size="sm" className="w-full">
-              원본 공고로 이동
+          {/* 백엔드 확인(2026-07-19): originalUrl이 null인 공고가 예외 케이스가 아니라
+              일부 기관(한전KDN 등)에서 꽤 나올 수 있다고 확인됨. 방어 처리 필수. */}
+          {originalUrl ? (
+            <a href={originalUrl} target="_blank" rel="noreferrer" className="block w-full">
+              <Button variant="outline" size="sm" className="w-full">
+                원본 공고로 이동
+              </Button>
+            </a>
+          ) : (
+            <Button variant="outline" size="sm" className="w-full" disabled>
+              원본 링크 없음
             </Button>
-          </a>
+          )}
           <Button variant="outline" size="sm" onClick={onAddToKanban}>
             내 지원 현황에 추가
           </Button>
