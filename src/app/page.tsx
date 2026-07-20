@@ -12,11 +12,11 @@ import { RegionFilterButton } from '@/features/feed/components/RegionFilterButto
 import { JobCategoryFilterButton } from '@/features/feed/components/JobCategoryFilterButton';
 import { DeadlineSoonFilterButton } from '@/features/feed/components/DeadlineSoonFilterButton';
 import { useFeedQuery } from '@/features/feed/api/useFeedQuery';
+import { postScrap, deleteScrap } from '@/features/feed/api/scrap';
 import type { FeedQueryParams } from '@/types/api';
 
 type SortOption = NonNullable<FeedQueryParams['sort']>;
 
-// 백엔드 확인 완료(2026-07-19) 기준 매핑
 const JOB_CATEGORY_LABELS: Record<string, string> = {
   사업관리: '사업관리',
   '경영.회계.사무': '경영·회계·사무',
@@ -70,11 +70,15 @@ export default function FeedPage() {
 
   const [jobCategoryValue, setJobCategoryValue] = useState<SelectionValue | null>(null);
   const [regionValue, setRegionValue] = useState<SelectionValue | null>(null);
-
-  // ⚠️ career는 실제 API가 NEW/EXPERIENCED 이진값인데 UI는 신입~15년 슬라이더라
-  // 데이터 모델이 안 맞음. 새 토글 UI로 교체 여부 보류 중이라 API 연결도 보류.
-  // 지금은 화면에만 남겨두고 쿼리 파라미터로는 안 보냄.
   const [careerRange, setCareerRange] = useState<[number, number]>([0, MAX_STEP]);
+
+  // 스크랩 상태 로컬 오버라이드.
+  // ⚠️ FeedItem 응답에 jobPostingId가 없어서, 이번 세션에서 직접 스크랩한 것만
+  // jobPostingId를 기억해 해제가 가능함. 서버에서 이미 isScrapped:true로 온 공고는
+  // jobPostingId를 모르기 때문에 해제 버튼이 동작하지 않음 (TODO: 백엔드에
+  // FeedItem에도 jobPostingId 포함 요청 필요).
+  const [scrapOverrides, setScrapOverrides] = useState<Record<number, boolean>>({});
+  const [jobPostingIdMap, setJobPostingIdMap] = useState<Record<number, number>>({});
 
   const { data, isLoading, isError } = useFeedQuery({
     page: currentPage,
@@ -87,6 +91,31 @@ export default function FeedPage() {
         ? jobCategoryValue.childIds.join(',')
         : undefined,
   });
+
+  async function handleToggleScrap(feedId: number, currentlyScrapped: boolean) {
+    // 낙관적 업데이트: 서버 응답 기다리지 않고 먼저 화면 반영
+    setScrapOverrides((prev) => ({ ...prev, [feedId]: !currentlyScrapped }));
+
+    try {
+      if (!currentlyScrapped) {
+        const res = await postScrap(feedId);
+        setJobPostingIdMap((prev) => ({ ...prev, [feedId]: res.jobPostingId }));
+      } else {
+        const jobPostingId = jobPostingIdMap[feedId];
+        if (!jobPostingId) {
+          // 이번 세션에서 스크랩한 적 없는(=jobPostingId 모르는) 공고는 해제 불가.
+          // TODO: 백엔드가 FeedItem에 jobPostingId 내려주면 이 분기 제거 가능.
+          console.warn('jobPostingId를 몰라서 스크랩 해제 요청을 보낼 수 없습니다.', feedId);
+          return;
+        }
+        await deleteScrap(jobPostingId);
+      }
+    } catch (err) {
+      // 실패 시 롤백
+      setScrapOverrides((prev) => ({ ...prev, [feedId]: currentlyScrapped }));
+      console.error('스크랩 처리 실패', err);
+    }
+  }
 
   return (
     <div className="w-full h-screen relative bg-base-white overflow-hidden flex text-left text-label-base font-pretendard">
@@ -127,7 +156,6 @@ export default function FeedPage() {
           </div>
         </div>
 
-        {/* 플랫폼 필터 삭제됨(2026-07-19 팀 확정) — 최종 발표 시점까지 공공데이터포털만 연동 */}
         <div className="flex-1 flex flex-col px-11 py-5 bg-surface-card">
           <div className="flex flex-col gap-6">
             <div className="flex flex-col gap-8">
@@ -140,22 +168,26 @@ export default function FeedPage() {
                 )}
                 {!isLoading &&
                   !isError &&
-                  data?.items.map((job) => (
-                    <JobCard
-                      key={job.id}
-                      thumbnailUrl={job.thumbnailUrl ?? ''}
-                      deadlineIso={job.deadline}
-                      deadlineText={formatDeadline(job.deadline)}
-                      company={job.companyName}
-                      title={job.jobTitle}
-                      jobCategory={formatJobCategory(job.jobCategory)}
-                      // platform 필터는 없앴지만 뱃지 자체는 유지 (공공기관 표시용)
-                      platformLabel="공공데이터포털"
-                      region={job.region ?? ''}
-                      career={formatCareer(job.career)}
-                      originalUrl={job.originalUrl}
-                    />
-                  ))}
+                  data?.items.map((job) => {
+                    const isScrapped = scrapOverrides[job.id] ?? job.isScrapped;
+                    return (
+                      <JobCard
+                        key={job.id}
+                        thumbnailUrl={job.thumbnailUrl ?? ''}
+                        deadlineIso={job.deadline}
+                        deadlineText={formatDeadline(job.deadline)}
+                        company={job.companyName}
+                        title={job.jobTitle}
+                        jobCategory={formatJobCategory(job.jobCategory)}
+                        platformLabel="공공데이터포털"
+                        region={job.region ?? ''}
+                        career={formatCareer(job.career)}
+                        originalUrl={job.originalUrl}
+                        isScrapped={isScrapped}
+                        onToggleScrap={() => handleToggleScrap(job.id, isScrapped)}
+                      />
+                    );
+                  })}
               </div>
 
               {data && (
