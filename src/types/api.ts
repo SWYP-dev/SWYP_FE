@@ -244,9 +244,9 @@ export interface ScrapRemoveResponse {
 }
 
 // 3.2 칸반 카드 등록
-// ⚠️ 참고: 명세서 v1.9 노트에 "3장 칸반 등록의 '스크랩 선행' 정책 문구·POSTING_NOT_FAVORITED
-// 에러코드 정합화는 별도 후속으로 처리 예정"이라고 되어 있어, 에러코드명은 아직 변경하지
-// 않았습니다. 후속 명세 업데이트 시 확인 필요.
+// ✅ 확인 완료 (2026-07-20, Swagger 실측): Request Body `postingId` 필드는 실제로
+// jobPostingId(스크랩 사본 id)를 받음 — 상세는 registerCard.ts 주석 참고.
+// 에러코드 POSTING_NOT_FAVORITED는 그대로 사용 중 (정합화 명칭 변경은 아직 안 됨).
 export interface KanbanCardRegisterResponse {
   cardId: number;
   stageId: number;
