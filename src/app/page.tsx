@@ -1,9 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import type { NextPage } from 'next';
-import { Sidebar } from '@/components/layout/sidebar';
 import { Header } from '@/components/layout/header';
+import { Sidebar } from '@/components/layout/sidebar';
 import { JobCard } from '@/components/ui/job-card';
 import { Pagination } from '@/components/ui/pagination';
 import { MAX_STEP } from '@/components/ui/slider';
@@ -12,50 +11,70 @@ import { CareerFilterChip } from '@/features/feed/components/CareerFilterChip';
 import { RegionFilterButton } from '@/features/feed/components/RegionFilterButton';
 import { JobCategoryFilterButton } from '@/features/feed/components/JobCategoryFilterButton';
 import { DeadlineSoonFilterButton } from '@/features/feed/components/DeadlineSoonFilterButton';
-import { PlatformTabs } from '@/features/feed/components/PlatformTabs';
-import type { PlatformFilter } from '@/features/feed/types/feed';
 import { useFeedQuery } from '@/features/feed/api/useFeedQuery';
 import type { FeedQueryParams } from '@/types/api';
 
 type SortOption = NonNullable<FeedQueryParams['sort']>;
 
-// 백엔드 JobCategory enum -> 화면 표시용 한글 라벨
-// TODO: 8개 전부 맞는지 진영님 확인 필요 (임시 매핑)
+// 백엔드 확인 완료(2026-07-19) 기준 매핑
 const JOB_CATEGORY_LABELS: Record<string, string> = {
-  BACKEND: '백엔드 개발자',
-  FRONTEND: '프론트엔드 개발자',
-  FULLSTACK: '풀스택 개발자',
-  DESIGN: '디자이너',
-  PM: 'PM',
-  DATA: '데이터',
-  DEVOPS: 'DevOps',
-  OTHER: '기타',
+  사업관리: '사업관리',
+  '경영.회계.사무': '경영·회계·사무',
+  '금융.보험': '금융·보험',
+  '교육.자연.사회과학': '교육·자연·사회과학',
+  '법률.경찰.소방.교도.국방': '법률·경찰·소방·교도·국방',
+  '보건.의료': '보건·의료',
+  '사회복지.종교': '사회복지·종교',
+  '문화.예술.디자인.방송': '문화·예술·디자인·방송',
+  '운전.운송': '운전·운송',
+  영업판매: '영업판매',
+  '경비.청소': '경비·청소',
+  '이용.숙박.여행.오락.스포츠': '이용·숙박·여행·오락·스포츠',
+  음식서비스: '음식서비스',
+  건설: '건설',
+  기계: '기계',
+  재료: '재료',
+  '화학.바이오': '화학·바이오',
+  '섬유.의복': '섬유·의복',
+  '전기.전자': '전기·전자',
+  정보통신: '정보통신',
+  식품가공: '식품가공',
+  '인쇄.목재.가구.공예': '인쇄·목재·가구·공예',
+  '환경.에너지.안전': '환경·에너지·안전',
+  농림어업: '농림어업',
 };
 
-const PLATFORM_LABELS: Record<string, string> = {
-  SARAMIN: '사람인',
-  WANTED: '원티드',
-  WORKNET: '워크넷',
-  DIRECT: '직접등록',
-};
+function formatJobCategory(raw: string): string {
+  const codes = raw.split(',').filter(Boolean);
+  const labels = codes.map((code) => JOB_CATEGORY_LABELS[code] ?? code);
+  if (labels.length <= 3) return labels.join(', ');
+  return `${labels.slice(0, 3).join(', ')} 외 ${labels.length - 3}건`;
+}
+
+function formatCareer(raw: string): string {
+  const codes = raw.split(',').filter(Boolean);
+  if (codes.length >= 2) return '신입/경력 무관';
+  return codes[0] === 'NEW' ? '신입' : '경력';
+}
 
 function formatDeadline(deadline: string): string {
   const date = new Date(deadline);
   return `~${date.getMonth() + 1}.${date.getDate()} (${'일월화수목금토'[date.getDay()]})`;
 }
 
-const Component1: NextPage = () => {
-  const [currentPage, setCurrentPage] = useState(0);
+export default function FeedPage() {
   const [sort, setSort] = useState<SortOption>('LATEST');
   const [deadlineSoon, setDeadlineSoon] = useState(false);
   const [keyword, setKeyword] = useState('');
+  const [currentPage, setCurrentPage] = useState(0);
 
-  // ⚠️ 아래 3개는 UI 상태만 들고 있고 아직 API 파라미터로 안 보냄
-  // (백엔드/PM 확인 후 매핑 방식 정해지면 useFeedQuery params에 추가)
-  const [careerRange, setCareerRange] = useState<[number, number]>([0, MAX_STEP]);
-  const [regionValue, setRegionValue] = useState<SelectionValue | null>(null);
   const [jobCategoryValue, setJobCategoryValue] = useState<SelectionValue | null>(null);
-  const [platformFilter, setPlatformFilter] = useState<PlatformFilter>('ALL');
+  const [regionValue, setRegionValue] = useState<SelectionValue | null>(null);
+
+  // ⚠️ career는 실제 API가 NEW/EXPERIENCED 이진값인데 UI는 신입~15년 슬라이더라
+  // 데이터 모델이 안 맞음. 새 토글 UI로 교체 여부 보류 중이라 API 연결도 보류.
+  // 지금은 화면에만 남겨두고 쿼리 파라미터로는 안 보냄.
+  const [careerRange, setCareerRange] = useState<[number, number]>([0, MAX_STEP]);
 
   const { data, isLoading, isError } = useFeedQuery({
     page: currentPage,
@@ -63,6 +82,10 @@ const Component1: NextPage = () => {
     sort,
     deadlineSoon: deadlineSoon || undefined,
     keyword: keyword || undefined,
+    jobCategory:
+      jobCategoryValue && jobCategoryValue.childIds.length > 0
+        ? jobCategoryValue.childIds.join(',')
+        : undefined,
   });
 
   return (
@@ -104,10 +127,9 @@ const Component1: NextPage = () => {
           </div>
         </div>
 
+        {/* 플랫폼 필터 삭제됨(2026-07-19 팀 확정) — 최종 발표 시점까지 공공데이터포털만 연동 */}
         <div className="flex-1 flex flex-col px-11 py-5 bg-surface-card">
           <div className="flex flex-col gap-6">
-            <PlatformTabs value={platformFilter} onChange={setPlatformFilter} />
-
             <div className="flex flex-col gap-8">
               <div className="flex flex-col items-center gap-3 p-3 bg-base-white border border-line-secondary rounded-[20px]">
                 {isLoading && <p className="py-11 text-label-description">불러오는 중...</p>}
@@ -121,15 +143,16 @@ const Component1: NextPage = () => {
                   data?.items.map((job) => (
                     <JobCard
                       key={job.id}
-                      thumbnailUrl={job.thumbnailUrl}
+                      thumbnailUrl={job.thumbnailUrl ?? ''}
                       deadlineIso={job.deadline}
                       deadlineText={formatDeadline(job.deadline)}
                       company={job.companyName}
                       title={job.jobTitle}
-                      jobCategory={JOB_CATEGORY_LABELS[job.jobCategory] ?? job.jobCategory}
-                      platformLabel={PLATFORM_LABELS[job.platform] ?? job.platform}
-                      region="" // TODO: region 필드가 API 응답에 없음. 백엔드 확인 필요
-                      career={job.career === 'NEW' ? '신입' : '경력'}
+                      jobCategory={formatJobCategory(job.jobCategory)}
+                      // platform 필터는 없앴지만 뱃지 자체는 유지 (공공기관 표시용)
+                      platformLabel="공공데이터포털"
+                      region={job.region ?? ''}
+                      career={formatCareer(job.career)}
                       originalUrl={job.originalUrl}
                     />
                   ))}
@@ -150,6 +173,4 @@ const Component1: NextPage = () => {
       </main>
     </div>
   );
-};
-
-export default Component1;
+}
