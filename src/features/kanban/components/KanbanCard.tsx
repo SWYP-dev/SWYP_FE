@@ -8,8 +8,8 @@ import { formatDeadlineText } from '../utils/formatDeadline';
 interface KanbanCardProps {
   card: KanbanCardType;
   stageId: number;
-  onEdit?: () => void;
-  onDelete?: () => void;
+  onEdit?: () => void;   // Drawer 연동 시 재사용 예정, 인터페이스 유지
+  onDelete?: () => void; // Drawer 연동 시 재사용 예정, 인터페이스 유지
 }
 
 function handleOriginalLinkClick(event: React.MouseEvent<HTMLAnchorElement>) {
@@ -20,7 +20,12 @@ function CalendarSmallIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
       <rect x="2" y="3" width="10" height="9" rx="1.2" stroke="#9E9EA1" strokeWidth="1.2" />
-      <path d="M2 5.5h10M4.5 1.5v3M9.5 1.5v3" stroke="#9E9EA1" strokeWidth="1.2" strokeLinecap="round" />
+      <path
+        d="M2 5.5h10M4.5 1.5v3M9.5 1.5v3"
+        stroke="#9E9EA1"
+        strokeWidth="1.2"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }
@@ -39,12 +44,11 @@ function ExternalLinkIcon() {
   );
 }
 
-// Figma Card 컴포넌트(node 49:7685) 스펙 반영.
-// 드래그 핸들과 버튼 클릭 충돌 방지:
-//   - 드래그: 카드 전체 영역 (listeners/attributes)
-//   - 수정/삭제 버튼: e.stopPropagation()으로 드래그 이벤트 차단
-// deadlineChanged: true일 경우 마감일 옆에 경고 표시
-export function KanbanCard({ card, stageId, onEdit, onDelete }: KanbanCardProps) {
+// Figma Card(node 49:7685) 스펙 반영.
+// 수정/삭제 버튼 없음 — Figma 디자인에 존재하지 않음.
+// 카드 클릭 → 상세 Drawer는 Phase 4에서 구현 예정.
+// deadlineChanged: true일 경우 마감일 옆 경고 뱃지 노출.
+export function KanbanCard({ card, stageId }: KanbanCardProps) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: card.id,
     data: { stageId, card },
@@ -62,7 +66,7 @@ export function KanbanCard({ card, stageId, onEdit, onDelete }: KanbanCardProps)
       {...attributes}
       className="flex w-full cursor-grab flex-col items-start justify-center active:cursor-grabbing"
     >
-      <div className="flex w-full items-start rounded-xl bg-base-white px-6 pb-3 pt-4">
+      <div className="flex w-full items-start rounded-xl bg-base-white px-5 pb-3 pt-4">
         <div className="flex min-w-0 flex-1 flex-col gap-[2px]">
           {/* 타이틀 영역 */}
           <div className="flex flex-col gap-1">
@@ -97,33 +101,6 @@ export function KanbanCard({ card, stageId, onEdit, onDelete }: KanbanCardProps)
             원본 공고 이동
             <ExternalLinkIcon />
           </a>
-
-          {/* 수정 / 삭제 버튼 */}
-          <div className="flex items-center gap-2 pt-1 border-t border-line-secondary mt-1">
-            <button
-              type="button"
-              onPointerDown={(e) => e.stopPropagation()}
-              onClick={(e) => {
-                e.stopPropagation();
-                onEdit?.();
-              }}
-              className="flex-1 py-1 text-1 font-medium text-label-body hover:text-label-base"
-            >
-              수정
-            </button>
-            <div className="h-3 w-px bg-line-secondary" />
-            <button
-              type="button"
-              onPointerDown={(e) => e.stopPropagation()}
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete?.();
-              }}
-              className="flex-1 py-1 text-1 font-medium text-status-negative hover:opacity-70"
-            >
-              삭제
-            </button>
-          </div>
         </div>
       </div>
     </div>
