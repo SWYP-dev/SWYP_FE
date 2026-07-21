@@ -182,7 +182,7 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
 
   return (
     <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-      <div className="flex h-full w-full flex-1 items-stretch gap-5 overflow-x-auto pb-2">
+      <div className="flex h-full w-full flex-1 items-stretch gap-5 overflow-x-auto pb-2 kanban-scroll-x">
         {[...stages]
           .sort((a, b) => a.position - b.position)
           .map((stage) => (

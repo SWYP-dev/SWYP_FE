@@ -1,11 +1,11 @@
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css');
 
+@import 'tailwindcss';
+@import '../styles/tokens.css';
+
 @utility text-trim {
   text-box: trim-both cap alphabetic;
 }
-
-@import 'tailwindcss';
-@import '../styles/tokens.css';
 
 .range-thumb {
   pointer-events: none;
@@ -34,4 +34,40 @@
     0px 4px 6px 0px rgba(33, 33, 35, 0.07),
     0px 10px 15px 0px rgba(33, 33, 35, 0.07);
   cursor: pointer;
+}
+
+/* 칸반보드 커스텀 스크롤바 */
+.kanban-scroll-y::-webkit-scrollbar {
+  width: 15px;
+}
+.kanban-scroll-y::-webkit-scrollbar-track {
+  background: #fafafb;
+  border-left: 1px solid #e2e8e7;
+  border-right: 1px solid #e2e8e7;
+}
+.kanban-scroll-y::-webkit-scrollbar-thumb {
+  background: #c2c2c1;
+  border-radius: 9999px;
+  border: 3px solid #fafafb;
+}
+.kanban-scroll-x::-webkit-scrollbar {
+  height: 9px;
+}
+.kanban-scroll-x::-webkit-scrollbar-track {
+  background: #fafafb;
+  border-top: 1px solid #e2e8e7;
+  border-bottom: 1px solid #e2e8e7;
+}
+.kanban-scroll-x::-webkit-scrollbar-thumb {
+  background: #c2c2c1;
+  border-radius: 9999px;
+  border: 3px solid #fafafb;
+}
+.kanban-scroll-y {
+  scrollbar-width: thin;
+  scrollbar-color: #c2c2c1 #fafafb;
+}
+.kanban-scroll-x {
+  scrollbar-width: thin;
+  scrollbar-color: #c2c2c1 #fafafb;
 }
