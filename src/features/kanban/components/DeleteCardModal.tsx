@@ -6,18 +6,31 @@ import type { KanbanCard } from '@/types/api';
 interface DeleteCardModalProps {
   isOpen: boolean;
   card: KanbanCard | null;
+  isOverDrawer?: boolean;
   onClose: () => void;
   onConfirm: (cardId: number) => void;
 }
 
 // 지원 내역 삭제 확인 팝업 (PRD 4.2.2: "카드 삭제 시 유실 방지 확인 팝업 노출" 필수)
-// 삭제 확인 후 → KanbanBoard에서 토스트 노출.
-export function DeleteCardModal({ isOpen, card, onClose, onConfirm }: DeleteCardModalProps) {
+// 삭제 확인 후 → KanbanBoard/DeadlineList에서 토스트 노출.
+export function DeleteCardModal({
+  isOpen,
+  card,
+  isOverDrawer = false,
+  onClose,
+  onConfirm,
+}: DeleteCardModalProps) {
   if (!isOpen || !card) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-base-dimmed" onClick={onClose} aria-hidden="true" />
+    <div
+      className={`fixed inset-0 flex items-center justify-center ${isOverDrawer ? 'z-[60]' : 'z-50'}`}
+    >
+      <div
+        className={`absolute inset-0 ${isOverDrawer ? '' : 'bg-base-dimmed'}`}
+        onClick={onClose}
+        aria-hidden="true"
+      />
       <div className="relative flex w-[394px] flex-col gap-6 overflow-hidden rounded-[20px] bg-base-white py-6 shadow-spread-small">
         {/* 헤더 */}
         <div className="flex items-center justify-between px-8">
