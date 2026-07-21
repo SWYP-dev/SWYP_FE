@@ -134,6 +134,7 @@ export function DeadlineList() {
         mode="edit"
         stageId={editingStageId}
         card={editingCard ?? undefined}
+        isOverDrawer={viewingCardId !== null}
         onClose={() => setEditingCard(null)}
         onConfirm={handleConfirmEditCard}
       />
