@@ -1,23 +1,27 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { useKanbanBoard } from '@/features/kanban/api/useKanbanQuery';
-import { useUpdateCard, useDeleteCard } from '@/features/kanban/api/useKanbanMutations';
-import { AddCardModal } from '@/features/kanban/components/AddCardModal';
+import { useQueryClient } from '@tanstack/react-query';
+import { kanbanKeys, useKanbanBoard } from '@/features/kanban/api/useKanbanQuery';
+import { useUpdateCard, useMoveCard, useDeleteCard } from '@/features/kanban/api/useKanbanMutations';
 import { DeleteCardModal } from '@/features/kanban/components/DeleteCardModal';
 import { CardDetailDrawer } from '@/features/kanban/components/CardDetailDrawer';
 import { Toast } from '@/components/ui/toast';
 import type { KanbanCard } from '@/types/api';
 import { flattenKanbanCards, groupCardsByDeadline } from '../utils/groupByDeadline';
 import { DeadlineGroup } from './DeadlineGroup';
+import { EditDeadlineCardModal } from './EditDeadlineCardModal';
 
 // Figma "지원 마감일 메인"(node 101:17608) 스펙 반영.
 // 전용 목록 조회 API가 없어(⚠️ 세영님·동섭님 확인 필요) GET /api/v1/kanban(3.1) 응답을
-// 프론트에서 평탄화 + 마감일순 그룹핑한다. 수정/삭제/상세조회는 기존 칸반 로직
-// (AddCardModal · DeleteCardModal · CardDetailDrawer · useUpdateCard · useDeleteCard) 그대로 재사용.
+// 프론트에서 평탄화 + 마감일순 그룹핑한다. 삭제/상세조회는 기존 칸반 로직
+// (DeleteCardModal · CardDetailDrawer · useDeleteCard) 그대로 재사용하고, 수정은 이 페이지
+// 전용 EditDeadlineCardModal(공고 링크 대신 전형 단계 선택 필드) 사용 — Figma node 101:17631.
 export function DeadlineList() {
+  const queryClient = useQueryClient();
   const { data, isLoading, isError } = useKanbanBoard();
   const updateCardMutation = useUpdateCard();
+  const moveCardMutation = useMoveCard();
   const deleteCardMutation = useDeleteCard();
 
   const [viewingCardId, setViewingCardId] = useState<number | null>(null);
@@ -42,31 +46,40 @@ export function DeadlineList() {
     if (entry) setDeletingCard(entry.card);
   }
 
-  function handleConfirmEditCard(formData: {
+  // 전형 단계는 원래 소속 단계에서 변경됐을 때만 별도로 이동 API(moveCard)를 호출한다.
+  async function handleConfirmEditCard(formData: {
+    cardId: number;
     companyName: string;
     jobTitle: string;
-    originalUrl: string;
     deadline: string;
     stageId: number;
-    cardId?: number;
   }) {
-    if (!formData.cardId) return;
-    updateCardMutation.mutate(
-      {
+    const entry = findEntry(formData.cardId);
+    if (!entry) return;
+
+    try {
+      await updateCardMutation.mutateAsync({
         cardId: formData.cardId,
         companyName: formData.companyName,
         title: formData.jobTitle,
-        originalUrl: formData.originalUrl,
+        originalUrl: entry.card.originalUrl, // 이 모달에는 공고 링크 필드가 없어 기존 값 유지
         deadline: formData.deadline,
-      },
-      {
-        onSuccess: () => {
-          setEditingCard(null);
-          setToastMessage('지원 마감일을 수정했어요.');
-        },
-        onError: () => setToastMessage('지원 내역 수정에 실패했어요.'),
+      });
+
+      if (formData.stageId !== entry.stageId) {
+        await moveCardMutation.mutateAsync({
+          cardId: formData.cardId,
+          stageId: formData.stageId,
+          position: 1,
+        });
       }
-    );
+
+      queryClient.invalidateQueries({ queryKey: kanbanKeys.board() });
+      setEditingCard(null);
+      setToastMessage('지원 마감일을 수정했어요.');
+    } catch {
+      setToastMessage('지원 내역 수정에 실패했어요.');
+    }
   }
 
   function handleConfirmDeleteCard(cardId: number) {
@@ -128,12 +141,12 @@ export function DeadlineList() {
         onDeleteCard={(card) => setDeletingCard(card)}
       />
 
-      <AddCardModal
+      <EditDeadlineCardModal
         key={`edit-${editingCard?.id}`}
         isOpen={editingCard !== null}
-        mode="edit"
-        stageId={editingStageId}
         card={editingCard ?? undefined}
+        currentStageId={editingStageId}
+        stages={data?.stages ?? []}
         isOverDrawer={viewingCardId !== null}
         onClose={() => setEditingCard(null)}
         onConfirm={handleConfirmEditCard}
