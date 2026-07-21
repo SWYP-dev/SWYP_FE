@@ -3,7 +3,11 @@
 import { useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { kanbanKeys, useKanbanBoard } from '@/features/kanban/api/useKanbanQuery';
-import { useUpdateCard, useMoveCard, useDeleteCard } from '@/features/kanban/api/useKanbanMutations';
+import {
+  useUpdateCard,
+  useMoveCard,
+  useDeleteCard,
+} from '@/features/kanban/api/useKanbanMutations';
 import { DeleteCardModal } from '@/features/kanban/components/DeleteCardModal';
 import { CardDetailDrawer } from '@/features/kanban/components/CardDetailDrawer';
 import { Toast } from '@/components/ui/toast';
@@ -155,6 +159,7 @@ export function DeadlineList() {
       <DeleteCardModal
         isOpen={deletingCard !== null}
         card={deletingCard}
+        isOverDrawer={viewingCardId !== null}
         onClose={() => setDeletingCard(null)}
         onConfirm={handleConfirmDeleteCard}
       />
