@@ -179,7 +179,7 @@ export function AddCardModal({
                 <CalendarIcon />
               </button>
               {showDatePicker && (
-                <div className="absolute left-0 top-[calc(100%+8px)] z-10">
+                <div className="absolute bottom-[calc(100%+8px)] left-0 z-10">
                   <DatePicker
                     value={form.deadline}
                     onChange={(date) => {
