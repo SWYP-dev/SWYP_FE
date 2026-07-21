@@ -1,5 +1,6 @@
 import type { ApiResponse } from '@/types/api';
 import { clearTokens, getAccessToken, getRefreshToken, setAccessToken } from './token';
+import { clearAuthUserOutsideReact } from '@/features/auth/store/authStore';
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -50,13 +51,11 @@ export async function apiFetch<T>(
   isRetry = false
 ): Promise<T> {
   const accessToken = getAccessToken();
-  // 파일 업로드(4.1) 등 multipart/form-data 요청은 FormData를 그대로 body로 넘김
   const isFormData = options.body instanceof FormData;
 
   const res = await fetch(`${BASE_URL}${path}`, {
     ...options,
     headers: {
-      // FormData는 브라우저가 boundary를 포함한 Content-Type을 자동 설정하므로 직접 지정하면 안 됨
       ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
       ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
       ...options.headers,
@@ -75,8 +74,11 @@ export async function apiFetch<T>(
       return apiFetch<T>(path, options, true);
     } catch {
       clearTokens();
+      // [2026-07-22] 로그인 기능 연동: 토큰 삭제뿐 아니라 authStore(사이드바 프로필 상태)도 초기화
+      clearAuthUserOutsideReact();
       if (typeof window !== 'undefined') {
-        window.location.href = '/login'; // 실제 로그인 페이지 경로에 맞게 수정
+        // 별도 /login 페이지 없이 홈에서 모달로 로그인하므로 홈으로 이동
+        window.location.href = '/';
       }
       throw new Error('인증이 만료되었습니다. 다시 로그인해주세요.');
     }
