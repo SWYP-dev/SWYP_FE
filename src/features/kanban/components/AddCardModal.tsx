@@ -13,6 +13,13 @@ interface AddCardModalProps {
   stageId: number;
   /** 수정 모드일 때 기존 카드 데이터 */
   card?: KanbanCard;
+  /**
+   * 상세 Drawer가 이미 열려있는 상태에서 뜬 모달인지 여부.
+   * true면 Drawer가 이미 배경을 딤 처리하고 있으므로 이 모달은 자체 딤을 생략하고
+   * Drawer보다 위(z-[60])에만 떠서, 뒤의 상세 정보 패널이 이중 딤으로 안 보이게 되는
+   * 문제를 막는다. (지원 마감일 페이지에서 "수정" 클릭 시 Drawer가 사라지는 버그 수정)
+   */
+  isOverDrawer?: boolean;
   onClose: () => void;
   onConfirm: (data: {
     companyName: string;
@@ -47,6 +54,7 @@ export function AddCardModal({
   mode,
   stageId,
   card,
+  isOverDrawer = false,
   onClose,
   onConfirm,
 }: AddCardModalProps) {
@@ -122,8 +130,12 @@ export function AddCardModal({
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-base-dimmed" onClick={handleClose} aria-hidden="true" />
+    <div className={`fixed inset-0 flex items-center justify-center ${isOverDrawer ? 'z-[60]' : 'z-50'}`}>
+      <div
+        className={`absolute inset-0 ${isOverDrawer ? '' : 'bg-base-dimmed'}`}
+        onClick={handleClose}
+        aria-hidden="true"
+      />
       <div className="relative flex w-[394px] flex-col gap-6 overflow-visible rounded-[20px] bg-base-white py-6 shadow-spread-small">
         {/* 헤더 */}
         <div className="flex items-center justify-between px-8">
