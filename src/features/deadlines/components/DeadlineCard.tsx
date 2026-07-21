@@ -30,9 +30,12 @@ function CalendarSmallIcon() {
 }
 
 // Figma "지원 마감일 메인" Card(node 101:17530 등) 스펙 반영.
-// 칸반 보드의 KanbanCard(수정/삭제 버튼 없음)와 달리, 이 리스트 전용 Card는
-// 수정/삭제 아이콘과 전형 단계 뱃지를 포함한다 (사용자 확인: 기존 칸반 로직 재사용).
-// ⚠️ isSelected(회색 배경)는 Drawer가 열려있는 카드를 표시하는 것으로 추정 — 디자이너 확인 후 조정 예정.
+// ⚠️ FIX: 좌측 Divider 바 색상 미적용 버그 수정.
+// 기존 'bg-neutral-900'가 이 프로젝트 Tailwind 토큰 스케일(50/100/200/700/1000 확인됨)에서
+// 실제 생성되는 유틸리티인지 불확실해 값이 적용되지 않고 항상 파란색(bg-fill-primary)으로
+// 보이는 문제가 있었음. tokens.css에 확정적으로 존재하는 CSS 변수
+// --color-label-base(#212123, Figma의 neutral/900과 동일 hex)를 직접 참조하도록 변경.
+// isUrgent(오늘/내일 그룹) = 파란색, 그 외 = 검정.
 export function DeadlineCard({
   entry,
   isUrgent,
@@ -60,7 +63,7 @@ export function DeadlineCard({
       <div className="flex flex-1 items-center gap-4">
         <div
           className={`h-full w-1 shrink-0 rounded-max ${
-            isUrgent ? 'bg-fill-primary' : 'bg-neutral-900'
+            isUrgent ? 'bg-fill-primary' : 'bg-[var(--color-label-base)]'
           }`}
         />
 
