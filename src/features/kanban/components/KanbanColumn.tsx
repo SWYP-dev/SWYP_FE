@@ -146,7 +146,10 @@ export function KanbanColumn({
       </div>
 
       {/* Card List */}
-      <div ref={setNodeRef} className="w-full flex-1 overflow-visible">
+      <div
+        ref={setNodeRef}
+        className="w-full flex-1 overflow-y-auto overflow-x-hidden kanban-scroll-y"
+      >
         <div className="flex flex-col gap-3 px-4 pb-4">
           {stage.cards.map((card) => (
             <KanbanCard

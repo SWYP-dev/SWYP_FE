@@ -5,15 +5,11 @@ import { Sidebar } from '@/components/layout/sidebar';
 import { Header } from '@/components/layout/header';
 import { useKanbanBoard } from '@/features/kanban/api/useKanbanQuery';
 
-// @dnd-kit이 내부적으로 useId 카운터를 사용해 DOM id를 생성하는데,
-// SSR과 클라이언트 하이드레이션 사이에 카운터가 리셋되어 값이 달라져
-// hydration mismatch가 발생함. KanbanBoard를 클라이언트에서만 렌더링해 해결.
 const KanbanBoard = dynamic(
   () => import('@/features/kanban/components/KanbanBoard').then((m) => m.KanbanBoard),
   { ssr: false }
 );
 
-// Figma "지원 현황 메인"(node 49:7796) 페이지. sidebar의 '/kanban' 라우팅 대상.
 export default function KanbanPage() {
   const { data, isLoading, isError } = useKanbanBoard();
 
@@ -25,12 +21,12 @@ export default function KanbanPage() {
         avatarUrl="/images/avatar.png"
       />
 
-      <main className="flex flex-1 flex-col self-stretch">
+      <main className="flex min-w-0 flex-1 flex-col self-stretch">
         <div className="sticky top-0 z-10 bg-base-white">
           <Header />
         </div>
 
-        <div className="flex flex-1 flex-col overflow-hidden px-[80px] py-6">
+        <div className="flex min-h-0 flex-1 flex-col px-[80px] py-6">
           {isLoading && (
             <div className="flex h-full items-center justify-center text-3 text-label-description">
               불러오는 중...
