@@ -9,6 +9,7 @@ import { Toast } from '@/components/ui/toast';
 import { DeleteStageModal } from './DeleteStageModal';
 import { AddCardModal } from './AddCardModal';
 import { DeleteCardModal } from './DeleteCardModal';
+import { CardDetailDrawer } from './CardDetailDrawer';
 import {
   useCreateDirectCard,
   useUpdateCard,
@@ -33,6 +34,7 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
   const [addCardStageId, setAddCardStageId] = useState<number | null>(null);
   const [editingCard, setEditingCard] = useState<KanbanCard | null>(null);
   const [deletingCard, setDeletingCard] = useState<KanbanCard | null>(null);
+  const [viewingCardId, setViewingCardId] = useState<number | null>(null);
 
   // fix: initialStages 변경 시 stages 동기화 — 컬럼 너비 변형 버그 수정 (버그2)
   // useEffect에서 setState를 호출하면 리렌더링이 한 번 더 발생해 깜빡임(컬럼 너비
@@ -210,6 +212,7 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
               onAddCard={(stageId) => setAddCardStageId(stageId)}
               onEditCard={(card) => setEditingCard(card)}
               onDeleteCard={(card) => setDeletingCard(card)}
+              onCardClick={(card) => setViewingCardId(card.id)}
             />
           ))}
         {isAddingStage && (
@@ -325,6 +328,20 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
         card={deletingCard}
         onClose={() => setDeletingCard(null)}
         onConfirm={handleConfirmDeleteCard}
+      />
+
+      <CardDetailDrawer
+        isOpen={viewingCardId !== null}
+        cardId={viewingCardId}
+        onClose={() => setViewingCardId(null)}
+        onEditCard={(card) => {
+          setViewingCardId(null);
+          setEditingCard(card); // 기존 AddCardModal(mode=edit) 재사용
+        }}
+        onDeleteCard={(card) => {
+          setViewingCardId(null);
+          setDeletingCard(card); // 기존 DeleteCardModal 재사용
+        }}
       />
     </DndContext>
   );
