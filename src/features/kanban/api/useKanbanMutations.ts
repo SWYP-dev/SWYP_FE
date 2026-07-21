@@ -7,6 +7,7 @@ import {
   createStage,
   updateStage,
   deleteStage,
+  updateCardMemo,
 } from './kanbanApi';
 import { kanbanKeys } from './useKanbanQuery';
 
@@ -103,6 +104,18 @@ export function useDeleteStage() {
       deleteStage(stageId, moveToStageId ? { moveToStageId } : undefined),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: kanbanKeys.board() });
+    },
+  });
+}
+
+// 카드 메모 수정 (blur 자동저장)
+export function useUpdateCardMemo() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ cardId, memo }: { cardId: number; memo: string }) =>
+      updateCardMemo(cardId, memo),
+    onSuccess: (_data, { cardId }) => {
+      queryClient.invalidateQueries({ queryKey: kanbanKeys.cardDetail(cardId) });
     },
   });
 }

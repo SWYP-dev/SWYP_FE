@@ -16,6 +16,7 @@ interface KanbanColumnProps {
   onAddCard?: (stageId: number) => void;
   onEditCard?: (card: KanbanCardType, stageId: number) => void;
   onDeleteCard?: (card: KanbanCardType) => void;
+  onCardClick?: (card: KanbanCardType) => void;
 }
 
 export function KanbanColumn({
@@ -28,6 +29,7 @@ export function KanbanColumn({
   onAddCard,
   onEditCard,
   onDeleteCard,
+  onCardClick,
 }: KanbanColumnProps) {
   // fix: id를 String으로 통일 — 신규 추가 스테이지 드래그 안 되는 버그 수정 (버그3)
   const { setNodeRef, isOver } = useDroppable({
@@ -158,6 +160,7 @@ export function KanbanColumn({
               stageId={stage.id}
               onEdit={() => onEditCard?.(card, stage.id)}
               onDelete={() => onDeleteCard?.(card)}
+              onClick={() => onCardClick?.(card)}
             />
           ))}
           {!isDraft && stage.cards.length === 0 && (

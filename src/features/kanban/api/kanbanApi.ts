@@ -1,5 +1,5 @@
 import { apiFetch } from '@/lib/api/api-client';
-import type { KanbanStage } from '@/types/api';
+import type { KanbanCardDetail, KanbanStage } from '@/types/api';
 
 // ================================
 // Response 타입
@@ -49,6 +49,11 @@ export interface KanbanStageUpdateResponse {
 
 export interface KanbanStageDeleteResponse {
   movedCardCount: number;
+}
+
+export interface KanbanCardMemoResponse {
+  cardId: number;
+  memo: string;
 }
 
 // ================================
@@ -142,5 +147,18 @@ export function deleteStage(
   return apiFetch<KanbanStageDeleteResponse>(`/api/v1/kanban/stages/${stageId}`, {
     method: 'DELETE',
     body,
+  });
+}
+
+// GET /api/v1/kanban/cards/{cardId} (3.5)
+export function fetchCardDetail(cardId: number): Promise<KanbanCardDetail> {
+  return apiFetch<KanbanCardDetail>(`/api/v1/kanban/cards/${cardId}`);
+}
+
+// PATCH /api/v1/kanban/cards/{cardId}/memo (3.6)
+export function updateCardMemo(cardId: number, memo: string): Promise<KanbanCardMemoResponse> {
+  return apiFetch<KanbanCardMemoResponse>(`/api/v1/kanban/cards/${cardId}/memo`, {
+    method: 'PATCH',
+    body: { memo },
   });
 }
