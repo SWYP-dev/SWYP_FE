@@ -1,6 +1,6 @@
 'use client';
 
-import { Modal } from '@/components/ui/modal';
+import { CloseIcon } from '@/components/ui/icons';
 import { getKakaoAuthorizeUrl } from '../utils/kakaoOAuth';
 
 interface LoginModalProps {
@@ -8,10 +8,6 @@ interface LoginModalProps {
   onClose: () => void;
 }
 
-// Figma "로그인 화면"(node 111:23076) 내 Modal(node 111:23089) 스펙 반영.
-// 공용 Modal의 ModalFooter(버튼 2개 레이아웃)는 이 시안과 안 맞아서 끄고,
-// contentSlot에 카카오 버튼 1개만 직접 채움. 오버레이(base/dimmed)는 Drawer와
-// 동일하게 이 컴포넌트에서 직접 감싼다.
 export function LoginModal({ isOpen, onClose }: LoginModalProps) {
   if (!isOpen) return null;
 
@@ -21,13 +17,27 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-base-dimmed">
-      <Modal hasModalFooter={false} onClose={onClose}>
-        <div className="flex w-[380px] flex-col items-center gap-14 px-9">
-          <div className="flex flex-col items-center gap-3 text-center">
-            <p className="text-8 font-bold leading-[1.4] text-label-base">
+      <div className="flex flex-col items-start gap-5 overflow-hidden rounded-[20px] bg-base-white py-7 shadow-spread-small">
+        {/* ModalHeader */}
+        <div className="flex w-full items-center justify-end px-8">
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="닫기"
+            className="flex size-6 items-center justify-center text-label-base"
+          >
+            <CloseIcon size={24} />
+          </button>
+        </div>
+
+        {/* contentSlot */}
+        <div className="flex flex-col items-center justify-center gap-14 px-9">
+          <div className="flex flex-col items-center gap-3">
+            {/* whitespace-nowrap 필수 — 이게 빠지면 어색하게 줄바꿈됨 */}
+            <p className="whitespace-nowrap text-8 font-bold leading-[1.4] text-black">
               여기저기 흩어진 취업 정보를 한곳에서, 취합
             </p>
-            <p className="w-[248px] text-5 font-medium leading-[1.5] text-label-body">
+            <p className="w-[248px] text-center text-5 font-medium leading-[1.5] text-label-body">
               공고 탐색부터 서류·일정·전형 관리까지, 취업 준비의 모든 과정을 한곳에서
             </p>
           </div>
@@ -35,7 +45,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
           <button
             type="button"
             onClick={handleKakaoLogin}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#fee404] px-3 py-3"
+            className="flex w-[380px] items-center justify-center gap-2 rounded-lg bg-[#fee404] px-3 py-3"
           >
             <KakaoIcon />
             <span className="text-3 font-semibold leading-[1.5] text-label-base">
@@ -43,7 +53,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
             </span>
           </button>
         </div>
-      </Modal>
+      </div>
     </div>
   );
 }
