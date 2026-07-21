@@ -30,12 +30,11 @@ function CalendarSmallIcon() {
 }
 
 // Figma "지원 마감일 메인" Card(node 101:17530 등) 스펙 반영.
-// ⚠️ FIX: 좌측 Divider 바 색상 미적용 버그 수정.
-// 기존 'bg-neutral-900'가 이 프로젝트 Tailwind 토큰 스케일(50/100/200/700/1000 확인됨)에서
-// 실제 생성되는 유틸리티인지 불확실해 값이 적용되지 않고 항상 파란색(bg-fill-primary)으로
-// 보이는 문제가 있었음. tokens.css에 확정적으로 존재하는 CSS 변수
-// --color-label-base(#212123, Figma의 neutral/900과 동일 hex)를 직접 참조하도록 변경.
-// isUrgent(오늘/내일 그룹) = 파란색, 그 외 = 검정.
+// isUrgent(오늘/내일 그룹) = 파란색, 그 외 = 검정(--color-label-base).
+// ⚠️ FIX: 좌측 액센트 바가 안 보이던 버그 수정.
+// 바 높이를 부모 기준 h-full(퍼센트)로 잡았는데, 부모가 items-center라 자식을
+// 콘텐츠 높이(=0, 바는 내용이 없음)로만 배치해서 바가 찌그러져 있었음.
+// 부모를 items-stretch로 바꿔 형제(텍스트 영역) 높이에 맞춰 자동으로 늘어나도록 수정.
 export function DeadlineCard({
   entry,
   isUrgent,
@@ -60,9 +59,9 @@ export function DeadlineCard({
           : 'border-line-secondary bg-base-white hover:bg-neutral-50'
       }`}
     >
-      <div className="flex flex-1 items-center gap-4">
+      <div className="flex flex-1 items-stretch gap-4">
         <div
-          className={`h-full w-1 shrink-0 rounded-max ${
+          className={`w-2 shrink-0 self-stretch rounded-max ${
             isUrgent ? 'bg-fill-primary' : 'bg-[var(--color-label-base)]'
           }`}
         />
