@@ -243,6 +243,13 @@ export interface ScrapRemoveResponse {
   isScrapped: boolean;
 }
 
+// 2.5 스크랩 목록 조회 - 쿼리 파라미터
+// API 명세서상 page/size만 지원 (피드와 달리 필터/정렬 파라미터 없음)
+export interface ScrapQueryParams {
+  page?: number; // 0부터 시작, 기본 0
+  size?: number; // 기본 20, 최대 50
+}
+
 // 3.2 칸반 카드 등록
 // ✅ 확인 완료 (2026-07-20, Swagger 실측): Request Body `postingId` 필드는 실제로
 // jobPostingId(스크랩 사본 id)를 받음 — 상세는 registerCard.ts 주석 참고.
