@@ -50,15 +50,22 @@ export async function apiFetch<T>(
   isRetry = false
 ): Promise<T> {
   const accessToken = getAccessToken();
+  // 파일 업로드(4.1) 등 multipart/form-data 요청은 FormData를 그대로 body로 넘김
+  const isFormData = options.body instanceof FormData;
 
   const res = await fetch(`${BASE_URL}${path}`, {
     ...options,
     headers: {
-      'Content-Type': 'application/json',
+      // FormData는 브라우저가 boundary를 포함한 Content-Type을 자동 설정하므로 직접 지정하면 안 됨
+      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
       ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
       ...options.headers,
     },
-    body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+    body: isFormData
+      ? (options.body as FormData)
+      : options.body !== undefined
+        ? JSON.stringify(options.body)
+        : undefined,
   });
 
   // 401이고 아직 재시도 안 했으면: 토큰 재발급 후 딱 한 번만 재시도
