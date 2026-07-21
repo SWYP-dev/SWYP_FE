@@ -18,9 +18,6 @@ interface KanbanColumnProps {
   onDeleteCard?: (card: KanbanCardType) => void;
 }
 
-// Figma KanbanColumn 마스터(50:14062) + 지원 현황 메인(49:7796) 스펙 반영.
-// 헤더 좌측 장식 아이콘: ⠿ (drag-handle, 비활성 장식용)
-// 헤더 우측 ButtonGroup 순서: + (추가) → ✎ (수정) → 🗑 (삭제)
 export function KanbanColumn({
   stage,
   isDraft = false,
@@ -32,8 +29,9 @@ export function KanbanColumn({
   onEditCard,
   onDeleteCard,
 }: KanbanColumnProps) {
+  // fix: id를 String으로 통일 — 신규 추가 스테이지 드래그 안 되는 버그 수정 (버그3)
   const { setNodeRef, isOver } = useDroppable({
-    id: stage.id,
+    id: String(stage.id),
     data: { stageId: stage.id },
   });
 
@@ -70,15 +68,15 @@ export function KanbanColumn({
   }
 
   return (
+    // fix: overflow-hidden 제거 — 드래그 시 카드가 컬럼에 잘리는 버그 수정 (버그1)
     <div
-      className={`flex h-full min-w-[296px] flex-1 flex-col items-start overflow-hidden rounded-2xl bg-surface-card ${
-        isOver ? 'ring-2 ring-line-primary' : ''
+      className={`flex h-full min-w-[296px] flex-1 flex-col items-start rounded-2xl transition-colors ${
+        isOver ? 'bg-fill-primary-light' : 'bg-surface-card'
       }`}
     >
       {/* Header */}
       <div className="flex w-full items-start p-4">
         <div className="flex min-h-7 flex-1 items-center justify-between">
-          {/* 좌측: 장식 아이콘 + 스테이지명 + 카드 수 */}
           <div className="flex items-center gap-2">
             <DragHandleIcon size={20} />
             {isEditingName ? (
@@ -115,8 +113,6 @@ export function KanbanColumn({
               </p>
             )}
           </div>
-
-          {/* 우측 ButtonGroup: + → ✎ → 🗑 */}
           <div className="flex items-center gap-2">
             <button
               type="button"
@@ -150,7 +146,7 @@ export function KanbanColumn({
       </div>
 
       {/* Card List */}
-      <div ref={setNodeRef} className="w-full flex-1 overflow-y-auto overflow-x-hidden">
+      <div ref={setNodeRef} className="w-full flex-1 overflow-visible">
         <div className="flex flex-col gap-3 px-4 pb-4">
           {stage.cards.map((card) => (
             <KanbanCard

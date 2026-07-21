@@ -34,6 +34,16 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
   const [editingCard, setEditingCard] = useState<KanbanCard | null>(null);
   const [deletingCard, setDeletingCard] = useState<KanbanCard | null>(null);
 
+  // fix: initialStages 변경 시 stages 동기화 — 컬럼 너비 변형 버그 수정 (버그2)
+  // useEffect에서 setState를 호출하면 리렌더링이 한 번 더 발생해 깜빡임(컬럼 너비
+  // 변형)이 생기므로, 렌더링 중 prop 변경을 감지해 즉시 동기화하는 패턴을 사용.
+  // (참고: react.dev "You Might Not Need an Effect" — Adjusting state on prop change)
+  const [prevInitialStages, setPrevInitialStages] = useState(initialStages);
+  if (initialStages !== prevInitialStages) {
+    setPrevInitialStages(initialStages);
+    setStages(initialStages);
+  }
+
   const createDirectCardMutation = useCreateDirectCard();
   const updateCardMutation = useUpdateCard();
   const moveCardMutation = useMoveCard();
@@ -49,13 +59,13 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
     const { active, over } = event;
     if (!over) return;
 
-    const cardId = active.id as number;
+    // fix: String id → Number로 파싱 (버그3)
+    const cardId = Number(active.id);
     const fromStageId = active.data.current?.stageId as number;
-    const toStageId = over.id as number;
+    const toStageId = Number(over.id);
 
     if (!fromStageId || fromStageId === toStageId) return;
 
-    // 낙관적 업데이트
     setStages((prev) => {
       const fromStage = prev.find((s) => s.id === fromStageId);
       const card = fromStage?.cards.find((c) => c.id === cardId);
@@ -71,7 +81,6 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
       { cardId, stageId: toStageId, position: 1 },
       {
         onError: () => {
-          // 실패 시 롤백
           setStages(initialStages);
           setToastMessage('카드 이동에 실패했어요.');
         },

@@ -8,8 +8,8 @@ import { formatDeadlineText } from '../utils/formatDeadline';
 interface KanbanCardProps {
   card: KanbanCardType;
   stageId: number;
-  onEdit?: () => void;   // Drawer 연동 시 재사용 예정, 인터페이스 유지
-  onDelete?: () => void; // Drawer 연동 시 재사용 예정, 인터페이스 유지
+  onEdit?: () => void;
+  onDelete?: () => void;
 }
 
 function handleOriginalLinkClick(event: React.MouseEvent<HTMLAnchorElement>) {
@@ -44,13 +44,10 @@ function ExternalLinkIcon() {
   );
 }
 
-// Figma Card(node 49:7685) 스펙 반영.
-// 수정/삭제 버튼 없음 — Figma 디자인에 존재하지 않음.
-// 카드 클릭 → 상세 Drawer는 Phase 4에서 구현 예정.
-// deadlineChanged: true일 경우 마감일 옆 경고 뱃지 노출.
 export function KanbanCard({ card, stageId }: KanbanCardProps) {
+  // fix: id를 String으로 통일 — 신규 추가 스테이지 드래그 안 되는 버그 수정 (버그3)
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
-    id: card.id,
+    id: String(card.id),
     data: { stageId, card },
   });
 
@@ -64,11 +61,10 @@ export function KanbanCard({ card, stageId }: KanbanCardProps) {
       style={style}
       {...listeners}
       {...attributes}
-      className="flex w-full cursor-grab flex-col items-start justify-center active:cursor-grabbing"
+      className={`flex w-full cursor-grab flex-col items-start justify-center active:cursor-grabbing ${isDragging ? 'z-50' : ''}`}
     >
       <div className="flex w-full items-start rounded-xl bg-base-white px-5 pb-3 pt-4">
         <div className="flex min-w-0 flex-1 flex-col gap-[2px]">
-          {/* 타이틀 영역 */}
           <div className="flex flex-col gap-1">
             <div className="flex flex-col">
               <p className="text-3 font-medium text-label-body">{card.companyName}</p>
@@ -76,7 +72,6 @@ export function KanbanCard({ card, stageId }: KanbanCardProps) {
                 {card.jobTitle}
               </p>
             </div>
-            {/* 마감일 + deadlineChanged 경고 */}
             <div className="flex items-center gap-1">
               <CalendarSmallIcon />
               <span className="flex-1 text-1 font-medium text-label-description">
@@ -89,8 +84,6 @@ export function KanbanCard({ card, stageId }: KanbanCardProps) {
               )}
             </div>
           </div>
-
-          {/* 원본 공고 이동 */}
           <a
             href={card.originalUrl}
             target="_blank"
