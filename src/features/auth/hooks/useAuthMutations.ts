@@ -2,29 +2,23 @@
 
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { loginWithKakao, logoutRequest, fetchCurrentUser } from '../api/authApi';
+import { loginWithKakao, logoutRequest } from '../api/authApi';
 import { useAuthStore } from '../store/authStore';
 import { setTokens, clearTokens } from '@/lib/api/token';
 
 export function useKakaoLoginMutation() {
   const setUser = useAuthStore((s) => s.setUser);
-  const patchUser = useAuthStore((s) => s.patchUser);
 
   return useMutation({
     mutationFn: (code: string) => loginWithKakao(code),
-    onSuccess: async (data) => {
+    onSuccess: (data) => {
       setTokens(data.accessToken, data.refreshToken);
-      // 닉네임/프로필 사진은 즉시 표시
+      // [2026-07-22] GET /api/v1/users/me 별도 호출 제거.
+      // Slack 논의(7/18)에 따라 이메일은 카카오 로그인 필수 동의 항목으로 확정되어
+      // 1.1 응답(user.email)에 바로 포함될 예정 — 별도 이메일 보완 호출 불필요.
+      // ⚠️ 현재 스웨거엔 email 필드가 아직 없어서, 반영 전까지는 사이드바 이메일이
+      // 빈 값으로 보일 수 있음(정상 — 백엔드 반영 후 자동으로 채워짐).
       setUser(data.user);
-
-      // 이메일은 1.1 응답에 없으므로 6.1을 추가 호출해서 보완.
-      // 실패해도 로그인 자체는 이미 성공했으니 조용히 무시.
-      try {
-        const me = await fetchCurrentUser();
-        patchUser({ email: me.email });
-      } catch {
-        // no-op: 이메일 보완 실패는 로그인 실패로 취급하지 않음
-      }
     },
   });
 }
