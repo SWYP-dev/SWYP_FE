@@ -8,11 +8,7 @@ import { DeadlineList } from '@/features/deadlines/components/DeadlineList';
 export default function DeadlinesPage() {
   return (
     <div className="relative flex h-screen w-full overflow-hidden bg-base-white">
-      <Sidebar
-        userName="손진영"
-        userEmail="sonjinyoung9849@gmail.com"
-        avatarUrl="/images/avatar.png"
-      />
+      <Sidebar />
 
       <main className="flex min-w-0 flex-1 flex-col self-stretch">
         <div className="sticky top-0 z-10">

@@ -119,11 +119,7 @@ export default function FeedPage() {
 
   return (
     <div className="w-full h-screen relative bg-base-white overflow-hidden flex text-left text-label-base font-pretendard">
-      <Sidebar
-        userName="손진영"
-        userEmail="sonjinyoung9849@gmail.com"
-        avatarUrl="/images/avatar.png"
-      />
+      <Sidebar />
 
       <main className="self-stretch flex-1 flex flex-col text-3 min-h-0 overflow-y-auto">
         <div className="sticky top-0 z-10 flex flex-col bg-base-white">
