@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { CloseIcon } from '@/components/ui/icons';
 import { DatePicker } from '@/components/ui/date-picker';
+import { Popover, usePopoverTrigger } from '@/components/ui/popover';
+import { DropdownMenu, type DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import type { KanbanCard, KanbanStage } from '@/types/api';
 
 interface EditDeadlineCardModalProps {
@@ -67,6 +69,7 @@ export function EditDeadlineCardModal({
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const stageDropdown = usePopoverTrigger<HTMLButtonElement>();
 
   if (!isOpen || !card) return null;
 
@@ -74,7 +77,9 @@ export function EditDeadlineCardModal({
 
   function validate(): boolean {
     const next: FormErrors = {};
-    if (!form.companyName.trim()) next.companyName = '회사명을 입력해 주세요.';
+    if (!form.companyName.trim() || form.companyName.trim().length < 2) {
+      next.companyName = '2자 이상 입력해 주세요.';
+    }
     if (!form.jobTitle.trim()) next.jobTitle = '공고명을 입력해 주세요.';
     if (!form.deadline) next.deadline = '지원 마감일을 입력해 주세요.';
     setErrors(next);
@@ -102,6 +107,9 @@ export function EditDeadlineCardModal({
   const deadlineText = form.deadline
     ? `${form.deadline.getFullYear()}. ${form.deadline.getMonth() + 1}. ${form.deadline.getDate()}`
     : '';
+
+  const stageItems: DropdownMenuItem[] = stages.map((s) => ({ label: s.name }));
+  const selectedStageName = stages.find((s) => s.id === form.stageId)?.name ?? '';
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center">
@@ -165,25 +173,6 @@ export function EditDeadlineCardModal({
             )}
           </div>
 
-          {/* 전형 단계 — 공고 링크 대신 이 카드가 속한 칸반 단계를 선택/변경 */}
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-1">
-              <p className="text-3 font-semibold text-label-base">전형 단계</p>
-              <p className="font-bold text-status-negative">*</p>
-            </div>
-            <select
-              value={form.stageId}
-              onChange={(e) => setForm((prev) => ({ ...prev, stageId: Number(e.target.value) }))}
-              className="w-full rounded-xl border border-line-secondary px-4 py-3 text-5 font-medium text-label-base outline-none"
-            >
-              {stages.map((stage) => (
-                <option key={stage.id} value={stage.id}>
-                  {stage.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
           {/* 지원 마감일 */}
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-1">
@@ -217,6 +206,39 @@ export function EditDeadlineCardModal({
             {errors.deadline && (
               <p className="text-1 font-medium text-status-negative">{errors.deadline}</p>
             )}
+          </div>
+
+          {/* 전형 단계 — Figma 그대로 지원 마감일 아래 배치 (사용자 확인 2026-07-23) */}
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-1">
+              <p className="text-3 font-semibold text-label-base">전형 단계</p>
+              <p className="font-bold text-status-negative">*</p>
+            </div>
+            <button
+              ref={stageDropdown.triggerRef}
+              type="button"
+              onClick={stageDropdown.toggle}
+              className="flex w-full items-center justify-between rounded-xl border border-line-secondary px-4 py-3 text-5 font-medium text-label-base outline-none"
+            >
+              <span>{selectedStageName}</span>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M7 10l5 5 5-5" stroke="#9E9EA1" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+            <Popover
+              isOpen={stageDropdown.isOpen}
+              onClose={stageDropdown.close}
+              triggerRef={stageDropdown.triggerRef}
+              align="start"
+            >
+              <DropdownMenu
+                items={stageItems}
+                onSelect={(_, index) => {
+                  setForm((prev) => ({ ...prev, stageId: stages[index].id }));
+                  stageDropdown.close();
+                }}
+              />
+            </Popover>
           </div>
         </div>
 
