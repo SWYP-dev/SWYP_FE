@@ -29,12 +29,7 @@ export function AttachedFileItem({ document, onDownload, onDelete }: AttachedFil
         <span className="shrink-0 text-1 font-medium text-label-description">
           v{document.version}
         </span>
-        <AttachmentCategoryDropdown onSelectCategory={setCategory} />
-        {category && (
-          <span className="shrink-0 rounded bg-neutral-50 px-1 py-[1px] text-0 font-medium text-label-description">
-            {category}
-          </span>
-        )}
+        <AttachmentCategoryDropdown selectedCategory={category} onSelectCategory={setCategory} />
       </div>
       <button
         type="button"
