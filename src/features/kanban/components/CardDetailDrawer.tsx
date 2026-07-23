@@ -15,6 +15,7 @@ import {
 } from '@/features/documents/api/useDocumentMutations';
 import { AttachedFileItem } from '@/features/documents/components/AttachedFileItem';
 import { AttachedLinkItem } from '@/features/documents/components/AttachedLinkItem';
+import Image from 'next/image';
 
 // Figma node 94:13318 기준 — URL 카테고리 드롭다운 옵션
 const URL_CATEGORIES = ['이력서', '포트폴리오', '개인 채널', '기타'] as const;
@@ -83,7 +84,7 @@ export function CardDetailDrawer({
   function handleFileButtonClick() {
     const input = window.document.createElement('input');
     input.type = 'file';
-    input.accept = '.pdf,.doc,.docx,.ppt,.pptx';
+    input.accept = '.pdf,.docx,.pptx'; // 수정: .doc, .ppt 제거 (API 4.1 허용 형식은 PDF/DOCX/PPTX만)
     input.onchange = () => {
       const file = input.files?.[0];
       if (file) uploadFile.mutate({ file, name: file.name });
@@ -116,12 +117,15 @@ export function CardDetailDrawer({
         <div className="flex w-full flex-col">
           {/* 썸네일 */}
           {detail.thumbnailUrl ? (
-            <div className="h-[250px] w-full shrink-0 overflow-hidden">
-              <img
-                src={detail.thumbnailUrl}
-                alt={detail.companyName}
-                className="h-full w-full object-cover"
-              />
+            <div className="relative h-[250px] w-full shrink-0 overflow-hidden bg-neutral-100">
+              {detail.thumbnailUrl && (
+                <Image
+                  src={detail.thumbnailUrl}
+                  alt={detail.companyName}
+                  fill
+                  className="object-cover"
+                />
+              )}
             </div>
           ) : (
             <div className="h-[250px] w-full shrink-0 bg-neutral-100" />
