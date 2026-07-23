@@ -135,14 +135,16 @@ export function KanbanColumn({
             >
               <EditIcon size={20} />
             </button>
-            <button
-              type="button"
-              aria-label="스테이지 삭제"
-              onClick={() => onDeleteStage?.(stage.id)}
-              className="flex size-5 items-center justify-center text-icon-gray"
-            >
-              <TrashIcon size={20} />
-            </button>
+            {!isDraft && !stage.isDefault && (
+              <button
+                type="button"
+                aria-label="스테이지 삭제"
+                onClick={() => onDeleteStage?.(stage.id)}
+                className="flex size-5 items-center justify-center text-icon-gray"
+              >
+                <TrashIcon size={20} />
+              </button>
+            )}
           </div>
         </div>
       </div>
