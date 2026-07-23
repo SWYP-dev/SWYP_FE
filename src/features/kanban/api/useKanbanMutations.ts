@@ -101,7 +101,7 @@ export function useDeleteStage() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ stageId, moveToStageId }: { stageId: number; moveToStageId?: number }) =>
-      deleteStage(stageId, moveToStageId ? { moveToStageId } : undefined),
+      deleteStage(stageId, moveToStageId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: kanbanKeys.board() });
     },
