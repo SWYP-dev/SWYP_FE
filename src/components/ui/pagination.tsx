@@ -10,7 +10,7 @@ interface PaginationProps {
 function ChevronIcon({ direction, disabled }: { direction: 'left' | 'right'; disabled: boolean }) {
   return (
     <Image
-      src={direction === 'left' ? '/icons/chevron-left.png' : '/icons/chevron-right.png'}
+      src={direction === 'left' ? '/icons/chevron-left.svg' : '/icons/chevron-right.svg'}
       alt=""
       width={18}
       height={18}

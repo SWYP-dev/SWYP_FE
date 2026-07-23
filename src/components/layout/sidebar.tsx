@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { LoginModal } from '@/features/auth/components/LoginModal';
 import { ProfileMenu } from '@/features/auth/components/ProfileMenu';
+import { ChwihapWordmark } from '@/features/notification/components/icons';
 
 // Figma Sidebar 컴포넌트(node 36:545) 스펙 반영.
 // TODO: 실제 라우팅 경로(/scraps, /kanban, /deadlines)는 페이지 생성 시 확정 필요.
@@ -30,7 +31,7 @@ export function Sidebar() {
     <aside className="flex h-full w-[257px] flex-col items-start justify-between border-r border-line-secondary bg-base-white">
       <div className="flex w-full flex-col items-start">
         <div className="flex h-[80px] w-full flex-col justify-center gap-3 px-6 py-3">
-          <p className="w-full text-8 font-bold leading-[20px] text-label-base">CHWIHAP</p>
+          <ChwihapWordmark className="h-5 w-auto" />
         </div>
 
         <nav className="flex w-full flex-col items-start gap-2 px-6">

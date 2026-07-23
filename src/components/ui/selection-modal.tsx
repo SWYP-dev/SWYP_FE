@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 
@@ -42,8 +43,6 @@ interface SelectionModalProps {
  * - 오른쪽은 다중 선택 체크박스, 3열 그리드. "OO 전체"가 항상 첫 줄.
  * - 다른 그룹으로 전환하면 이전 그룹 선택은 사라짐 (그룹은 항상 1개만 활성).
  * - 하단 초기화/적용 버튼 있음. 선택 없으면 적용 비활성(label/primary-disabled).
- *
- * ⚠️ X 아이콘, 체크 아이콘은 Figma 임시 asset URL(7일 만료)이라 인라인 SVG로 대체.
  */
 export function SelectionModal({
   title,
@@ -326,15 +325,5 @@ function CloseIcon(): ReactNode {
 }
 
 function CheckIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
-      <path
-        d="M4 9L7.5 12.5L14 5.5"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
+  return <Image src="/icons/check.svg" alt="" width={16} height={16} />;
 }

@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { CloseIcon } from '@/components/ui/icons';
 import { getKakaoAuthorizeUrl } from '../utils/kakaoOAuth';
 
@@ -67,12 +68,5 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
 }
 
 function KakaoIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path
-        d="M9 2C4.86 2 1.5 4.69 1.5 8.01c0 2.13 1.4 4 3.5 5.07l-.71 2.6a.38.38 0 0 0 .58.42l3.1-2.06c.35.03.7.05 1.03.05 4.14 0 7.5-2.69 7.5-6.01S13.14 2 9 2z"
-        fill="#212123"
-      />
-    </svg>
-  );
+  return <Image src="/icons/kakao-fill.svg" alt="" width={18} height={18} />;
 }
