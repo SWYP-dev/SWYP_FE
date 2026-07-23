@@ -1,56 +1,80 @@
-// notification-preview 페이지 전용 인라인 아이콘 모음.
-// public/icons에 대응 에셋(bell 제외)이 없어, features/deadlines/components/DeadlineHeader.tsx의
-// 인라인 SVG 패턴을 그대로 따라 직접 구현.
-
-export function NotificationBellIcon({ size = 20 }: { size?: number }) {
+export function CalendarIcon({ className }: { className?: string }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg
+      viewBox="0 0 14 14"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      aria-hidden="true"
+    >
+      <rect
+        x="1.5"
+        y="2.5"
+        width="11"
+        height="10"
+        rx="1.5"
+        stroke="currentColor"
+        strokeWidth="1.1"
+      />
+      <path d="M1.5 5.5H12.5" stroke="currentColor" strokeWidth="1.1" />
+      <path d="M4 1.5V3.5" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" />
+      <path d="M10 1.5V3.5" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+export function ChevronRightIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 18 18"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      aria-hidden="true"
+    >
       <path
-        d="M12 3.5c-3.5 0-5.5 2.4-5.5 6v3.2c0 .6-.2 1.2-.6 1.7l-1 1.3c-.6.8 0 2 1 2h12.2c1 0 1.6-1.2 1-2l-1-1.3c-.4-.5-.6-1.1-.6-1.7V9.5c0-3.6-2-6-5.5-6Z"
-        stroke="#212123"
-        strokeWidth="1.5"
+        d="M7 4.5L11.5 9L7 13.5"
+        stroke="currentColor"
+        strokeWidth="1.4"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      <path d="M10 19a2 2 0 0 0 4 0" stroke="#212123" strokeWidth="1.5" strokeLinecap="round" />
     </svg>
   );
 }
 
-export function MailIcon({ size = 16 }: { size?: number }) {
+/**
+ * TODO: 실제 로고 SVG 에셋으로 교체 필요.
+ * 샌드박스 네트워크 제약으로 Figma 원본 로고(node 122:22883)를 내려받지 못해 임시로 재현했습니다.
+ * public/logo/chwihap-logo.svg 등으로 실제 파일을 받아 교체해주세요.
+ */
+export function ChwihapWordmark({ className }: { className?: string }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="1.5" y="3" width="13" height="10" rx="1.5" stroke="#9E9EA1" strokeWidth="1.3" />
+    <svg
+      viewBox="0 0 110 20"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      role="img"
+      aria-label="Chwihap"
+    >
+      <circle cx="9" cy="10" r="8" fill="#4864F1" />
       <path
-        d="M2 4.5 8 9l6-4.5"
-        stroke="#9E9EA1"
-        strokeWidth="1.3"
+        d="M12.2 7.2a4.2 4.2 0 1 0 0 5.6"
+        stroke="white"
+        strokeWidth="1.6"
         strokeLinecap="round"
-        strokeLinejoin="round"
+        fill="none"
       />
-    </svg>
-  );
-}
-
-export function CalendarSmallIcon({ size = 14 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="2" y="3" width="10" height="9" rx="1.2" stroke="#9E9EA1" strokeWidth="1.2" />
-      <path
-        d="M2 5.5h10M4.5 1.5v3M9.5 1.5v3"
-        stroke="#9E9EA1"
-        strokeWidth="1.2"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-// 안읽음 알림 표시용 작은 점.
-export function UnreadDotIcon({ size = 8 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 8 8" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="4" cy="4" r="4" fill="#4864F1" />
+      <text
+        x="21"
+        y="15"
+        fontFamily="Pretendard, sans-serif"
+        fontWeight="700"
+        fontSize="13"
+        fill="#212123"
+      >
+        Chwihap
+      </text>
     </svg>
   );
 }
