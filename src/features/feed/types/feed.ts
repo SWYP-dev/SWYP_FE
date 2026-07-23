@@ -31,3 +31,6 @@ export interface FeedResponse {
 }
 
 export type SortOption = 'LATEST' | 'DEADLINE';
+
+// PlatformTabs 등 필터 UI에서 사용. JobPosting.platform에 'ALL'(전체) 옵션을 더한 값.
+export type PlatformFilter = 'ALL' | JobPosting['platform'];
