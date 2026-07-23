@@ -38,7 +38,7 @@ export function DeadlineNotificationCard({
             <p className="truncate text-base font-semibold text-[#212123]">{item.title}</p>
           </div>
           <div className="flex items-center gap-1">
-            <CalendarIcon className="size-3.5 text-[#9e9ea1]" />
+            <CalendarIcon className="size-[14px] text-[#9e9ea1]" />
             <p className="text-xs font-medium text-[#9e9ea1]">
               {formatDeadlineLabel(item.deadlineDate)}
             </p>

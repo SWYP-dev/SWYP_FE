@@ -20,8 +20,8 @@ export function EmailNotificationPreview({
   const totalCount = groups.reduce((sum, group) => sum + group.items.length, 0);
 
   return (
-    <div className="flex w-full flex-col items-center gap-5 bg-[#f6f6f7] py-9">
-      <div className="flex w-full max-w-[652px] flex-col items-start gap-6 rounded-2xl bg-white p-9">
+    <div className="flex w-full flex-col items-center gap-5 bg-[#f6f6f7] py-[36px]">
+      <div className="flex w-full max-w-[652px] flex-col items-start gap-6 rounded-2xl bg-white p-[36px]">
         <header className="flex w-full flex-col items-start border-b border-[#e9ebec] pb-5">
           <ChwihapWordmark className="h-5 w-[110px]" />
         </header>
