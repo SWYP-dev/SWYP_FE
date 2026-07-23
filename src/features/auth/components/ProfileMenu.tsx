@@ -34,10 +34,7 @@ export function ProfileMenu() {
               className="rounded-max object-cover"
             />
           ) : (
-            // 카카오 프로필 사진 미등록 시 profileImage가 null로 내려옴 (실제 응답으로 확인됨)
-            <span className="text-1 font-semibold text-label-body">
-              {user.nickname?.[0] ?? '?'}
-            </span>
+            <Image src="/icons/person-fill.svg" alt="" width={20} height={20} />
           )}
         </div>
         <div className="flex min-w-0 flex-1 flex-col items-start leading-[1.5]">

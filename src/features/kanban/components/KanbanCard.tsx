@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import type { KanbanCard as KanbanCardType } from '@/types/api';
@@ -32,17 +33,7 @@ function CalendarSmallIcon() {
 }
 
 function ExternalLinkIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path
-        d="M5.5 3.5H3.5A1 1 0 0 0 2.5 4.5v6A1 1 0 0 0 3.5 11.5h6a1 1 0 0 0 1-1v-2M8 2.5h3.5V6M11.2 2.8 6.5 7.5"
-        stroke="#4864F1"
-        strokeWidth="1.2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
+  return <Image src="/icons/external-link.svg" alt="" width={14} height={14} />;
 }
 
 export function KanbanCard({ card, stageId, onClick }: KanbanCardProps) {
