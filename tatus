@@ -1,0 +1,81 @@
+[33mcommit d8192fa58bb74bf2fabc9f3d91d010011ee9ff22[m
+Author: 한태영 <162069193+xodudgks@users.noreply.github.com>
+Date:   Thu Jul 9 22:24:48 2026 +0900
+
+    Feature/UI header input 컴포넌트 적용 (#12)
+    
+    * docs: CONTRIBUTING 및 PR 템플릿 추가 (#2)
+    
+    * docs: CONTRIBUTING 및 PR 템플릿 추가
+    
+    Co-authored-by: Cursor <cursoragent@cursor.com>
+    
+    * docs: PR base 및 템플릿 자동 적용 조건 안내 추가
+    
+    Co-authored-by: Cursor <cursoragent@cursor.com>
+    
+    ---------
+    
+    Co-authored-by: Cursor <cursoragent@cursor.com>
+    
+    * feat: API 응답 타입 정의 (#3)
+    
+    * feat: API 응답 타입 정의 (v1.5.0 기준)
+    
+    * fix: 백엔드 리뷰 반영 - ApiResponse v1.6 구조 변경, size 주석 정정, 액션 응답 타입 추가
+    
+    * feat: 플랫폼/마감일/범용 뱃지 컴포넌트 추가 (#4)
+    
+    * feat: API 클라이언트 및 TanStack Query 세팅 (#5)
+    
+    * feat: API 클라이언트 및 TanStack Query 세팅
+    
+    * fix: api.ts v1.6 구조 반영에 따른 api-client.ts 수정
+    
+    * feat: 공통 버튼 컴포넌트 추가 (#6)
+    
+    * fix: 버튼 Figma 스펙 반영 및 모달 컴포넌트 추가 (#7)
+    
+    * feat: 공통 버튼 컴포넌트 추가
+    
+    * fix: Figma 스펙 반영 버튼 radius/font-weight 수정, feat: 모달 컴포넌트 추가
+    
+    * fix: Figma 스펙 반영 Badge 모서리/패딩/폰트크기 수정, feat: 통합 공고 탐색 페이지에 마감일 뱃지 연동 (#8)
+    
+    * fix: Figma 스펙 반영 Button variant/radius/padding 수정 (ghost/danger 제거, outline 추가) (#9)
+    
+    * feat: 즐겨찾기→스크랩 리네이밍 및 페이지네이션 방식 전환 반영 (API v1.9) (#10)
+    
+    * feat: Sidebar 컴포넌트 추가 및 page.tsx 적용 (#11)
+    
+    * feat: Header, Input 컴포넌트 추가 및 page.tsx 적용
+    
+    * fix: Header SearchInput 최신 스펙 반영 (padding-y 8px, placeholder 14px medium)
+    
+    ---------
+    
+    Co-authored-by: Cursor <cursoragent@cursor.com>
+
+ .github/PULL_REQUEST_TEMPLATE.md  |  52 [32m+++++++[m
+ CONTRIBUTING.md                   | 118 [32m+++++++++++++++[m
+ README.md                         |   5 [32m+[m
+ package-lock.json                 |  41 [32m+++[m[31m---[m
+ package.json                      |   2 [32m+[m[31m-[m
+ src/app/layout.tsx                |  28 [32m++[m[31m--[m
+ src/app/page.tsx                  | 131 [32m+++[m[31m--------------[m
+ src/components/input.tsx          |  46 [32m++++++[m
+ src/components/layout/header.tsx  |  47 [32m++++++[m
+ src/components/layout/sidebar.tsx |  75 [32m++++++++++[m
+ src/components/ui/.gitkeep        |   0
+ src/components/ui/badge.tsx       |  95 [32m++++++++++++[m
+ src/components/ui/button.tsx      |  49 [32m+++++++[m
+ src/components/ui/modal.tsx       |  84 [32m+++++++++++[m
+ src/lib/api/.gitkeep              |   0
+ src/lib/api/api-client.ts         |  85 [32m+++++++++++[m
+ src/lib/api/query-client.ts       |  10 [32m++[m
+ src/lib/api/token.ts              |  29 [32m++++[m
+ src/providers/.gitkeep            |   0
+ src/providers/query-provider.tsx  |   8 [32m+[m
+ src/types/.gitkeep                |   0
+ src/types/api.ts                  | 299 [32m++++++++++++++++++++++++++++++++++++++[m
+ 22 files changed, 1059 insertions(+), 145 deletions(-)
