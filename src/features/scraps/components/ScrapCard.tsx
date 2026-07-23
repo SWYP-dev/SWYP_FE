@@ -43,8 +43,14 @@ export function ScrapCard({ data, onRemoveScrap, onAddToKanban }: ScrapCardProps
         {data.thumbnailUrl ? (
           <Image src={data.thumbnailUrl} alt="" fill className="rounded-lg object-cover" />
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center text-1 text-label-description">
-            CHWIHAP
+          <div className="absolute inset-0 flex items-center justify-center bg-neutral-100">
+            <Image
+              src="/logo/chwihap-logo.svg"
+              alt=""
+              width={48}
+              height={48}
+              className="object-contain opacity-40"
+            />
           </div>
         )}
         <div className="relative flex h-[83px] w-full items-start justify-between">

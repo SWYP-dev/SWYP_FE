@@ -58,8 +58,14 @@ export function JobCard({
         {thumbnailUrl ? (
           <Image src={thumbnailUrl} alt="" fill className="rounded-lg object-cover" />
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center text-1 text-label-description">
-            CHWIHAP
+          <div className="absolute inset-0 flex items-center justify-center bg-neutral-100">
+            <Image
+              src="/logo/chwihap-logo.svg"
+              alt=""
+              width={48}
+              height={48}
+              className="object-contain opacity-40"
+            />
           </div>
         )}
         {/* Wrapper: D-day 뱃지(좌) + 스크랩 아이콘(우), justify-between — Figma 스펙 그대로 */}
