@@ -83,7 +83,7 @@ export function CardDetailDrawer({
   function handleFileButtonClick() {
     const input = window.document.createElement('input');
     input.type = 'file';
-    input.accept = '.pdf,.doc,.docx,.ppt,.pptx';
+    input.accept = '.pdf,.docx,.pptx'; // 수정: .doc, .ppt 제거 (API 4.1 허용 형식은 PDF/DOCX/PPTX만)
     input.onchange = () => {
       const file = input.files?.[0];
       if (file) uploadFile.mutate({ file, name: file.name });
