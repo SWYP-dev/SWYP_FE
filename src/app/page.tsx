@@ -44,14 +44,19 @@ const JOB_CATEGORY_LABELS: Record<string, string> = {
   농림어업: '농림어업',
 };
 
-function formatJobCategory(raw: string): string {
+// ⚠️ [2026-07-23] 배포 크래시 수정: 백엔드가 jobCategory/career를 null로 내려주는
+// 공고가 실제로 존재함 (feed 401 이슈 해결 후 실데이터 렌더링되며 처음 발견됨).
+// raw가 null/undefined일 때 raw.split()에서 TypeError로 페이지 전체가 크래시됨.
+function formatJobCategory(raw: string | null | undefined): string {
+  if (!raw) return '-';
   const codes = raw.split(',').filter(Boolean);
   const labels = codes.map((code) => JOB_CATEGORY_LABELS[code] ?? code);
   if (labels.length <= 3) return labels.join(', ');
   return `${labels.slice(0, 3).join(', ')} 외 ${labels.length - 3}건`;
 }
 
-function formatCareer(raw: string): string {
+function formatCareer(raw: string | null | undefined): string {
+  if (!raw) return '-';
   const codes = raw.split(',').filter(Boolean);
   if (codes.length >= 2) return '신입/경력 무관';
   return codes[0] === 'NEW' ? '신입' : '경력';
