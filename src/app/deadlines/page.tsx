@@ -12,11 +12,7 @@ export default function DeadlinesPage() {
 
       <main className="flex min-w-0 flex-1 flex-col self-stretch">
         <div className="sticky top-0 z-10">
-          <DeadlineHeader
-            onBellClick={() => {
-              /* TODO: 알림 확인 모달 — "지원 마감일 알림 확인 전/후" 시안 확정 후 연결 */
-            }}
-          />
+          <DeadlineHeader />
         </div>
 
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto bg-neutral-50 px-[80px] py-6">
