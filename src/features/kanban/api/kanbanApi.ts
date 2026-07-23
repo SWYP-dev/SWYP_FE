@@ -142,12 +142,12 @@ export function updateStage(
 // DELETE /api/v1/kanban/stages/{stageId}
 export function deleteStage(
   stageId: number,
-  body?: { moveToStageId?: number }
+  moveToStageId?: number
 ): Promise<KanbanStageDeleteResponse> {
-  return apiFetch<KanbanStageDeleteResponse>(`/api/v1/kanban/stages/${stageId}`, {
-    method: 'DELETE',
-    body,
-  });
+  const url = moveToStageId
+    ? `/api/v1/kanban/stages/${stageId}?moveToStageId=${moveToStageId}`
+    : `/api/v1/kanban/stages/${stageId}`;
+  return apiFetch<KanbanStageDeleteResponse>(url, { method: 'DELETE' });
 }
 
 // GET /api/v1/kanban/cards/{cardId} (3.5)
