@@ -3,10 +3,9 @@ import type { KakaoLoginResponse, CurrentUserResponse } from '../type/auth';
 
 // 1.1 카카오 소셜 로그인 (POST /api/v1/auth/kakao)
 export function loginWithKakao(code: string): Promise<KakaoLoginResponse> {
-  const redirectUri = process.env.NEXT_PUBLIC_KAKAO_REDIRECT_URI ?? '';
   return apiFetch<KakaoLoginResponse>('/api/v1/auth/kakao', {
     method: 'POST',
-    body: { code, redirectUri },
+    body: { code },
   });
 }
 
