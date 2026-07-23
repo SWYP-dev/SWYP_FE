@@ -67,17 +67,18 @@ export async function apiFetch<T>(
         : undefined,
   });
 
-  // 401이고 아직 재시도 안 했으면: 토큰 재발급 후 딱 한 번만 재시도
   if (res.status === 401 && !isRetry) {
     try {
       await refreshAccessToken();
       return apiFetch<T>(path, options, true);
     } catch {
       clearTokens();
-      // [2026-07-22] 로그인 기능 연동: 토큰 삭제뿐 아니라 authStore(사이드바 프로필 상태)도 초기화
       clearAuthUserOutsideReact();
-      if (typeof window !== 'undefined') {
-        // 별도 /login 페이지 없이 홈에서 모달로 로그인하므로 홈으로 이동
+      // ⚠️ [2026-07-23] 무한 리로드 버그 수정: 로그인 안 한 상태에서 인증이 필요한
+      // API(예: 알림 벨의 notifications/inbox)를 호출하면 401 → 이 catch 진입 →
+      // window.location.href='/' → 페이지 리로드 → 알림 벨이 다시 401 호출 → 무한 반복.
+      // 이미 '/'에 있을 때는 리다이렉트하지 않도록 방어.
+      if (typeof window !== 'undefined' && window.location.pathname !== '/') {
         window.location.href = '/';
       }
       throw new Error('인증이 만료되었습니다. 다시 로그인해주세요.');
