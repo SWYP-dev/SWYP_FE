@@ -130,10 +130,14 @@ export interface KanbanCardDetail {
   postingId: number;
   companyName: string;
   jobTitle: string;
+  thumbnailUrl: string | null; // 추가 — Drawer 상단 썸네일, null 가능
+  jobCategory: JobCategory | null; // 추가 — 직무 분류 (예: "BACKEND")
+  region: string | null; // 추가 — 위치 (예: "판교")
+  career: Career | null; // 추가 — 경력 (예: "NEW" | "EXPERIENCED")
   deadline: string;
   originalUrl: string;
   deadlineChanged: boolean;
-  memo: string;
+  memo: string | null;
   documents: DocumentItem[];
   registeredAt: string;
 }

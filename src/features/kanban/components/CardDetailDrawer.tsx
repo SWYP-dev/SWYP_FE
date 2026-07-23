@@ -110,7 +110,7 @@ export function CardDetailDrawer({
                         thumbnailUrl: '',
                         originalUrl: detail.originalUrl,
                         deadlineChanged: detail.deadlineChanged,
-                        memo: detail.memo,
+                        memo: detail.memo ?? '',
                         registeredAt: detail.registeredAt,
                       })
                     }
@@ -127,10 +127,10 @@ export function CardDetailDrawer({
                         companyName: detail.companyName,
                         jobTitle: detail.jobTitle,
                         deadline: detail.deadline,
-                        thumbnailUrl: '',
+                        thumbnailUrl: detail.thumbnailUrl ?? '',
                         originalUrl: detail.originalUrl,
                         deadlineChanged: detail.deadlineChanged,
-                        memo: detail.memo,
+                        memo: detail.memo ?? '',
                         registeredAt: detail.registeredAt,
                       })
                     }
