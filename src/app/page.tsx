@@ -175,7 +175,6 @@ export default function FeedPage() {
                         company={job.companyName}
                         title={job.jobTitle}
                         jobCategory={formatJobCategory(job.jobCategory)}
-                        platformLabel="공공데이터포털"
                         region={job.region ?? ''}
                         career={formatCareer(job.career)}
                         originalUrl={job.originalUrl}

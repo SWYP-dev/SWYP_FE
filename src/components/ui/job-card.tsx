@@ -1,5 +1,5 @@
 import Image from 'next/image';
-import { DeadlineBadge, Badge } from './badge';
+import { DeadlineBadge } from './badge';
 import { Button } from './button';
 import { PinIcon, BriefcaseIcon, CalendarIcon } from './icons';
 
@@ -10,7 +10,6 @@ interface JobCardProps {
   company: string;
   title: string;
   jobCategory: string;
-  platformLabel: string;
   region: string;
   career: string;
   originalUrl: string | null;
@@ -36,6 +35,7 @@ function BookmarkIcon({ filled }: { filled: boolean }) {
 }
 
 // Figma Card 컴포넌트(node 36:567, type="list") 스펙 반영.
+// 2026-07-23 디자인 변경점 반영: 플랫폼 뱃지 제거.
 export function JobCard({
   thumbnailUrl,
   deadlineIso,
@@ -43,7 +43,6 @@ export function JobCard({
   company,
   title,
   jobCategory,
-  platformLabel,
   region,
   career,
   originalUrl,
@@ -90,7 +89,6 @@ export function JobCard({
             <p className="truncate text-6 font-semibold text-label-base">{title}</p>
           </div>
           <p className="text-1 font-medium text-label-description">{jobCategory}</p>
-          <Badge className="w-fit bg-neutral-200 text-label-body">{platformLabel}</Badge>
         </div>
 
         {/* Caption: 고정 너비 — 텍스트 길이에 따른 정렬 흔들림 방지 */}

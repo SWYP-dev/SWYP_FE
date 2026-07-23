@@ -30,6 +30,4 @@ export interface FeedResponse {
   hasNext: boolean;
 }
 
-export type PlatformFilter = 'ALL' | 'SARAMIN' | 'WANTED';
-
 export type SortOption = 'LATEST' | 'DEADLINE';

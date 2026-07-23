@@ -187,7 +187,7 @@ export function EditDeadlineCardModal({
                   errors.deadline ? 'border-status-negative' : 'border-line-secondary'
                 } ${deadlineText ? 'text-label-base' : 'text-label-placeholder'}`}
               >
-                <span>{deadlineText || '서류 접수 마감일을 입력해 주세요.'}</span>
+                <span>{deadlineText || '지원 마감일을 선택해주세요.'}</span>
                 <CalendarIcon />
               </button>
               {showDatePicker && (
