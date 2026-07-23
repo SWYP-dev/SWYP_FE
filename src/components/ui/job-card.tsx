@@ -72,7 +72,7 @@ export function JobCard({
         ) : (
           <div className="absolute inset-0 flex items-center justify-center bg-neutral-100">
             <Image
-              src="/logo/chwihap-logo.svg"
+              src="/images/main-logo.png"
               alt=""
               width={48}
               height={48}
