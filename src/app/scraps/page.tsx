@@ -99,7 +99,7 @@ const ScrapsPage: NextPage = () => {
 
       <main className="self-stretch flex-1 flex flex-col text-3 min-h-0 overflow-y-auto">
         <div className="sticky top-0 z-10 flex flex-col bg-base-white">
-          <Header />
+          <Header showSearch={false} />
 
           <div className="flex items-center justify-between pt-7 px-12 pb-5 text-center">
             <div className="flex items-center gap-3">

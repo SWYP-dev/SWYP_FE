@@ -19,7 +19,7 @@ export default function KanbanPage() {
 
       <main className="flex min-w-0 flex-1 flex-col self-stretch">
         <div className="sticky top-0 z-10 bg-base-white">
-          <Header />
+          <Header showSearch={false} />
         </div>
 
         <div className="flex min-h-0 flex-1 flex-col px-[80px] py-6">
