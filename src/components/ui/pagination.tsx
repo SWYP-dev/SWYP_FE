@@ -1,27 +1,21 @@
+import Image from 'next/image';
+
 interface PaginationProps {
   currentPage: number; // 0부터 시작 (API 명세서 기준)
   totalPages: number;
   onPageChange: (page: number) => void;
 }
 
+// name="chevron-left" / "chevron-right" — 이전/다음 페이지 버튼.
 function ChevronIcon({ direction, disabled }: { direction: 'left' | 'right'; disabled: boolean }) {
   return (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 18 18"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className={disabled ? 'text-neutral-400' : 'text-label-base'}
-    >
-      <path
-        d={direction === 'left' ? 'M11 4L6 9L11 14' : 'M7 4L12 9L7 14'}
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
+    <Image
+      src={direction === 'left' ? '/icons/chevron-left.png' : '/icons/chevron-right.png'}
+      alt=""
+      width={18}
+      height={18}
+      className={disabled ? 'opacity-40' : ''}
+    />
   );
 }
 

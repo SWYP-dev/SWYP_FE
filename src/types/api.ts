@@ -56,6 +56,7 @@ export interface FeedItem {
   id: number; // feed id (job_feed.id) — 피드 탐색 중에만 쓰는 임시성 ID, 스크랩 이후엔 jobPostingId를 써야 함
   platform: Platform;
   companyName: string;
+  region: string; // 백엔드 확인(2026-07-19) 후 추가된 필드
   jobTitle: string;
   jobCategory: JobCategory;
   career: Career;
@@ -129,10 +130,14 @@ export interface KanbanCardDetail {
   postingId: number;
   companyName: string;
   jobTitle: string;
+  thumbnailUrl: string | null; // 추가 — Drawer 상단 썸네일, null 가능
+  jobCategory: JobCategory | null; // 추가 — 직무 분류 (예: "BACKEND")
+  region: string | null; // 추가 — 위치 (예: "판교")
+  career: Career | null; // 추가 — 경력 (예: "NEW" | "EXPERIENCED")
   deadline: string;
   originalUrl: string;
   deadlineChanged: boolean;
-  memo: string;
+  memo: string | null;
   documents: DocumentItem[];
   registeredAt: string;
 }
@@ -242,10 +247,17 @@ export interface ScrapRemoveResponse {
   isScrapped: boolean;
 }
 
+// 2.5 스크랩 목록 조회 - 쿼리 파라미터
+// API 명세서상 page/size만 지원 (피드와 달리 필터/정렬 파라미터 없음)
+export interface ScrapQueryParams {
+  page?: number; // 0부터 시작, 기본 0
+  size?: number; // 기본 20, 최대 50
+}
+
 // 3.2 칸반 카드 등록
-// ⚠️ 참고: 명세서 v1.9 노트에 "3장 칸반 등록의 '스크랩 선행' 정책 문구·POSTING_NOT_FAVORITED
-// 에러코드 정합화는 별도 후속으로 처리 예정"이라고 되어 있어, 에러코드명은 아직 변경하지
-// 않았습니다. 후속 명세 업데이트 시 확인 필요.
+// ✅ 확인 완료 (2026-07-20, Swagger 실측): Request Body `postingId` 필드는 실제로
+// jobPostingId(스크랩 사본 id)를 받음 — 상세는 registerCard.ts 주석 참고.
+// 에러코드 POSTING_NOT_FAVORITED는 그대로 사용 중 (정합화 명칭 변경은 아직 안 됨).
 export interface KanbanCardRegisterResponse {
   cardId: number;
   stageId: number;

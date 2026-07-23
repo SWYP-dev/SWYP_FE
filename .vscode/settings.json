@@ -1,0 +1,7 @@
+{
+  // Tailwind CSS v4의 @utility, @theme 등 커스텀 at-rule을
+  // 알 수 없는 규칙으로 오인해 경고를 띄우는 것을 방지
+  "css.lint.unknownAtRules": "ignore",
+  "scss.lint.unknownAtRules": "ignore",
+  "less.lint.unknownAtRules": "ignore"
+}

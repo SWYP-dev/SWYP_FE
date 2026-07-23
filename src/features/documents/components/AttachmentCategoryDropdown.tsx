@@ -11,20 +11,33 @@ const DOCUMENT_CATEGORY_ITEMS: DropdownMenuItem[] = [
 ];
 
 interface AttachmentCategoryDropdownProps {
+  selectedCategory: string | null;
   onSelectCategory: (category: string) => void;
 }
 
 /**
- * 칸반 카드 상세(3.4)의 서류 첨부 탭에서 파일 카테고리를 선택하는 드롭다운.
- * TODO: 트리거는 AttachmentItem의 실제 버튼 스펙 확인 후 교체 필요 (지금은 임시 button).
+ * 미선택 시 "+ 카테고리" 버튼이 트리거, 선택 후에는 선택된 카테고리 뱃지 자체가
+ * 트리거로 바뀌어 클릭하면 다시 선택 목록이 뜬다.
  */
-export function AttachmentCategoryDropdown({ onSelectCategory }: AttachmentCategoryDropdownProps) {
+export function AttachmentCategoryDropdown({
+  selectedCategory,
+  onSelectCategory,
+}: AttachmentCategoryDropdownProps) {
   const { isOpen, triggerRef, toggle, close } = usePopoverTrigger<HTMLButtonElement>();
 
   return (
     <>
-      <button ref={triggerRef} onClick={toggle} type="button">
-        카테고리 선택
+      <button
+        ref={triggerRef}
+        onClick={toggle}
+        type="button"
+        className={
+          selectedCategory
+            ? 'shrink-0 rounded bg-neutral-50 px-1 py-[1px] text-0 font-medium text-label-description'
+            : 'shrink-0 text-1 font-medium text-label-primary'
+        }
+      >
+        {selectedCategory ?? '+ 카테고리'}
       </button>
 
       <Popover isOpen={isOpen} onClose={close} triggerRef={triggerRef} align="start">

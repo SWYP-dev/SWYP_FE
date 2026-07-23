@@ -1,5 +1,5 @@
 import Image from 'next/image';
-import { DeadlineBadge, Badge } from './badge';
+import { DeadlineBadge } from './badge';
 import { Button } from './button';
 import { PinIcon, BriefcaseIcon, CalendarIcon } from './icons';
 
@@ -10,15 +10,32 @@ interface JobCardProps {
   company: string;
   title: string;
   jobCategory: string;
-  platformLabel: string;
   region: string;
   career: string;
-  originalUrl: string;
+  originalUrl: string | null;
+  isScrapped: boolean;
+  onToggleScrap?: () => void;
   onAddToKanban?: () => void;
 }
 
+// 스크랩 아이콘(Figma 36:567 CardThumbnail > Wrapper > Icon, size 20x20).
+// SVG 파일 업로드가 지원되지 않아 인라인으로 작성.
+function BookmarkIcon({ filled }: { filled: boolean }) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M5.5 4C5.5 3.44772 5.94772 3 6.5 3H13.5C14.0523 3 14.5 3.44772 14.5 4V16.5L10 13.5L5.5 16.5V4Z"
+        fill={filled ? 'white' : 'none'}
+        stroke="white"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 // Figma Card 컴포넌트(node 36:567, type="list") 스펙 반영.
-// 스크랩 아이콘은 위치 미확정으로 보류 (TODO).
+// 2026-07-23 디자인 변경점 반영: 플랫폼 뱃지 제거.
 export function JobCard({
   thumbnailUrl,
   deadlineIso,
@@ -26,25 +43,44 @@ export function JobCard({
   company,
   title,
   jobCategory,
-  platformLabel,
   region,
   career,
   originalUrl,
+  isScrapped,
+  onToggleScrap,
   onAddToKanban,
 }: JobCardProps) {
   return (
     // Card: gap-[20px](spacing/6) — Thumbnail ~ 안쪽 Wrapper 사이 간격
     <div className="flex w-full items-center gap-6 rounded-xl p-3 hover:bg-neutral-100">
       {/* Thumbnail */}
-      <div className="relative size-[100px] shrink-0 overflow-hidden rounded-lg">
-        <Image src={thumbnailUrl} alt="" fill className="object-cover" />
-        <div className="absolute left-[6px] top-[6px]">
+      <div className="relative size-[100px] shrink-0 overflow-hidden rounded-lg bg-neutral-100 p-[6px]">
+        {thumbnailUrl ? (
+          <Image src={thumbnailUrl} alt="" fill className="rounded-lg object-cover" />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center text-1 text-label-description">
+            CHWIHAP
+          </div>
+        )}
+        {/* Wrapper: D-day 뱃지(좌) + 스크랩 아이콘(우), justify-between — Figma 스펙 그대로 */}
+        <div className="relative flex h-[83px] w-full items-start justify-between">
           <DeadlineBadge deadline={deadlineIso} />
+          <button
+            type="button"
+            aria-label={isScrapped ? '스크랩 해제' : '스크랩'}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onToggleScrap?.();
+            }}
+            className="flex size-5 shrink-0 items-center justify-center"
+          >
+            <BookmarkIcon filled={isScrapped} />
+          </button>
         </div>
-        {/* TODO: 스크랩 아이콘 - 위치 미확정, 추후 추가 */}
       </div>
 
-      {/* Wrapper: gap-[28px] — Content/Caption/Buttons 사이 간격 (28px는 닫힌 스케일 밖 값이라 arbitrary 표기) */}
+      {/* Wrapper: gap-[28px] — Content/Caption/Buttons 사이 간격 */}
       <div className="flex min-w-0 flex-1 items-center gap-[28px]">
         {/* Content */}
         <div className="flex min-w-0 flex-1 flex-col justify-center gap-2">
@@ -53,41 +89,44 @@ export function JobCard({
             <p className="truncate text-6 font-semibold text-label-base">{title}</p>
           </div>
           <p className="text-1 font-medium text-label-description">{jobCategory}</p>
-          <Badge className="w-fit bg-neutral-200 text-label-body">{platformLabel}</Badge>
         </div>
 
-        {/* Caption */}
-        <div className="flex h-full flex-col justify-center gap-1">
+        {/* Caption: 고정 너비 — 텍스트 길이에 따른 정렬 흔들림 방지 */}
+        <div className="flex h-full w-[168px] shrink-0 flex-col justify-center gap-1">
           <div className="flex items-center gap-[6px]">
             <PinIcon />
-            <span className="text-3 font-medium leading-[1.6] text-label-description">
-              {region}
+            <span className="truncate text-3 font-medium leading-[1.6] text-label-description">
+              {region || '지역 정보 없음'}
             </span>
           </div>
           <div className="flex items-center gap-[6px]">
             <BriefcaseIcon />
-            <span className="text-3 font-medium leading-[1.6] text-label-description">
+            <span className="truncate text-3 font-medium leading-[1.6] text-label-description">
               {career}
             </span>
           </div>
           <div className="flex items-center gap-[6px]">
             <CalendarIcon />
-            <span className="text-3 font-medium leading-[1.6] text-label-description">
+            <span className="truncate text-3 font-medium leading-[1.6] text-label-description">
               {deadlineText}
             </span>
           </div>
         </div>
 
-        {/* Buttons: 원본 공고로 이동 버튼에 w-full — 아래(내 지원 현황에 추가) 버튼 너비에 맞춰 늘어남.
-            NOTE: Button 컴포넌트가 className을 그대로 전달(forward)한다는 가정 하에 작성했습니다.
-            만약 className이 병합 안 되면 Button 내부 구현 확인 필요. */}
-        <div className="flex h-full flex-col justify-center gap-[10px]">
-          <a href={originalUrl} target="_blank" rel="noreferrer" className="block w-full">
-            <Button variant="outline" size="sm" className="w-full">
-              원본 공고로 이동
+        {/* Buttons: 고정 너비 */}
+        <div className="flex h-full w-[140px] shrink-0 flex-col justify-center gap-[10px]">
+          {originalUrl ? (
+            <a href={originalUrl} target="_blank" rel="noreferrer" className="block w-full">
+              <Button variant="outline" size="sm" className="w-full">
+                원본 공고로 이동
+              </Button>
+            </a>
+          ) : (
+            <Button variant="outline" size="sm" className="w-full" disabled>
+              원본 링크 없음
             </Button>
-          </a>
-          <Button variant="outline" size="sm" onClick={onAddToKanban}>
+          )}
+          <Button variant="outline" size="sm" className="w-full" onClick={onAddToKanban}>
             내 지원 현황에 추가
           </Button>
         </div>

@@ -4,31 +4,21 @@ import { useState } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import type { KanbanCard as KanbanCardType, KanbanStage } from '@/types/api';
 import { KanbanCard } from './KanbanCard';
-import {
-  DragHandleIcon,
-  EditIcon,
-  PlusSmallIcon,
-  TrashIcon,
-  TriangleDownFillIcon,
-} from '@/components/ui/icons';
+import { DragHandleIcon, EditIcon, PlusSmallIcon, TrashIcon } from '@/components/ui/icons';
 
 interface KanbanColumnProps {
   stage: KanbanStage;
-  /** 전형 단계 추가 직후의 임시(draft) 컬럼 여부 — 헤더 TextField가 열린 채로 시작 */
   isDraft?: boolean;
   onRenameStage?: (stageId: number, newName: string) => void;
   onDeleteStage?: (stageId: number) => void;
-  /** draft 컬럼 이름 확정 (Figma 49:7797 흐름) */
   onConfirmDraft?: (name: string) => void;
-  /** draft 컬럼 취소 (빈 값 커밋 or ESC) */
   onCancelDraft?: () => void;
   onAddCard?: (stageId: number) => void;
   onEditCard?: (card: KanbanCardType, stageId: number) => void;
   onDeleteCard?: (card: KanbanCardType) => void;
+  onCardClick?: (card: KanbanCardType) => void;
 }
 
-// Figma KanbanColumn 마스터(50:14062) + "전형 단계 추가" 프레임(49:7797) 스펙 반영.
-// 추가/수정 모두 헤더 인라인 TextField 방식. TextField 마스터(49:7636)는 default/error 상태 관리.
 export function KanbanColumn({
   stage,
   isDraft = false,
@@ -39,9 +29,11 @@ export function KanbanColumn({
   onAddCard,
   onEditCard,
   onDeleteCard,
+  onCardClick,
 }: KanbanColumnProps) {
+  // fix: id를 String으로 통일 — 신규 추가 스테이지 드래그 안 되는 버그 수정 (버그3)
   const { setNodeRef, isOver } = useDroppable({
-    id: stage.id,
+    id: String(stage.id),
     data: { stageId: stage.id },
   });
 
@@ -51,7 +43,6 @@ export function KanbanColumn({
 
   function commit() {
     const trimmed = draftName.trim();
-
     if (isDraft) {
       if (!trimmed) {
         onCancelDraft?.();
@@ -60,7 +51,6 @@ export function KanbanColumn({
       onConfirmDraft?.(trimmed);
       return;
     }
-
     setIsEditingName(false);
     if (trimmed && trimmed !== stage.name) {
       onRenameStage?.(stage.id, trimmed);
@@ -80,16 +70,17 @@ export function KanbanColumn({
   }
 
   return (
+    // fix: overflow-hidden 제거 — 드래그 시 카드가 컬럼에 잘리는 버그 수정 (버그1)
     <div
-      className={`flex h-full min-w-[296px] flex-1 flex-col items-start overflow-hidden rounded-2xl bg-surface-card ${
-        isOver ? 'ring-2 ring-line-primary' : ''
+      className={`flex h-full min-w-[296px] flex-1 flex-col items-start rounded-2xl transition-colors ${
+        isOver ? 'bg-fill-primary-light' : 'bg-surface-card'
       }`}
     >
       {/* Header */}
       <div className="flex w-full items-start p-4">
         <div className="flex min-h-7 flex-1 items-center justify-between">
           <div className="flex items-center gap-2">
-            <TriangleDownFillIcon />
+            <DragHandleIcon size={20} />
             {isEditingName ? (
               <div className="flex flex-col gap-1">
                 <input
@@ -111,8 +102,7 @@ export function KanbanColumn({
                 />
                 {hasError && (
                   <p className="text-1 font-medium text-status-negative">
-                    {/* ⚠️ 확인 필요: 실제 에러 문구는 Figma 49:7822 확인 후 교체 */}
-                    전형 단계 이름을 입력해 주세요.
+                    전형 이름을 입력해주세요.
                   </p>
                 )}
               </div>
@@ -126,22 +116,13 @@ export function KanbanColumn({
             )}
           </div>
           <div className="flex items-center gap-2">
-            {!isDraft && (
-              <button
-                type="button"
-                aria-label="지원 내역 추가"
-                onClick={() => onAddCard?.(stage.id)}
-                className="flex size-4 items-center justify-center text-icon-gray"
-              >
-                <PlusSmallIcon />
-              </button>
-            )}
             <button
               type="button"
-              aria-label="스테이지 순서 이동"
-              className="flex size-4 cursor-grab items-center justify-center text-icon-gray"
+              aria-label="지원 내역 추가"
+              onClick={() => onAddCard?.(stage.id)}
+              className="flex size-5 items-center justify-center text-icon-gray"
             >
-              <DragHandleIcon />
+              <PlusSmallIcon size={20} />
             </button>
             <button
               type="button"
@@ -150,26 +131,29 @@ export function KanbanColumn({
                 setDraftName(stage.name);
                 setIsEditingName(true);
               }}
-              className="flex size-4 items-center justify-center text-icon-gray"
+              className="flex size-5 items-center justify-center text-icon-gray"
             >
-              <EditIcon />
+              <EditIcon size={20} />
             </button>
-            {!stage.isDefault && (
+            {!isDraft && !stage.isDefault && (
               <button
                 type="button"
                 aria-label="스테이지 삭제"
                 onClick={() => onDeleteStage?.(stage.id)}
-                className="flex size-4 items-center justify-center text-icon-gray"
+                className="flex size-5 items-center justify-center text-icon-gray"
               >
-                <TrashIcon />
+                <TrashIcon size={20} />
               </button>
             )}
           </div>
         </div>
       </div>
 
-      {/* List — 세로 스크롤은 overflow-y-auto로만 처리 */}
-      <div ref={setNodeRef} className="w-full flex-1 overflow-y-auto overflow-x-hidden">
+      {/* Card List */}
+      <div
+        ref={setNodeRef}
+        className="w-full flex-1 overflow-y-auto overflow-x-hidden kanban-scroll-y"
+      >
         <div className="flex flex-col gap-3 px-4 pb-4">
           {stage.cards.map((card) => (
             <KanbanCard
@@ -178,6 +162,7 @@ export function KanbanColumn({
               stageId={stage.id}
               onEdit={() => onEditCard?.(card, stage.id)}
               onDelete={() => onDeleteCard?.(card)}
+              onClick={() => onCardClick?.(card)}
             />
           ))}
           {!isDraft && stage.cards.length === 0 && (
