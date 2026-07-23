@@ -8,7 +8,7 @@ export interface KakaoLoginResponse {
   user: {
     id: number;
     nickname: string;
-    profileImage: string;
+    profileImage: string | null;
     email: string;
   };
 }
@@ -25,6 +25,6 @@ export interface CurrentUserResponse {
 export interface AuthUser {
   id: number;
   nickname: string;
-  profileImage: string;
+  profileImage: string | null; // 카카오 프로필 미등록 시 null로 내려옴 (실제 응답 확인됨)
   email: string;
 }
