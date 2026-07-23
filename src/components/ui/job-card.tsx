@@ -1,3 +1,6 @@
+'use client';
+
+import { useState } from 'react';
 import Image from 'next/image';
 import { DeadlineBadge } from './badge';
 import { Button } from './button';
@@ -50,13 +53,22 @@ export function JobCard({
   onToggleScrap,
   onAddToKanban,
 }: JobCardProps) {
+  const [imgError, setImgError] = useState(false);
+  const showImage = !!thumbnailUrl && !imgError;
+
   return (
     // Card: gap-[20px](spacing/6) — Thumbnail ~ 안쪽 Wrapper 사이 간격
     <div className="flex w-full items-center gap-6 rounded-xl p-3 hover:bg-neutral-100">
       {/* Thumbnail */}
       <div className="relative size-[100px] shrink-0 overflow-hidden rounded-lg bg-neutral-100 p-[6px]">
-        {thumbnailUrl ? (
-          <Image src={thumbnailUrl} alt="" fill className="rounded-lg object-cover" />
+        {showImage ? (
+          <Image
+            src={thumbnailUrl}
+            alt=""
+            fill
+            className="rounded-lg object-cover"
+            onError={() => setImgError(true)}
+          />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center bg-neutral-100">
             <Image
