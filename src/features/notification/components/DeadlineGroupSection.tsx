@@ -9,7 +9,7 @@ interface DeadlineGroupSectionProps {
 export function DeadlineGroupSection({ group, onCardClick }: DeadlineGroupSectionProps) {
   return (
     <div className="flex w-full flex-col items-start gap-4">
-      <div className="flex items-end gap-1.5">
+      <div className="flex items-end gap-[6px]">
         <p
           className={`text-lg font-semibold leading-[1.4] ${group.isEmphasized ? 'text-[#4864f1]' : 'text-[#212123]'}`}
         >
