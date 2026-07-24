@@ -23,17 +23,16 @@ import type { ScrapCardData } from '@/features/scraps/types/scrap';
 import type { ScrapItem } from '@/types/api';
 
 // ScrapItem(API 2.5 응답)에는 platform/jobCategory/region/career 필드가 아직 없음
-// (features/scraps/types/scrap.ts 상단 주석 참고). 백엔드 확장 전까지는 빈 값으로
-// 채워서 카드 레이아웃만 유지하고, 실제 값이 있는 필드(회사명/공고명/마감일 등)만 API 응답을 그대로 사용.
-// TODO: API 2.5 응답에 필드가 추가되면 세영님 확인 후 실제 값으로 교체.
+// (features/scraps/types/scrap.ts 상단 주석 참고). API 2.5가 필드를 안 내려주는 동안은
+// '' 대신 '-'로 채워 피드 카드와 표기 방식을 통일.
 function toScrapCardData(item: ScrapItem): ScrapCardData {
   return {
     ...item,
     deadlineLabel: formatDeadlineText(item.deadline),
     platformLabel: '',
     jobCategoryLabel: '',
-    region: '',
-    careerLabel: '',
+    region: '-',
+    careerLabel: '-',
   };
 }
 
