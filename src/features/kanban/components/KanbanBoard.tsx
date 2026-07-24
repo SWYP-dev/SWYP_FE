@@ -30,6 +30,7 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
   const [stages, setStages] = useState(initialStages);
   const [isAddingStage, setIsAddingStage] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toastType, setToastType] = useState<'success' | 'error'>('success');
   const [deletingStage, setDeletingStage] = useState<KanbanStage | null>(null);
   const [addCardStageId, setAddCardStageId] = useState<number | null>(null);
   const [editingCard, setEditingCard] = useState<KanbanCard | null>(null);
@@ -84,6 +85,7 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
       {
         onError: () => {
           setStages(initialStages);
+          setToastType('error');
           setToastMessage('카드 이동에 실패했어요.');
         },
       }
@@ -92,6 +94,7 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
 
   function handleAddStageClick() {
     if (stages.length >= MAX_STAGES) {
+      setToastType('error');
       setToastMessage('전형 단계는 최대 10개까지 추가할 수 있어요.');
       return;
     }
@@ -108,9 +111,11 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
             { id: res.id, name: res.name, position: res.position, isDefault: false, cards: [] },
           ]);
           setIsAddingStage(false);
+          setToastType('success');
           setToastMessage('전형 단계가 추가되었어요.');
         },
         onError: () => {
+          setToastType('error');
           setToastMessage('전형 단계 추가에 실패했어요.');
           setIsAddingStage(false);
         },
@@ -154,9 +159,13 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
             }))
           );
           setEditingCard(null);
+          setToastType('success');
           setToastMessage('지원 내역이 수정되었어요.');
         },
-        onError: () => setToastMessage('지원 내역 수정에 실패했어요.'),
+        onError: () => {
+          setToastType('error');
+          setToastMessage('지원 내역 수정에 실패했어요.');
+        },
       }
     );
   }
@@ -168,9 +177,13 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
           prev.map((s) => ({ ...s, cards: s.cards.filter((c) => c.id !== cardId) }))
         );
         setDeletingCard(null);
+        setToastType('success');
         setToastMessage('지원 내역이 삭제되었어요.');
       },
-      onError: () => setToastMessage('지원 내역 삭제에 실패했어요.'),
+      onError: () => {
+        setToastType('error');
+        setToastMessage('지원 내역 삭제에 실패했어요.');
+      },
     });
   }
 
@@ -199,9 +212,13 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
                       setStages((prev) =>
                         prev.map((s) => (s.id === stageId ? { ...s, name: newName } : s))
                       );
+                      setToastType('success');
                       setToastMessage('전형 단계 이름이 수정되었어요.');
                     },
-                    onError: () => setToastMessage('전형 단계 수정에 실패했어요.'),
+                    onError: () => {
+                      setToastType('error');
+                      setToastMessage('전형 단계 수정에 실패했어요.');
+                    },
                   }
                 );
               }}
@@ -232,6 +249,7 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
         message={toastMessage ?? ''}
         isVisible={toastMessage !== null}
         onDismiss={dismissToast}
+        type={toastType}
       />
 
       <DeleteStageModal
@@ -256,9 +274,13 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
                   return prev.filter((s) => s.id !== stageId);
                 });
                 setDeletingStage(null);
+                setToastType('success');
                 setToastMessage('전형 단계가 삭제되었어요.');
               },
-              onError: () => setToastMessage('전형 단계 삭제에 실패했어요.'),
+              onError: () => {
+                setToastType('error');
+                setToastMessage('전형 단계 삭제에 실패했어요.');
+              },
             }
           );
         }}
@@ -305,9 +327,13 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
                   )
                 );
                 setAddCardStageId(null);
+                setToastType('success');
                 setToastMessage('지원 내역이 추가되었어요.');
               },
-              onError: () => setToastMessage('지원 내역 추가에 실패했어요.'),
+              onError: () => {
+                setToastType('error');
+                setToastMessage('지원 내역 추가에 실패했어요.');
+              },
             }
           );
         }}
