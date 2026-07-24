@@ -17,22 +17,21 @@ import { ScrapCard } from '@/features/scraps/components/ScrapCard';
 import { useScrapsQuery } from '@/features/scraps/api/useScrapsQuery';
 import { deleteScrap } from '@/features/feed/api/scrap';
 import { registerKanbanCard } from '@/features/kanban/api/registerCard';
+import { kanbanKeys } from '@/features/kanban/api/useKanbanQuery';
 import { ApiClientError } from '@/lib/api/api-client';
 import { formatDeadlineText } from '@/features/kanban/utils/formatDeadline';
+import { formatCareer } from '@/features/feed/utils/formatCareer';
 import type { ScrapCardData } from '@/features/scraps/types/scrap';
 import type { ScrapItem } from '@/types/api';
 
-// ScrapItem(API 2.5 응답)에는 platform/jobCategory/region/career 필드가 아직 없음
-// (features/scraps/types/scrap.ts 상단 주석 참고). API 2.5가 필드를 안 내려주는 동안은
-// '' 대신 '-'로 채워 피드 카드와 표기 방식을 통일.
 function toScrapCardData(item: ScrapItem): ScrapCardData {
   return {
     ...item,
     deadlineLabel: formatDeadlineText(item.deadline),
-    platformLabel: '',
-    jobCategoryLabel: '',
-    region: '-',
-    careerLabel: '-',
+    platformLabel: item.platform ?? '',
+    jobCategoryLabel: item.jobCategory ?? '',
+    region: item.region ?? '-',
+    careerLabel: formatCareer(item.career),
   };
 }
 
@@ -85,6 +84,7 @@ const ScrapsPage: NextPage = () => {
   async function handleAddToKanban(jobPostingId: number) {
     try {
       await registerKanbanCard(jobPostingId);
+      queryClient.invalidateQueries({ queryKey: kanbanKeys.board() });
       setToastType('success');
       setToastMessage('지원 현황에 추가했어요.');
     } catch (err) {
