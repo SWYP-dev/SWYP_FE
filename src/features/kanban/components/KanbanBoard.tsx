@@ -86,7 +86,40 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
     const { active, over } = event;
     if (!over) return;
 
-    // fix: String id → Number로 파싱 (버그3)
+    // 스테이지(컬럼) 순서 변경
+    if (active.data.current?.type === 'stage') {
+      const fromStageId = active.data.current.stageId as number;
+      const toStageId = Number(over.id);
+      if (fromStageId === toStageId) return;
+
+      let newPosition = 0;
+      setStages((prev) => {
+        const sorted = [...prev].sort((a, b) => a.position - b.position);
+        const fromIndex = sorted.findIndex((s) => s.id === fromStageId);
+        const toIndex = sorted.findIndex((s) => s.id === toStageId);
+        if (fromIndex === -1 || toIndex === -1) return prev;
+
+        const reordered = [...sorted];
+        const [moved] = reordered.splice(fromIndex, 1);
+        reordered.splice(toIndex, 0, moved);
+
+        newPosition = toIndex + 1;
+        return reordered.map((s, idx) => ({ ...s, position: idx + 1 }));
+      });
+
+      updateStageMutation.mutate(
+        { stageId: fromStageId, position: newPosition },
+        {
+          onError: () => {
+            setStages(initialStages);
+            showToast('error', '전형 단계 순서 변경에 실패했어요.');
+          },
+        }
+      );
+      return;
+    }
+
+    // 카드 이동
     const cardId = Number(active.id);
     const fromStageId = active.data.current?.stageId as number;
     const toStageId = Number(over.id);
