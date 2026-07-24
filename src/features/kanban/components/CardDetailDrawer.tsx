@@ -15,11 +15,13 @@ import {
 } from '@/features/documents/api/useDocumentMutations';
 import { AttachedFileItem } from '@/features/documents/components/AttachedFileItem';
 import { AttachedLinkItem } from '@/features/documents/components/AttachedLinkItem';
-import Image from 'next/image';
+import { ApiClientError } from '@/lib/api/api-client';
 
 // Figma node 94:13318 기준 — URL 카테고리 드롭다운 옵션
 const URL_CATEGORIES = ['이력서', '포트폴리오', '개인 채널', '기타'] as const;
 type UrlCategory = (typeof URL_CATEGORIES)[number];
+
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB (API 명세서 4.4.2 정책)
 
 // career 값 → 표시 텍스트 변환
 function formatCareer(career: string | null): string {
@@ -61,6 +63,7 @@ export function CardDetailDrawer({
   const [linkCategory, setLinkCategory] = useState<UrlCategory | null>(null);
   const [linkUrl, setLinkUrl] = useState('');
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+  const [fileError, setFileError] = useState<string | null>(null);
 
   // 상세 데이터 로드 시 1회만 memo 초기값 동기화
   if (detail && !isMemoSynced) {
@@ -73,6 +76,7 @@ export function CardDetailDrawer({
     setLinkCategory(null);
     setLinkUrl('');
     setShowCategoryDropdown(false);
+    setFileError(null);
   }
 
   function handleMemoBlur() {
@@ -84,10 +88,29 @@ export function CardDetailDrawer({
   function handleFileButtonClick() {
     const input = window.document.createElement('input');
     input.type = 'file';
-    input.accept = '.pdf,.docx,.pptx'; // 수정: .doc, .ppt 제거 (API 4.1 허용 형식은 PDF/DOCX/PPTX만)
+    input.accept = '.pdf,.docx,.pptx';
     input.onchange = () => {
       const file = input.files?.[0];
-      if (file) uploadFile.mutate({ file, name: file.name });
+      if (!file) return;
+
+      if (file.size > MAX_FILE_SIZE) {
+        setFileError('파일 용량은 10MB를 초과할 수 없어요.');
+        return;
+      }
+
+      setFileError(null);
+      uploadFile.mutate(
+        { file, name: file.name },
+        {
+          onError: (err) => {
+            if (err instanceof ApiClientError && err.code === 'STORAGE_LIMIT_EXCEEDED') {
+              setFileError('계정 저장 용량(100MB)이 초과되어 첨부할 수 없어요.');
+            } else {
+              setFileError('파일 첨부에 실패했어요. 10MB 이내의 파일만 첨부 가능합니다.');
+            }
+          },
+        }
+      );
     };
     input.click();
   }
@@ -115,22 +138,6 @@ export function CardDetailDrawer({
         </div>
       ) : (
         <div className="flex w-full flex-col">
-          {/* 썸네일 */}
-          {detail.thumbnailUrl ? (
-            <div className="relative h-[250px] w-full shrink-0 overflow-hidden bg-neutral-100">
-              {detail.thumbnailUrl && (
-                <Image
-                  src={detail.thumbnailUrl}
-                  alt={detail.companyName}
-                  fill
-                  className="object-cover"
-                />
-              )}
-            </div>
-          ) : (
-            <div className="h-[250px] w-full shrink-0 bg-neutral-100" />
-          )}
-
           {/* 회사/공고 정보 */}
           <div className="flex flex-col gap-4 border-b-4 border-line-secondary px-5 py-6">
             <div className="flex flex-col gap-1">
@@ -208,9 +215,12 @@ export function CardDetailDrawer({
               </div>
             </div>
 
-            <a href={detail.originalUrl} target="_blank" rel="noreferrer" className="block w-full">
-              <Button variant="primary" className="w-full">
-                원본 공고 이동
+            <a href={detail.originalUrl} target="_blank" rel="noreferrer" className="inline-block">
+              <Button variant="primary">
+                <span className="flex items-center gap-1">
+                  원본 공고 이동
+                  <ExternalLinkWhiteIcon />
+                </span>
               </Button>
             </a>
           </div>
@@ -241,33 +251,40 @@ export function CardDetailDrawer({
             {/* 첨부 파일 */}
             <div className="flex flex-col gap-2">
               <p className="text-3 font-medium text-label-body">첨부 파일</p>
-              {detail.documents
-                .filter((doc): doc is Extract<typeof doc, { type: 'FILE' }> => doc.type === 'FILE')
-                .map((doc) => (
-                  <AttachedFileItem
-                    key={doc.id}
-                    document={doc}
-                    onDownload={() => downloadDocument.mutate(doc.id)}
-                    onDelete={() => deleteDocumentMutation.mutate(doc.id)}
-                  />
-                ))}
+              <div className="flex min-w-0 flex-col gap-2">
+                {detail.documents
+                  .filter((doc): doc is Extract<typeof doc, { type: 'FILE' }> => doc.type === 'FILE')
+                  .map((doc) => (
+                    <AttachedFileItem
+                      key={doc.id}
+                      document={doc}
+                      onDownload={() => downloadDocument.mutate(doc.id)}
+                      onDelete={() => deleteDocumentMutation.mutate(doc.id)}
+                    />
+                  ))}
+              </div>
               <Button variant="secondary" className="w-full" onClick={handleFileButtonClick}>
                 + 첨부 파일 추가
               </Button>
+              {fileError && (
+                <p className="text-1 font-medium text-status-negative">{fileError}</p>
+              )}
             </div>
 
             {/* URL — Figma node 94:13318 카테고리 드롭다운 반영 */}
             <div className="flex flex-col gap-2">
               <p className="text-3 font-medium text-label-body">URL</p>
-              {detail.documents
-                .filter((doc): doc is Extract<typeof doc, { type: 'LINK' }> => doc.type === 'LINK')
-                .map((doc) => (
-                  <AttachedLinkItem
-                    key={doc.id}
-                    document={doc}
-                    onDelete={() => deleteDocumentMutation.mutate(doc.id)}
-                  />
-                ))}
+              <div className="flex min-w-0 flex-col gap-2">
+                {detail.documents
+                  .filter((doc): doc is Extract<typeof doc, { type: 'LINK' }> => doc.type === 'LINK')
+                  .map((doc) => (
+                    <AttachedLinkItem
+                      key={doc.id}
+                      document={doc}
+                      onDelete={() => deleteDocumentMutation.mutate(doc.id)}
+                    />
+                  ))}
+              </div>
 
               {isAddingLink ? (
                 <div className="flex flex-col gap-2">
@@ -357,6 +374,20 @@ function ChevronDownIcon() {
         d="M4 6l4 4 4-4"
         stroke="#BDBDC0"
         strokeWidth="1.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function ExternalLinkWhiteIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M6 4H4a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1v-2M9 3h4v4M13 3 7 9"
+        stroke="white"
+        strokeWidth="1.3"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
