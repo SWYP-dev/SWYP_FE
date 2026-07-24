@@ -5,7 +5,8 @@ import Image from 'next/image';
 import { DeadlineBadge } from './badge';
 import { Button } from './button';
 import { CardThumbnailPlaceholder } from './card-thumbnail-placeholder';
-import { PinIcon, BriefcaseIcon, CalendarIcon, ScrapBookmarkIcon } from './icons';
+import { PinIcon, BriefcaseIcon, CalendarIcon } from './icons';
+import { ScrapBookmarkIcon } from './scrap-bookmark-icon';
 
 interface JobCardProps {
   thumbnailUrl: string;

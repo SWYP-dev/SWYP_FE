@@ -5,7 +5,8 @@ import Image from 'next/image';
 import { DeadlineBadge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CardThumbnailPlaceholder } from '@/components/ui/card-thumbnail-placeholder';
-import { CalendarIcon, ScrapBookmarkIcon } from '@/components/ui/icons';
+import { CalendarIcon } from '@/components/ui/icons';
+import { ScrapBookmarkIcon } from '@/components/ui/scrap-bookmark-icon';
 import type { ScrapCardData } from '../types/scrap';
 
 interface ScrapCardProps {
