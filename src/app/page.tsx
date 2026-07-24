@@ -158,6 +158,8 @@ export default function FeedPage() {
     }
   }
 
+  const isSearching = keyword.trim().length > 0;
+
   function resetFilters() {
     setJobCategoryValue(null);
     setRegionValue(null);
@@ -172,6 +174,14 @@ export default function FeedPage() {
       <main className="self-stretch flex-1 flex flex-col text-3 min-h-0 overflow-y-auto">
         <div className="sticky top-0 z-10 flex flex-col bg-base-white">
           <Header onSearch={setKeyword} />
+
+          {isSearching && (
+            <div className="flex items-center justify-center pb-9 pt-12">
+              <p className="text-9 font-semibold leading-[1.4] text-label-base">
+                <span className="text-label-primary">{keyword}</span> 검색결과
+              </p>
+            </div>
+          )}
 
           <div className="flex items-center justify-between pt-7 px-12 pb-5 text-center">
             <div className="flex items-center gap-3">
@@ -201,8 +211,8 @@ export default function FeedPage() {
         </div>
 
         <div className="flex-1 flex flex-col px-11 py-5 bg-surface-card">
-          <div className="flex flex-col gap-6">
-            <div className="flex flex-col gap-8">
+          <div className="flex flex-1 flex-col gap-6">
+            <div className="flex flex-1 flex-col gap-8">
               <div className="flex flex-1 flex-col items-center gap-3 rounded-[20px] border border-line-secondary bg-base-white p-3">
                 {isLoading && <p className="py-11 text-label-description">불러오는 중...</p>}
                 {isError && (
@@ -210,8 +220,21 @@ export default function FeedPage() {
                     공고를 불러오지 못했어요. 잠시 후 다시 시도해주세요.
                   </p>
                 )}
-                {!isLoading && !isError && (data?.items.length ?? 0) === 0 && (
-                  <EmptyJobPosting onResetFilters={resetFilters} />
+                {!isLoading && !isError && (data?.items.length ?? 0) === 0 && isSearching && (
+                  <EmptyJobPosting
+                    iconSrc="/icons/empty-search-result.svg"
+                    title={`'${keyword}'에 대한 채용 공고가 없어요`}
+                    description="다른 검색어(기업명, 직무명, 공고명)로 다시 검색해 보세요."
+                  />
+                )}
+                {!isLoading && !isError && (data?.items.length ?? 0) === 0 && !isSearching && (
+                  <EmptyJobPosting
+                    iconSrc="/icons/empty-search.svg"
+                    title="조건에 맞는 채용 공고가 없어요"
+                    description="필터를 조정하거나 초기화해 보세요."
+                    actionLabel="필터 초기화"
+                    onAction={resetFilters}
+                  />
                 )}
                 {!isLoading &&
                   !isError &&
