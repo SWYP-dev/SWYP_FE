@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { DeadlineBadge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CardThumbnailPlaceholder } from '@/components/ui/card-thumbnail-placeholder';
-import { CalendarIcon } from '@/components/ui/icons';
+import { PinIcon, BriefcaseIcon, CalendarIcon } from '@/components/ui/icons';
 import { ScrapBookmarkIcon } from '@/components/ui/scrap-bookmark-icon';
 import type { ScrapCardData } from '../types/scrap';
 
@@ -16,17 +16,12 @@ interface ScrapCardProps {
 }
 
 // Figma "스크랩 메인 페이지"(node 75:13324) Card 컴포넌트 반영. JobCard.tsx 최신 패턴 반영.
-//
-// ⚠️ 보류: platform/jobCategory/region/career는 API 미지원으로 page.tsx에서 빈 문자열로
-// 채워 넘어옴 (toScrapCardData 참고). 여기서는 값이 있을 때만 렌더링하도록 방어해서,
-// 지금은 아예 안 보이고 나중에 필드 추가되면 자동으로 나타나게 처리.
 export function ScrapCard({ data, onRemoveScrap, onAddToKanban }: ScrapCardProps) {
   const [imgError, setImgError] = useState(false);
   const showImage = !!data.thumbnailUrl && !imgError;
 
   return (
     <div className="flex w-full items-center gap-6 rounded-xl p-3 transition-colors hover:bg-neutral-50">
-      {/* Thumbnail — thumbnailUrl 항상 null 확인됨 (공공데이터포털 소스 자체에 필드 없음) */}
       <div className="relative size-[100px] shrink-0 overflow-hidden rounded-lg bg-neutral-100 p-[6px]">
         {showImage ? (
           <Image
@@ -47,7 +42,6 @@ export function ScrapCard({ data, onRemoveScrap, onAddToKanban }: ScrapCardProps
             aria-label="스크랩 해제"
             className="flex size-5 shrink-0 items-center justify-center"
           >
-            {/* 스크랩 탭은 전부 스크랩된 상태만 노출되므로 항상 fill 아이콘 사용 */}
             <ScrapBookmarkIcon filled />
           </button>
         </div>
@@ -64,8 +58,20 @@ export function ScrapCard({ data, onRemoveScrap, onAddToKanban }: ScrapCardProps
           )}
         </div>
 
-        {/* Caption — region/career는 값 있을 때만, 마감일은 항상 표시 */}
+        {/* Caption — JobCard.tsx와 동일하게 지역/경력/마감일 3줄 고정 표시 */}
         <div className="flex h-full w-[168px] shrink-0 flex-col justify-center gap-1">
+          <div className="flex items-center gap-[6px]">
+            <PinIcon />
+            <span className="truncate text-3 font-medium leading-[1.6] text-label-description">
+              {data.region || '-'}
+            </span>
+          </div>
+          <div className="flex items-center gap-[6px]">
+            <BriefcaseIcon />
+            <span className="truncate text-3 font-medium leading-[1.6] text-label-description">
+              {data.careerLabel || '-'}
+            </span>
+          </div>
           <div className="flex items-center gap-[6px]">
             <CalendarIcon />
             <span className="truncate text-3 font-medium leading-[1.6] text-label-description">
@@ -74,7 +80,7 @@ export function ScrapCard({ data, onRemoveScrap, onAddToKanban }: ScrapCardProps
           </div>
         </div>
 
-        {/* Buttons: 고정 너비 */}
+        {/* Buttons */}
         <div className="flex h-full w-[140px] shrink-0 flex-col justify-center gap-[10px]">
           {data.originalUrl ? (
             <a href={data.originalUrl} target="_blank" rel="noreferrer" className="block w-full">
