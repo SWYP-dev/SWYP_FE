@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { DeadlineBadge } from './badge';
 import { Button } from './button';
+import { CardThumbnailPlaceholder } from './card-thumbnail-placeholder';
 import { PinIcon, BriefcaseIcon, CalendarIcon } from './icons';
 
 interface JobCardProps {
@@ -70,15 +71,7 @@ export function JobCard({
             onError={() => setImgError(true)}
           />
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center bg-neutral-100">
-            <Image
-              src="/images/main-logo.png"
-              alt=""
-              width={48}
-              height={48}
-              className="object-contain opacity-40"
-            />
-          </div>
+          <CardThumbnailPlaceholder />
         )}
         {/* Wrapper: D-day 뱃지(좌) + 스크랩 아이콘(우), justify-between — Figma 스펙 그대로 */}
         <div className="relative flex h-[83px] w-full items-start justify-between">

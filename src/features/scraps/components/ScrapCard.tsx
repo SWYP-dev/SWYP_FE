@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { DeadlineBadge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { CardThumbnailPlaceholder } from '@/components/ui/card-thumbnail-placeholder';
 import { CalendarIcon } from '@/components/ui/icons';
 import type { ScrapCardData } from '../types/scrap';
 
@@ -53,15 +54,7 @@ export function ScrapCard({ data, onRemoveScrap, onAddToKanban }: ScrapCardProps
             onError={() => setImgError(true)}
           />
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center bg-neutral-100">
-            <Image
-              src="/images/main-logo.png"
-              alt=""
-              width={48}
-              height={48}
-              className="object-contain opacity-40"
-            />
-          </div>
+          <CardThumbnailPlaceholder />
         )}
         <div className="relative flex h-[83px] w-full items-start justify-between">
           <DeadlineBadge deadline={data.deadline} />
