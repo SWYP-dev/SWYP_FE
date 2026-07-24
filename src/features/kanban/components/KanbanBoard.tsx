@@ -249,9 +249,9 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
             <KanbanColumn
               key={stage.id}
               stage={stage}
-              onRenameStage={(stageId, newName) => {
+              onRenameStage={(stageId, newName, position) => {
                 updateStageMutation.mutate(
-                  { stageId, name: newName },
+                  { stageId, name: newName, position },
                   {
                     onSuccess: () => {
                       setStages((prev) =>
@@ -259,7 +259,16 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
                       );
                       showToast('success', '전형 단계 이름이 수정되었어요.');
                     },
-                    onError: () => showToast('error', '전형 단계 수정에 실패했어요.'),
+                    onError: (err) => {
+                      if (
+                        err instanceof ApiClientError &&
+                        err.code === 'DEFAULT_STAGE_NAME_CHANGE_NOT_ALLOWED'
+                      ) {
+                        showToast('error', '기본 전형 단계는 이름을 변경할 수 없어요.');
+                      } else {
+                        showToast('error', '전형 단계 수정에 실패했어요.');
+                      }
+                    },
                   }
                 );
               }}

@@ -11,7 +11,7 @@ interface KanbanColumnProps {
   isDraft?: boolean;
   draftName?: string;
   onDraftNameChange?: (name: string) => void;
-  onRenameStage?: (stageId: number, newName: string) => void;
+  onRenameStage?: (stageId: number, newName: string, position: number) => void;
   onDeleteStage?: (stageId: number) => void;
   onConfirmDraft?: (name: string) => void;
   onCancelDraft?: () => void;
@@ -65,7 +65,7 @@ export function KanbanColumn({
     }
     setIsEditingName(false);
     if (trimmed && trimmed !== stage.name) {
-      onRenameStage?.(stage.id, trimmed);
+      onRenameStage?.(stage.id, trimmed, stage.position);
     } else {
       setLocalDraftName(stage.name);
     }
@@ -133,17 +133,19 @@ export function KanbanColumn({
             >
               <PlusSmallIcon size={20} />
             </button>
-            <button
-              type="button"
-              aria-label="스테이지 이름 수정"
-              onClick={() => {
-                setLocalDraftName(stage.name);
-                setIsEditingName(true);
-              }}
-              className="flex size-5 items-center justify-center text-icon-gray"
-            >
-              <EditIcon size={20} />
-            </button>
+            {!isDraft && !stage.isDefault && (
+              <button
+                type="button"
+                aria-label="스테이지 이름 수정"
+                onClick={() => {
+                  setLocalDraftName(stage.name);
+                  setIsEditingName(true);
+                }}
+                className="flex size-5 items-center justify-center text-icon-gray"
+              >
+                <EditIcon size={20} />
+              </button>
+            )}
             {!isDraft && (
               <button
                 type="button"
