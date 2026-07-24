@@ -15,7 +15,6 @@ import {
 } from '@/features/documents/api/useDocumentMutations';
 import { AttachedFileItem } from '@/features/documents/components/AttachedFileItem';
 import { AttachedLinkItem } from '@/features/documents/components/AttachedLinkItem';
-import Image from 'next/image';
 
 // Figma node 94:13318 기준 — URL 카테고리 드롭다운 옵션
 const URL_CATEGORIES = ['이력서', '포트폴리오', '개인 채널', '기타'] as const;
@@ -115,22 +114,6 @@ export function CardDetailDrawer({
         </div>
       ) : (
         <div className="flex w-full flex-col">
-          {/* 썸네일 */}
-          {detail.thumbnailUrl ? (
-            <div className="relative h-[250px] w-full shrink-0 overflow-hidden bg-neutral-100">
-              {detail.thumbnailUrl && (
-                <Image
-                  src={detail.thumbnailUrl}
-                  alt={detail.companyName}
-                  fill
-                  className="object-cover"
-                />
-              )}
-            </div>
-          ) : (
-            <div className="h-[250px] w-full shrink-0 bg-neutral-100" />
-          )}
-
           {/* 회사/공고 정보 */}
           <div className="flex flex-col gap-4 border-b-4 border-line-secondary px-5 py-6">
             <div className="flex flex-col gap-1">
@@ -208,9 +191,12 @@ export function CardDetailDrawer({
               </div>
             </div>
 
-            <a href={detail.originalUrl} target="_blank" rel="noreferrer" className="block w-full">
-              <Button variant="primary" className="w-full">
-                원본 공고 이동
+            <a href={detail.originalUrl} target="_blank" rel="noreferrer" className="inline-block">
+              <Button variant="primary">
+                <span className="flex items-center gap-1">
+                  원본 공고 이동
+                  <ExternalLinkWhiteIcon />
+                </span>
               </Button>
             </a>
           </div>
@@ -357,6 +343,20 @@ function ChevronDownIcon() {
         d="M4 6l4 4 4-4"
         stroke="#BDBDC0"
         strokeWidth="1.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function ExternalLinkWhiteIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M6 4H4a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1v-2M9 3h4v4M13 3 7 9"
+        stroke="white"
+        strokeWidth="1.3"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
