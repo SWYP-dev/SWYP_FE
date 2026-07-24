@@ -6,9 +6,12 @@ import { Sidebar } from '@/components/layout/sidebar';
 import { JobCard } from '@/components/ui/job-card';
 import { Pagination } from '@/components/ui/pagination';
 import { Toast } from '@/components/ui/toast';
-import { MAX_STEP } from '@/components/ui/slider';
 import type { SelectionValue } from '@/components/ui/selection-modal';
-import { CareerFilterChip } from '@/features/feed/components/CareerFilterChip';
+import {
+  CareerFilterChip,
+  buildCareerParam,
+  type CareerTagId,
+} from '@/features/feed/components/CareerFilterChip';
 import { RegionFilterButton } from '@/features/feed/components/RegionFilterButton';
 import { JobCategoryFilterButton } from '@/features/feed/components/JobCategoryFilterButton';
 import { DeadlineSoonFilterButton } from '@/features/feed/components/DeadlineSoonFilterButton';
@@ -59,7 +62,7 @@ function formatJobCategory(raw: string | null | undefined): string {
 function formatCareer(raw: string | null | undefined): string {
   if (!raw) return '-';
   const codes = raw.split(',').filter(Boolean);
-  if (codes.length >= 2) return '신입/경력 무관';
+  if (codes.length >= 2) return '경력 + 신입';
   return codes[0] === 'NEW' ? '신입' : '경력';
 }
 
@@ -76,7 +79,7 @@ export default function FeedPage() {
 
   const [jobCategoryValue, setJobCategoryValue] = useState<SelectionValue | null>(null);
   const [regionValue, setRegionValue] = useState<SelectionValue | null>(null);
-  const [careerRange, setCareerRange] = useState<[number, number]>([0, MAX_STEP]);
+  const [careerTags, setCareerTags] = useState<CareerTagId[]>([]);
 
   // 스크랩 상태 로컬 오버라이드.
   // ⚠️ FeedItem 응답에 jobPostingId가 없어서, 이번 세션에서 직접 스크랩한 것만
@@ -97,6 +100,7 @@ export default function FeedPage() {
       jobCategoryValue && jobCategoryValue.childIds.length > 0
         ? jobCategoryValue.childIds.join(',')
         : undefined,
+    career: buildCareerParam(careerTags),
   });
 
   async function handleToggleScrap(feedId: number, currentlyScrapped: boolean) {
@@ -137,7 +141,7 @@ export default function FeedPage() {
             <div className="flex items-center gap-3">
               <JobCategoryFilterButton value={jobCategoryValue} onApply={setJobCategoryValue} />
               <RegionFilterButton value={regionValue} onApply={setRegionValue} />
-              <CareerFilterChip appliedRange={careerRange} onApply={setCareerRange} />
+              <CareerFilterChip appliedTags={careerTags} onApply={setCareerTags} />
               <DeadlineSoonFilterButton isActive={deadlineSoon} onToggle={setDeadlineSoon} />
             </div>
             <div className="flex items-start gap-2 text-label-body">

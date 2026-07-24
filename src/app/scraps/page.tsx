@@ -6,9 +6,8 @@ import { Sidebar } from '@/components/layout/sidebar';
 import { Header } from '@/components/layout/header';
 import { Pagination } from '@/components/ui/pagination';
 import { Toast } from '@/components/ui/toast';
-import { MAX_STEP } from '@/components/ui/slider';
 import type { SelectionValue } from '@/components/ui/selection-modal';
-import { CareerFilterChip } from '@/features/feed/components/CareerFilterChip';
+import { CareerFilterChip, type CareerTagId } from '@/features/feed/components/CareerFilterChip';
 import { RegionFilterButton } from '@/features/feed/components/RegionFilterButton';
 import { JobCategoryFilterButton } from '@/features/feed/components/JobCategoryFilterButton';
 import { DeadlineSoonFilterButton } from '@/features/feed/components/DeadlineSoonFilterButton';
@@ -42,7 +41,7 @@ const ScrapsPage: NextPage = () => {
 
   // ⚠️ 보류: API 명세서 2.5는 page/size만 지원. 아래 필터/정렬 UI는 통합 공고 피드와 동일하게
   // 배치만 해두고 파라미터에는 아직 연결하지 않음 (확장 여부 세영님·동섭님 확인 대기).
-  const [careerRange, setCareerRange] = useState<[number, number]>([0, MAX_STEP]);
+  const [careerTags, setCareerTags] = useState<CareerTagId[]>([]);
   const [regionValue, setRegionValue] = useState<SelectionValue | null>(null);
   const [jobCategoryValue, setJobCategoryValue] = useState<SelectionValue | null>(null);
   const [isDeadlineSoon, setIsDeadlineSoon] = useState(false);
@@ -105,7 +104,7 @@ const ScrapsPage: NextPage = () => {
             <div className="flex items-center gap-3">
               <JobCategoryFilterButton value={jobCategoryValue} onApply={setJobCategoryValue} />
               <RegionFilterButton value={regionValue} onApply={setRegionValue} />
-              <CareerFilterChip appliedRange={careerRange} onApply={setCareerRange} />
+              <CareerFilterChip appliedTags={careerTags} onApply={setCareerTags} />
               <DeadlineSoonFilterButton isActive={isDeadlineSoon} onToggle={setIsDeadlineSoon} />
             </div>
             <div className="flex items-start gap-2 text-label-body">

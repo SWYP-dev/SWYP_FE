@@ -3,37 +3,53 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Modal } from '@/components/ui/modal';
-import { CAREER_LABELS, MAX_STEP, Slider } from '@/components/ui/slider';
 import { FilterTriggerButton } from '@/components/ui/filter-trigger-button';
 
-interface CareerFilterChipProps {
-  /** URL 쿼리와 동기화된, 실제 적용 중인 값 (step index, 0~15) */
-  appliedRange: [number, number];
-  onApply: (range: [number, number]) => void;
+export type CareerTagId = 'EXPERIENCED' | 'NEW' | 'BOTH' | 'FOREIGN';
+
+interface CareerTagOption {
+  id: CareerTagId;
+  label: string;
 }
 
-function formatChipLabel(min: number, max: number): string {
-  if (min === 0 && max === MAX_STEP) return '경력';
-  return `경력 ${CAREER_LABELS[min]} - ${CAREER_LABELS[max]}`;
+// Figma "경력" 필터 모달(node 133:23476) 태그 순서 그대로.
+const CAREER_TAG_OPTIONS: CareerTagOption[] = [
+  { id: 'EXPERIENCED', label: '경력' },
+  { id: 'NEW', label: '신입' },
+  { id: 'BOTH', label: '경력 + 신입' },
+  { id: 'FOREIGN', label: '외국인 전형' },
+];
+
+interface CareerFilterChipProps {
+  /** URL 쿼리와 동기화된, 실제 적용 중인 태그 집합. 빈 배열 = "전체" */
+  appliedTags: CareerTagId[];
+  onApply: (tags: CareerTagId[]) => void;
+}
+
+function formatChipLabel(tags: CareerTagId[]): string {
+  if (tags.length === 0) return '경력';
+  if (tags.length === 1) {
+    return `경력 · ${CAREER_TAG_OPTIONS.find((t) => t.id === tags[0])?.label}`;
+  }
+  return `경력 · ${tags.length}개`;
 }
 
 /**
  * 통합 공고 피드의 경력 필터.
  *
- * Figma 확인(node 36:628): 트리거 버튼 아래 붙는 Popover가 아니라
- * 화면 중앙에 뜨는 전체 Modal(ModalHeader "경력" + 닫기 아이콘,
- * 슬라이더, ModalFooter 초기화/적용 버튼)이었음.
- * 기존에는 Popover로 구현되어 있어 위치가 어긋났던 것을 Modal로 교체.
- * 오버레이(배경 딤 처리)는 Modal.tsx 컴포넌트 설명대로 호출부에서 담당
- * (selection-modal.tsx와 동일한 패턴).
+ * Figma 재확인(node 133:23476): 슬라이더(신입~15년)에서 태그 다중 선택 방식으로
+ * 디자인 변경됨. "전체/경력/신입/경력+신입/외국인 전형" 5개 버튼, 여러 개 동시 선택
+ * 가능 (2026-07-24 태영님 확인: 멀티 선택).
+ *
+ * ⚠️ "외국인 전형"은 API 명세서 career enum(NEW/EXPERIENCED)에 없는 값. 백엔드 확인
+ * 전까지 UI 선택은 가능하지만 실제 쿼리 파라미터에는 반영하지 않음 (buildCareerParam 참고).
  */
-export function CareerFilterChip({ appliedRange, onApply }: CareerFilterChipProps) {
+export function CareerFilterChip({ appliedTags, onApply }: CareerFilterChipProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [draft, setDraft] = useState<[number, number]>(appliedRange);
-  const isFullRange = appliedRange[0] === 0 && appliedRange[1] === MAX_STEP;
+  const [draft, setDraft] = useState<CareerTagId[]>(appliedTags);
 
   const openModal = () => {
-    setDraft(appliedRange);
+    setDraft(appliedTags);
     setIsOpen(true);
   };
 
@@ -43,13 +59,17 @@ export function CareerFilterChip({ appliedRange, onApply }: CareerFilterChipProp
   };
 
   const handleReset = () => {
-    setDraft([0, MAX_STEP]);
+    setDraft([]);
+  };
+
+  const toggleTag = (tagId: CareerTagId) => {
+    setDraft((prev) => (prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]));
   };
 
   return (
     <>
-      <FilterTriggerButton onClick={openModal} isActive={isOpen || !isFullRange}>
-        {formatChipLabel(appliedRange[0], appliedRange[1])}
+      <FilterTriggerButton onClick={openModal} isActive={isOpen || appliedTags.length > 0}>
+        {formatChipLabel(appliedTags)}
       </FilterTriggerButton>
 
       {isOpen &&
@@ -64,17 +84,21 @@ export function CareerFilterChip({ appliedRange, onApply }: CareerFilterChipProp
               <Modal
                 title="경력"
                 onClose={() => setIsOpen(false)}
-                primaryLabel="적용"
+                primaryLabel={draft.length > 0 ? `${draft.length}개 적용` : '적용'}
                 secondaryLabel="초기화"
                 onPrimaryClick={handleApply}
                 onSecondaryClick={handleReset}
               >
-                <div className="flex flex-col items-center justify-center py-11">
-                  <Slider
-                    minValue={draft[0]}
-                    maxValue={draft[1]}
-                    onChange={(min, max) => setDraft([min, max])}
-                  />
+                <div className="flex flex-wrap items-center gap-2 py-4">
+                  <TagButton label="전체" isActive={draft.length === 0} onClick={() => setDraft([])} />
+                  {CAREER_TAG_OPTIONS.map((tag) => (
+                    <TagButton
+                      key={tag.id}
+                      label={tag.label}
+                      isActive={draft.includes(tag.id)}
+                      onClick={() => toggleTag(tag.id)}
+                    />
+                  ))}
                 </div>
               </Modal>
             </div>
@@ -83,4 +107,41 @@ export function CareerFilterChip({ appliedRange, onApply }: CareerFilterChipProp
         )}
     </>
   );
+}
+
+function TagButton({
+  label,
+  isActive,
+  onClick,
+}: {
+  label: string;
+  isActive: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex items-center justify-center rounded-lg border bg-base-white px-4 py-2 ${
+        isActive ? 'border-line-primary text-label-primary' : 'border-line-secondary text-label-body'
+      }`}
+    >
+      <span className="text-3 font-medium">{label}</span>
+    </button>
+  );
+}
+
+// 태그 선택 결과 → API `career` 쿼리 파라미터(콤마 구분) 변환.
+// BOTH는 NEW+EXPERIENCED 코드를 모두 포함, FOREIGN은 API 미지원이라 제외(TODO: 백엔드 확인 후 반영).
+export function buildCareerParam(tags: CareerTagId[]): string | undefined {
+  const codes = new Set<string>();
+  tags.forEach((tag) => {
+    if (tag === 'NEW') codes.add('NEW');
+    if (tag === 'EXPERIENCED') codes.add('EXPERIENCED');
+    if (tag === 'BOTH') {
+      codes.add('NEW');
+      codes.add('EXPERIENCED');
+    }
+  });
+  return codes.size > 0 ? Array.from(codes).join(',') : undefined;
 }
