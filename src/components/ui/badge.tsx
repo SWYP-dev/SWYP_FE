@@ -77,7 +77,7 @@ export function DeadlineBadge({ deadline }: DeadlineBadgeProps) {
   const diffDays = Math.ceil((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
   if (diffDays < 0) {
-    return <Badge className="bg-neutral-100 text-neutral-500">마감</Badge>;
+    return <Badge className="bg-base-white text-neutral-500">마감</Badge>;
   }
 
   const isUrgent = diffDays <= 7;
@@ -86,7 +86,7 @@ export function DeadlineBadge({ deadline }: DeadlineBadgeProps) {
   return (
     <Badge
       className={
-        isUrgent ? 'bg-fill-negative-light text-status-negative' : 'bg-neutral-100 text-neutral-700'
+        isUrgent ? 'bg-fill-negative-light text-status-negative' : 'bg-base-white text-neutral-700'
       }
     >
       {label}
