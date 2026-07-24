@@ -17,6 +17,7 @@ import { ScrapCard } from '@/features/scraps/components/ScrapCard';
 import { useScrapsQuery } from '@/features/scraps/api/useScrapsQuery';
 import { deleteScrap } from '@/features/feed/api/scrap';
 import { registerKanbanCard } from '@/features/kanban/api/registerCard';
+import { kanbanKeys } from '@/features/kanban/api/useKanbanQuery';
 import { ApiClientError } from '@/lib/api/api-client';
 import { formatDeadlineText } from '@/features/kanban/utils/formatDeadline';
 import { formatCareer } from '@/features/feed/utils/formatCareer';
@@ -83,6 +84,7 @@ const ScrapsPage: NextPage = () => {
   async function handleAddToKanban(jobPostingId: number) {
     try {
       await registerKanbanCard(jobPostingId);
+      queryClient.invalidateQueries({ queryKey: kanbanKeys.board() });
       setToastType('success');
       setToastMessage('지원 현황에 추가했어요.');
     } catch (err) {
