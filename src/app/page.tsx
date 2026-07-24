@@ -5,6 +5,7 @@ import { Header } from '@/components/layout/header';
 import { Sidebar } from '@/components/layout/sidebar';
 import { JobCard } from '@/components/ui/job-card';
 import { Pagination } from '@/components/ui/pagination';
+import { Toast } from '@/components/ui/toast';
 import { MAX_STEP } from '@/components/ui/slider';
 import type { SelectionValue } from '@/components/ui/selection-modal';
 import { CareerFilterChip } from '@/features/feed/components/CareerFilterChip';
@@ -84,6 +85,7 @@ export default function FeedPage() {
   // FeedItem에도 jobPostingId 포함 요청 필요).
   const [scrapOverrides, setScrapOverrides] = useState<Record<number, boolean>>({});
   const [jobPostingIdMap, setJobPostingIdMap] = useState<Record<number, number>>({});
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const { data, isLoading, isError } = useFeedQuery({
     page: currentPage,
@@ -119,6 +121,7 @@ export default function FeedPage() {
       // 실패 시 롤백
       setScrapOverrides((prev) => ({ ...prev, [feedId]: currentlyScrapped }));
       console.error('스크랩 처리 실패', err);
+      setToastMessage(currentlyScrapped ? '스크랩 해제에 실패했어요.' : '스크랩에 실패했어요.');
     }
   }
 
@@ -203,6 +206,12 @@ export default function FeedPage() {
           </div>
         </div>
       </main>
+
+      <Toast
+        message={toastMessage ?? ''}
+        isVisible={toastMessage !== null}
+        onDismiss={() => setToastMessage(null)}
+      />
     </div>
   );
 }
