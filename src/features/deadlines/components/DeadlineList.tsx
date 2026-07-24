@@ -11,6 +11,7 @@ import {
 import { DeleteCardModal } from '@/features/kanban/components/DeleteCardModal';
 import { CardDetailDrawer } from '@/features/kanban/components/CardDetailDrawer';
 import { Toast } from '@/components/ui/toast';
+import { ApiClientError } from '@/lib/api/api-client';
 import type { KanbanCard } from '@/types/api';
 import { flattenKanbanCards, groupCardsByDeadline } from '../utils/groupByDeadline';
 import { DeadlineGroup } from './DeadlineGroup';
@@ -83,9 +84,13 @@ export function DeadlineList() {
       setEditingCard(null);
       setToastType('success');
       setToastMessage('지원 마감일을 수정했어요.');
-    } catch {
+    } catch (err) {
       setToastType('error');
-      setToastMessage('지원 내역 수정에 실패했어요.');
+      if (err instanceof ApiClientError && err.code === 'K010') {
+        setToastMessage('직접 등록한 공고만 수정할 수 있어요.');
+      } else {
+        setToastMessage('지원 내역 수정에 실패했어요.');
+      }
     }
   }
 

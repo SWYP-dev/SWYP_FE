@@ -43,6 +43,7 @@ export function AttachmentCategoryDropdown({
       <Popover isOpen={isOpen} onClose={close} triggerRef={triggerRef} align="start">
         <DropdownMenu
           items={DOCUMENT_CATEGORY_ITEMS}
+          className="w-[108px]"
           onSelect={(item) => {
             onSelectCategory(item.label);
             close();

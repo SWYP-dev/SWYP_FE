@@ -21,7 +21,9 @@ import { DeadlineSoonFilterButton } from '@/features/feed/components/DeadlineSoo
 import { useFeedQuery } from '@/features/feed/api/useFeedQuery';
 import { postScrap, deleteScrap } from '@/features/feed/api/scrap';
 import { registerKanbanCard } from '@/features/kanban/api/registerCard';
+import { kanbanKeys } from '@/features/kanban/api/useKanbanQuery';
 import { ApiClientError } from '@/lib/api/api-client';
+import { formatCareer } from '@/features/feed/utils/formatCareer';
 import type { FeedQueryParams } from '@/types/api';
 
 type SortOption = NonNullable<FeedQueryParams['sort']>;
@@ -62,13 +64,6 @@ function formatJobCategory(raw: string | null | undefined): string {
   const labels = codes.map((code) => JOB_CATEGORY_LABELS[code] ?? code);
   if (labels.length <= 3) return labels.join(', ');
   return `${labels.slice(0, 3).join(', ')} 외 ${labels.length - 3}건`;
-}
-
-function formatCareer(raw: string | null | undefined): string {
-  if (!raw) return '-';
-  const codes = raw.split(',').filter(Boolean);
-  if (codes.length >= 2) return '경력 + 신입';
-  return codes[0] === 'NEW' ? '신입' : '경력';
 }
 
 function formatDeadline(deadline: string): string {
@@ -158,6 +153,7 @@ export default function FeedPage() {
         setScrapOverrides((prev) => ({ ...prev, [feedId]: true }));
       }
       await registerKanbanCard(jobPostingId);
+      queryClient.invalidateQueries({ queryKey: kanbanKeys.board() });
       setToastType('success');
       setToastMessage('지원 현황에 추가했어요.');
     } catch (err) {

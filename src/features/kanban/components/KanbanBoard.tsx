@@ -5,11 +5,14 @@ import { DndContext, PointerSensor, useSensor, useSensors, type DragEndEvent } f
 import type { KanbanCard, KanbanStage } from '@/types/api';
 import { KanbanColumn } from './KanbanColumn';
 import { AddStageButton } from './AddStageButton';
+import { AddStageModal } from './AddStageModal';
 import { Toast } from '@/components/ui/toast';
 import { DeleteStageModal } from './DeleteStageModal';
 import { AddCardModal } from './AddCardModal';
 import { DeleteCardModal } from './DeleteCardModal';
 import { CardDetailDrawer } from './CardDetailDrawer';
+import { StageFilterChip } from './StageFilterChip';
+import { DeadlineSoonFilterButton } from '@/features/feed/components/DeadlineSoonFilterButton';
 import {
   useCreateDirectCard,
   useUpdateCard,
@@ -41,6 +44,8 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
   const [editingCard, setEditingCard] = useState<KanbanCard | null>(null);
   const [deletingCard, setDeletingCard] = useState<KanbanCard | null>(null);
   const [viewingCardId, setViewingCardId] = useState<number | null>(null);
+  const [selectedStageIds, setSelectedStageIds] = useState<number[]>([]);
+  const [isDeadlineSoonOnly, setIsDeadlineSoonOnly] = useState(false);
 
   // fix: initialStages 변경 시 stages 동기화 — 컬럼 너비 변형 버그 수정 (버그2)
   // useEffect에서 setState를 호출하면 리렌더링이 한 번 더 발생해 깜빡임(컬럼 너비
@@ -81,7 +86,53 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
     const { active, over } = event;
     if (!over) return;
 
-    // fix: String id → Number로 파싱 (버그3)
+    // 스테이지(컬럼) 순서 변경
+    if (active.data.current?.type === 'stage') {
+      const fromStageId = active.data.current.stageId as number;
+      const toStageId = Number(over.id);
+      if (fromStageId === toStageId) return;
+
+      const movingStage = stages.find((s) => s.id === fromStageId);
+      if (!movingStage) return;
+
+      let newPosition = 0;
+      setStages((prev) => {
+        const sorted = [...prev].sort((a, b) => a.position - b.position);
+        const fromIndex = sorted.findIndex((s) => s.id === fromStageId);
+        const toIndex = sorted.findIndex((s) => s.id === toStageId);
+        if (fromIndex === -1 || toIndex === -1) return prev;
+
+        const reordered = [...sorted];
+        const [moved] = reordered.splice(fromIndex, 1);
+        reordered.splice(toIndex, 0, moved);
+
+        newPosition = toIndex + 1;
+        return reordered.map((s, idx) => ({ ...s, position: idx + 1 }));
+      });
+
+      // 세영님 확인(2026-07-25): name은 항상 필수(K005) — 기본/커스텀 스테이지 구분 없이
+      // 항상 현재 이름을 그대로 실어서 보내야 함. (K023은 "실제로 이름 값을 바꾸려는 시도"에만
+      // 걸리는 것으로 추정 — 기존 이름 그대로면 통과됨.)
+      updateStageMutation.mutate(
+        { stageId: fromStageId, name: movingStage.name, position: newPosition },
+        {
+          onError: (err) => {
+            setStages(initialStages);
+            setToastType('error');
+            if (err instanceof ApiClientError && err.code === 'K023') {
+              setToastMessage('기본 전형 단계는 이름을 변경할 수 없어요.');
+            } else if (err instanceof ApiClientError && err.code === 'K005') {
+              setToastMessage('전형 이름이 누락되어 순서 변경에 실패했어요.');
+            } else {
+              setToastMessage('전형 단계 순서 변경에 실패했어요.');
+            }
+          },
+        }
+      );
+      return;
+    }
+
+    // 카드 이동
     const cardId = Number(active.id);
     const fromStageId = active.data.current?.stageId as number;
     const toStageId = Number(over.id);
@@ -232,20 +283,38 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
     );
   }
 
-  const draftStage: KanbanStage = {
-    id: -1,
-    name: '',
-    position: stages.length + 1,
-    isDefault: false,
-    cards: [],
-  };
+  function isDeadlineSoon(deadline: string): boolean {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const diff = Math.ceil((new Date(deadline).getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    return diff >= 0 && diff <= 7;
+  }
+
+  const visibleStages = [...stages]
+    .sort((a, b) => a.position - b.position)
+    .filter((stage) => selectedStageIds.length === 0 || selectedStageIds.includes(stage.id))
+    .map((stage) => ({
+      ...stage,
+      cards: isDeadlineSoonOnly ? stage.cards.filter((c) => isDeadlineSoon(c.deadline)) : stage.cards,
+    }));
 
   return (
     <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-      <div className="flex h-full w-full flex-1 items-stretch gap-5 overflow-x-auto pb-2 kanban-scroll-x">
-        {[...stages]
-          .sort((a, b) => a.position - b.position)
-          .map((stage) => (
+      <div className="flex h-full min-h-0 flex-1 flex-col">
+        <div className="mb-4 flex items-center gap-2">
+          <StageFilterChip
+            stages={stages}
+            appliedStageIds={selectedStageIds}
+            onApply={setSelectedStageIds}
+          />
+          <DeadlineSoonFilterButton
+            isActive={isDeadlineSoonOnly}
+            onToggle={setIsDeadlineSoonOnly}
+          />
+        </div>
+
+        <div className="flex h-full w-full flex-1 items-stretch gap-5 overflow-x-auto pb-2 kanban-scroll-x">
+          {visibleStages.map((stage) => (
             <KanbanColumn
               key={stage.id}
               stage={stage}
@@ -282,20 +351,10 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
               onCardClick={(cardId) => setViewingCardId(cardId)}
             />
           ))}
-        {isAddingStage && (
-          <KanbanColumn
-            key="draft"
-            stage={draftStage}
-            isDraft
-            draftName={draftName}
-            onDraftNameChange={setDraftName}
-            onConfirmDraft={handleConfirmDraft}
-            onCancelDraft={() => clearDraft()}
-          />
-        )}
-      </div>
+        </div>
 
-      <AddStageButton onClick={handleAddStageClick} />
+        <AddStageButton onClick={handleAddStageClick} />
+      </div>
 
       <Toast
         message={toastMessage ?? ''}
@@ -347,6 +406,14 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
             }
           );
         }}
+      />
+
+      <AddStageModal
+        isOpen={isAddingStage}
+        value={draftName}
+        onChange={setDraftName}
+        onClose={() => clearDraft()}
+        onConfirm={handleConfirmDraft}
       />
 
       <AddCardModal
