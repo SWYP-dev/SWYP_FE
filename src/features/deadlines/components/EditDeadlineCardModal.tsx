@@ -233,6 +233,8 @@ export function EditDeadlineCardModal({
             >
               <DropdownMenu
                 items={stageItems}
+                selectedIndex={stages.findIndex((s) => s.id === form.stageId)}
+                className="w-[330px]"
                 onSelect={(_, index) => {
                   setForm((prev) => ({ ...prev, stageId: stages[index].id }));
                   stageDropdown.close();
