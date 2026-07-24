@@ -47,6 +47,7 @@ export function ProfileMenu() {
       <Popover isOpen={isOpen} onClose={close} triggerRef={triggerRef} align="start">
         <DropdownMenu
           items={[{ label: '로그아웃' }]}
+          className="w-[140px]"
           onSelect={() => {
             close();
             logoutMutation.mutate();
