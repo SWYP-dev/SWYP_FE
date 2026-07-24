@@ -35,7 +35,11 @@ export function Header({ onSearch, showSearch = true }: HeaderProps) {
               placeholder="텍스트를 입력해 주세요."
               className="flex-1 bg-transparent text-3 font-medium text-label-base placeholder:text-label-placeholder outline-none"
             />
-            <button type="submit" aria-label="검색" className="shrink-0">
+            <button
+              type="submit"
+              aria-label="검색"
+              className="flex size-6 shrink-0 items-center justify-center"
+            >
               <svg
                 width="24"
                 height="24"
@@ -43,12 +47,11 @@ export function Header({ onSearch, showSearch = true }: HeaderProps) {
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
               >
-                <circle cx="11" cy="11" r="8" stroke="#BDBDC0" strokeWidth="2" />
                 <path
-                  d="M21 21L16.65 16.65"
-                  stroke="#BDBDC0"
-                  strokeWidth="2"
-                  strokeLinecap="round"
+                  fillRule="evenodd"
+                  clipRule="evenodd"
+                  d="M10.3678 3.00006C6.29869 3.00006 3 6.29876 3 10.3679C3 14.4371 6.29869 17.7358 10.3678 17.7358C12.1 17.7358 13.6926 17.138 14.9505 16.1375L19.5671 20.7541C19.8949 21.0819 20.4264 21.0819 20.7542 20.7541C21.0819 20.4263 21.0819 19.8949 20.7542 19.5671L16.1375 14.9504C17.1379 13.6925 17.7356 12.1 17.7356 10.3679C17.7356 6.29876 14.437 3.00006 10.3678 3.00006ZM4.67874 10.3679C4.67874 7.22591 7.22583 4.67881 10.3678 4.67881C13.5098 4.67881 16.0569 7.22591 16.0569 10.3679C16.0569 13.5099 13.5098 16.057 10.3678 16.057C7.22583 16.057 4.67874 13.5099 4.67874 10.3679Z"
+                  fill="#212123"
                 />
               </svg>
             </button>

@@ -6,21 +6,24 @@ interface ToastProps {
   message: string;
   isVisible: boolean;
   onDismiss: () => void;
-  /** "되돌리기" 버튼 표시 여부 — Figma hasButton prop */
+  /** Figma Toast 컴포넌트(node 150:23659) variant — 성공/실패 */
+  type?: 'success' | 'error';
   hasButton?: boolean;
+  actionLabel?: string;
+  onAction?: () => void;
+  /** @deprecated onAction 사용 권장. 하위 호환을 위해 유지 */
   onUndo?: () => void;
-  /** 자동 닫힘 시간(ms). 칸반 전형 단계 추가 요구사항: 4초 */
   duration?: number;
 }
 
-// Figma Toast 마스터 컴포넌트(node 53:13321) 스펙 반영.
-// 배경: --base/dimmed (rgba(0,0,0,0.7)), 좌측 success 아이콘, 12px medium white 텍스트.
-// type="success" 하나만 확인됨 — 에러 타입 등 추가 variant는 추후 확인 후 확장 예정.
 export function Toast({
   message,
   isVisible,
   onDismiss,
+  type = 'success',
   hasButton = false,
+  actionLabel = '되돌리기',
+  onAction,
   onUndo,
   duration = 4000,
 }: ToastProps) {
@@ -35,19 +38,22 @@ export function Toast({
   return (
     <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2">
       <div className="flex items-center gap-2 rounded-lg bg-base-dimmed px-4 py-3">
-        {/* success 아이콘 — 초록 원형 테두리 + 체크 */}
-        <div className="flex shrink-0 items-center justify-center rounded-max border border-status-positive p-[2px]">
-          <CheckSmallIcon />
+        <div
+          className={`flex shrink-0 items-center justify-center rounded-max border p-[2px] ${
+            type === 'error' ? 'border-status-negative' : 'border-status-positive'
+          }`}
+        >
+          {type === 'error' ? <CloseSmallIcon /> : <CheckSmallIcon />}
         </div>
         <p className="whitespace-nowrap text-1 font-medium text-base-white">{message}</p>
         {hasButton && (
           <div className="flex items-center self-stretch">
             <button
               type="button"
-              onClick={onUndo}
+              onClick={onAction ?? onUndo}
               className="rounded px-2 py-1 text-0 font-medium text-label-base bg-base-white"
             >
-              되돌리기
+              {actionLabel}
             </button>
           </div>
         )}
@@ -65,6 +71,20 @@ function CheckSmallIcon() {
         strokeWidth="1.3"
         strokeLinecap="round"
         strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+// 실패 상태용 X 아이콘 — CheckSmallIcon과 동일한 10x10 틀, 색상만 status/negative
+function CloseSmallIcon() {
+  return (
+    <svg width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M2.5 2.5L7.5 7.5M7.5 2.5L2.5 7.5"
+        stroke="#FB322E"
+        strokeWidth="1.3"
+        strokeLinecap="round"
       />
     </svg>
   );

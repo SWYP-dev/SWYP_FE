@@ -1,18 +1,26 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Header } from '@/components/layout/header';
 import { Sidebar } from '@/components/layout/sidebar';
 import { JobCard } from '@/components/ui/job-card';
+import { EmptyJobPosting } from '@/components/ui/empty-job-posting';
 import { Pagination } from '@/components/ui/pagination';
-import { MAX_STEP } from '@/components/ui/slider';
+import { Toast } from '@/components/ui/toast';
 import type { SelectionValue } from '@/components/ui/selection-modal';
-import { CareerFilterChip } from '@/features/feed/components/CareerFilterChip';
+import {
+  CareerFilterChip,
+  buildCareerParam,
+  type CareerTagId,
+} from '@/features/feed/components/CareerFilterChip';
 import { RegionFilterButton } from '@/features/feed/components/RegionFilterButton';
 import { JobCategoryFilterButton } from '@/features/feed/components/JobCategoryFilterButton';
 import { DeadlineSoonFilterButton } from '@/features/feed/components/DeadlineSoonFilterButton';
 import { useFeedQuery } from '@/features/feed/api/useFeedQuery';
 import { postScrap, deleteScrap } from '@/features/feed/api/scrap';
+import { registerKanbanCard } from '@/features/kanban/api/registerCard';
+import { ApiClientError } from '@/lib/api/api-client';
 import type { FeedQueryParams } from '@/types/api';
 
 type SortOption = NonNullable<FeedQueryParams['sort']>;
@@ -58,7 +66,7 @@ function formatJobCategory(raw: string | null | undefined): string {
 function formatCareer(raw: string | null | undefined): string {
   if (!raw) return '-';
   const codes = raw.split(',').filter(Boolean);
-  if (codes.length >= 2) return '신입/경력 무관';
+  if (codes.length >= 2) return '경력 + 신입';
   return codes[0] === 'NEW' ? '신입' : '경력';
 }
 
@@ -68,6 +76,7 @@ function formatDeadline(deadline: string): string {
 }
 
 export default function FeedPage() {
+  const router = useRouter();
   const [sort, setSort] = useState<SortOption>('LATEST');
   const [deadlineSoon, setDeadlineSoon] = useState(false);
   const [keyword, setKeyword] = useState('');
@@ -75,7 +84,7 @@ export default function FeedPage() {
 
   const [jobCategoryValue, setJobCategoryValue] = useState<SelectionValue | null>(null);
   const [regionValue, setRegionValue] = useState<SelectionValue | null>(null);
-  const [careerRange, setCareerRange] = useState<[number, number]>([0, MAX_STEP]);
+  const [careerTags, setCareerTags] = useState<CareerTagId[]>([]);
 
   // 스크랩 상태 로컬 오버라이드.
   // ⚠️ FeedItem 응답에 jobPostingId가 없어서, 이번 세션에서 직접 스크랩한 것만
@@ -84,6 +93,8 @@ export default function FeedPage() {
   // FeedItem에도 jobPostingId 포함 요청 필요).
   const [scrapOverrides, setScrapOverrides] = useState<Record<number, boolean>>({});
   const [jobPostingIdMap, setJobPostingIdMap] = useState<Record<number, number>>({});
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toastType, setToastType] = useState<'success' | 'error'>('success');
 
   const { data, isLoading, isError } = useFeedQuery({
     page: currentPage,
@@ -95,6 +106,7 @@ export default function FeedPage() {
       jobCategoryValue && jobCategoryValue.childIds.length > 0
         ? jobCategoryValue.childIds.join(',')
         : undefined,
+    career: buildCareerParam(careerTags),
   });
 
   async function handleToggleScrap(feedId: number, currentlyScrapped: boolean) {
@@ -119,7 +131,44 @@ export default function FeedPage() {
       // 실패 시 롤백
       setScrapOverrides((prev) => ({ ...prev, [feedId]: currentlyScrapped }));
       console.error('스크랩 처리 실패', err);
+      setToastType('error');
+      setToastMessage(currentlyScrapped ? '스크랩 해제에 실패했어요.' : '스크랩에 실패했어요.');
     }
+  }
+
+  // Figma "통합 공고 탐색 페이지(지원 현황 추가 버튼 클릭)"(node 133:23462) 반영.
+  // API 3.2 정책상 칸반 등록은 jobPostingId(스크랩 사본 id) 필수라, 피드에서 바로
+  // 누르면 먼저 스크랩 처리(postScrap은 이미 스크랩된 공고 재요청 시 기존 사본 재사용) 후 등록.
+  async function handleAddToKanban(feedId: number) {
+    try {
+      let jobPostingId = jobPostingIdMap[feedId];
+      if (!jobPostingId) {
+        const res = await postScrap(feedId);
+        jobPostingId = res.jobPostingId;
+        setJobPostingIdMap((prev) => ({ ...prev, [feedId]: jobPostingId }));
+        setScrapOverrides((prev) => ({ ...prev, [feedId]: true }));
+      }
+      await registerKanbanCard(jobPostingId);
+      setToastType('success');
+      setToastMessage('지원 현황에 추가했어요.');
+    } catch (err) {
+      setToastType('error');
+      if (err instanceof ApiClientError && err.code === 'ALREADY_REGISTERED') {
+        setToastMessage('이미 지원 현황에 등록된 공고예요.');
+      } else {
+        console.error('지원 현황 추가 실패', err);
+        setToastMessage('지원 현황 추가에 실패했어요.');
+      }
+    }
+  }
+
+  const isSearching = keyword.trim().length > 0;
+
+  function resetFilters() {
+    setJobCategoryValue(null);
+    setRegionValue(null);
+    setCareerTags([]);
+    setDeadlineSoon(false);
   }
 
   return (
@@ -130,11 +179,19 @@ export default function FeedPage() {
         <div className="sticky top-0 z-10 flex flex-col bg-base-white">
           <Header onSearch={setKeyword} />
 
+          {isSearching && (
+            <div className="flex items-center justify-center pb-9 pt-12">
+              <p className="text-9 font-semibold leading-[1.4] text-label-base">
+                <span className="text-label-primary">{keyword}</span> 검색결과
+              </p>
+            </div>
+          )}
+
           <div className="flex items-center justify-between pt-7 px-12 pb-5 text-center">
             <div className="flex items-center gap-3">
               <JobCategoryFilterButton value={jobCategoryValue} onApply={setJobCategoryValue} />
               <RegionFilterButton value={regionValue} onApply={setRegionValue} />
-              <CareerFilterChip appliedRange={careerRange} onApply={setCareerRange} />
+              <CareerFilterChip appliedTags={careerTags} onApply={setCareerTags} />
               <DeadlineSoonFilterButton isActive={deadlineSoon} onToggle={setDeadlineSoon} />
             </div>
             <div className="flex items-start gap-2 text-label-body">
@@ -158,18 +215,36 @@ export default function FeedPage() {
         </div>
 
         <div className="flex-1 flex flex-col px-11 py-5 bg-surface-card">
-          <div className="flex flex-col gap-6">
-            <div className="flex flex-col gap-8">
-              <div className="flex flex-col items-center gap-3 p-3 bg-base-white border border-line-secondary rounded-[20px]">
+          <div className="flex flex-1 flex-col gap-6">
+            <div className="flex flex-1 flex-col gap-8">
+              <div className="flex flex-1 flex-col items-center gap-3 rounded-[20px] border border-line-secondary bg-base-white p-3">
                 {isLoading && <p className="py-11 text-label-description">불러오는 중...</p>}
                 {isError && (
                   <p className="py-11 text-status-negative">
                     공고를 불러오지 못했어요. 잠시 후 다시 시도해주세요.
                   </p>
                 )}
+                {!isLoading && !isError && (data?.items.length ?? 0) === 0 && isSearching && (
+                  <EmptyJobPosting
+                    iconSrc="/icons/empty-search-result.svg"
+                    title={`'${keyword}'에 대한 채용 공고가 없어요`}
+                    description="다른 검색어(기업명, 직무명, 공고명)로 다시 검색해 보세요."
+                  />
+                )}
+                {!isLoading && !isError && (data?.items.length ?? 0) === 0 && !isSearching && (
+                  <EmptyJobPosting
+                    iconSrc="/icons/empty-search.svg"
+                    title="조건에 맞는 채용 공고가 없어요"
+                    description="필터를 조정하거나 초기화해 보세요."
+                    actionLabel="필터 초기화"
+                    onAction={resetFilters}
+                  />
+                )}
                 {!isLoading &&
                   !isError &&
-                  data?.items.map((job) => {
+                  data &&
+                  data.items.length > 0 &&
+                  data.items.map((job) => {
                     const isScrapped = scrapOverrides[job.id] ?? job.isScrapped;
                     return (
                       <JobCard
@@ -185,12 +260,13 @@ export default function FeedPage() {
                         originalUrl={job.originalUrl}
                         isScrapped={isScrapped}
                         onToggleScrap={() => handleToggleScrap(job.id, isScrapped)}
+                        onAddToKanban={() => handleAddToKanban(job.id)}
                       />
                     );
                   })}
               </div>
 
-              {data && (
+              {data && data.items.length > 0 && (
                 <div className="flex justify-center">
                   <Pagination
                     currentPage={currentPage}
@@ -203,6 +279,16 @@ export default function FeedPage() {
           </div>
         </div>
       </main>
+
+      <Toast
+        message={toastMessage ?? ''}
+        isVisible={toastMessage !== null}
+        onDismiss={() => setToastMessage(null)}
+        type={toastType}
+        hasButton={toastType === 'success' && toastMessage === '지원 현황에 추가했어요.'}
+        actionLabel="지원 현황 이동"
+        onAction={() => router.push('/kanban')}
+      />
     </div>
   );
 }

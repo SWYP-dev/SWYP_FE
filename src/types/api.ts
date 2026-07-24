@@ -31,7 +31,7 @@ export interface PageResponse<T> {
 // ===================================
 // 2. 통합 공고 피드 (Feed)
 // ===================================
-export type Platform = 'SARAMIN' | 'WANTED' | 'WORKNET' | 'DIRECT';
+export type Platform = 'SARAMIN' | 'WANTED' | 'WORKNET' | 'DIRECT' | 'PUBLIC' | 'PUBLIC_PERSONNEL';
 export type JobCategory =
   'BACKEND' | 'FRONTEND' | 'FULLSTACK' | 'DESIGN' | 'PM' | 'DATA' | 'DEVOPS' | 'OTHER';
 export type Career = 'NEW' | 'EXPERIENCED';

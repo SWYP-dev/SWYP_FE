@@ -1,14 +1,14 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import type { NextPage } from 'next';
 import { Sidebar } from '@/components/layout/sidebar';
 import { Header } from '@/components/layout/header';
 import { Pagination } from '@/components/ui/pagination';
 import { Toast } from '@/components/ui/toast';
-import { MAX_STEP } from '@/components/ui/slider';
 import type { SelectionValue } from '@/components/ui/selection-modal';
-import { CareerFilterChip } from '@/features/feed/components/CareerFilterChip';
+import { CareerFilterChip, type CareerTagId } from '@/features/feed/components/CareerFilterChip';
 import { RegionFilterButton } from '@/features/feed/components/RegionFilterButton';
 import { JobCategoryFilterButton } from '@/features/feed/components/JobCategoryFilterButton';
 import { DeadlineSoonFilterButton } from '@/features/feed/components/DeadlineSoonFilterButton';
@@ -38,11 +38,12 @@ function toScrapCardData(item: ScrapItem): ScrapCardData {
 
 // Figma "스크랩 메인 페이지"(node 75:13324). sidebar의 '/scraps' 라우팅 대상.
 const ScrapsPage: NextPage = () => {
+  const router = useRouter();
   const [currentPage, setCurrentPage] = useState(0);
 
   // ⚠️ 보류: API 명세서 2.5는 page/size만 지원. 아래 필터/정렬 UI는 통합 공고 피드와 동일하게
   // 배치만 해두고 파라미터에는 아직 연결하지 않음 (확장 여부 세영님·동섭님 확인 대기).
-  const [careerRange, setCareerRange] = useState<[number, number]>([0, MAX_STEP]);
+  const [careerTags, setCareerTags] = useState<CareerTagId[]>([]);
   const [regionValue, setRegionValue] = useState<SelectionValue | null>(null);
   const [jobCategoryValue, setJobCategoryValue] = useState<SelectionValue | null>(null);
   const [isDeadlineSoon, setIsDeadlineSoon] = useState(false);
@@ -56,6 +57,7 @@ const ScrapsPage: NextPage = () => {
   const [removedIds, setRemovedIds] = useState<Set<number>>(new Set());
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toastType, setToastType] = useState<'success' | 'error'>('success');
 
   async function handleRemoveScrap(jobPostingId: number) {
     setRemovedIds((prev) => new Set(prev).add(jobPostingId));
@@ -70,6 +72,7 @@ const ScrapsPage: NextPage = () => {
         return next;
       });
       console.error('스크랩 해제 실패', err);
+      setToastType('error');
       setToastMessage('스크랩 해제에 실패했어요.');
     }
   }
@@ -78,8 +81,10 @@ const ScrapsPage: NextPage = () => {
   async function handleAddToKanban(jobPostingId: number) {
     try {
       await registerKanbanCard(jobPostingId);
-      setToastMessage('지원 현황에 추가되었어요.');
+      setToastType('success');
+      setToastMessage('지원 현황에 추가했어요.');
     } catch (err) {
+      setToastType('error');
       if (err instanceof ApiClientError && err.code === 'ALREADY_REGISTERED') {
         setToastMessage('이미 지원 현황에 등록된 공고예요.');
       } else {
@@ -105,7 +110,7 @@ const ScrapsPage: NextPage = () => {
             <div className="flex items-center gap-3">
               <JobCategoryFilterButton value={jobCategoryValue} onApply={setJobCategoryValue} />
               <RegionFilterButton value={regionValue} onApply={setRegionValue} />
-              <CareerFilterChip appliedRange={careerRange} onApply={setCareerRange} />
+              <CareerFilterChip appliedTags={careerTags} onApply={setCareerTags} />
               <DeadlineSoonFilterButton isActive={isDeadlineSoon} onToggle={setIsDeadlineSoon} />
             </div>
             <div className="flex items-start gap-2 text-label-body">
@@ -151,6 +156,10 @@ const ScrapsPage: NextPage = () => {
         message={toastMessage ?? ''}
         isVisible={toastMessage !== null}
         onDismiss={() => setToastMessage(null)}
+        type={toastType}
+        hasButton={toastType === 'success' && toastMessage === '지원 현황에 추가했어요.'}
+        actionLabel="지원 현황 이동"
+        onAction={() => router.push('/kanban')}
       />
     </div>
   );
