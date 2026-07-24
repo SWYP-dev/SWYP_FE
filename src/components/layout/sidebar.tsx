@@ -30,7 +30,7 @@ export function Sidebar() {
   return (
     <aside className="flex h-full w-[257px] flex-col items-start justify-between border-r border-line-secondary bg-base-white">
       <div className="flex w-full flex-col items-start">
-        <div className="flex h-[80px] w-full flex-col justify-center gap-3 px-6 py-3">
+        <div className="flex h-[80px] w-full flex-col items-start justify-center gap-3 px-6 py-3">
           <ChwihapWordmark className="h-5 w-auto" />
         </div>
 
