@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useDroppable } from '@dnd-kit/core';
-import type { KanbanCard as KanbanCardType, KanbanStage } from '@/types/api';
+import type { KanbanStage } from '@/types/api';
 import { KanbanCard } from './KanbanCard';
 import { DragHandleIcon, EditIcon, PlusSmallIcon, TrashIcon } from '@/components/ui/icons';
 
@@ -14,9 +14,7 @@ interface KanbanColumnProps {
   onConfirmDraft?: (name: string) => void;
   onCancelDraft?: () => void;
   onAddCard?: (stageId: number) => void;
-  onEditCard?: (card: KanbanCardType, stageId: number) => void;
-  onDeleteCard?: (card: KanbanCardType) => void;
-  onCardClick?: (card: KanbanCardType) => void;
+  onCardClick?: (cardId: number) => void;
 }
 
 export function KanbanColumn({
@@ -27,8 +25,6 @@ export function KanbanColumn({
   onConfirmDraft,
   onCancelDraft,
   onAddCard,
-  onEditCard,
-  onDeleteCard,
   onCardClick,
 }: KanbanColumnProps) {
   // fix: id를 String으로 통일 — 신규 추가 스테이지 드래그 안 되는 버그 수정 (버그3)
@@ -135,7 +131,7 @@ export function KanbanColumn({
             >
               <EditIcon size={20} />
             </button>
-            {!isDraft && !stage.isDefault && (
+            {!isDraft && (
               <button
                 type="button"
                 aria-label="스테이지 삭제"
@@ -156,14 +152,7 @@ export function KanbanColumn({
       >
         <div className="flex flex-col gap-3 px-4 pb-4">
           {stage.cards.map((card) => (
-            <KanbanCard
-              key={card.id}
-              card={card}
-              stageId={stage.id}
-              onEdit={() => onEditCard?.(card, stage.id)}
-              onDelete={() => onDeleteCard?.(card)}
-              onClick={() => onCardClick?.(card)}
-            />
+            <KanbanCard key={card.id} card={card} stageId={stage.id} onCardClick={onCardClick} />
           ))}
           {!isDraft && stage.cards.length === 0 && (
             <div className="flex w-full items-center justify-center rounded-xl border border-dashed border-line-secondary py-8 text-2 text-label-description">

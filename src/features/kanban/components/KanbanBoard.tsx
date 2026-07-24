@@ -19,6 +19,7 @@ import {
   useUpdateStage,
   useDeleteStage,
 } from '@/features/kanban/api/useKanbanMutations';
+import { ApiClientError } from '@/lib/api/api-client';
 
 const MAX_STAGES = 10;
 
@@ -227,9 +228,7 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
                 if (target) setDeletingStage(target);
               }}
               onAddCard={(stageId) => setAddCardStageId(stageId)}
-              onEditCard={(card) => setEditingCard(card)}
-              onDeleteCard={(card) => setDeletingCard(card)}
-              onCardClick={(card) => setViewingCardId(card.id)}
+              onCardClick={(cardId) => setViewingCardId(cardId)}
             />
           ))}
         {isAddingStage && (
@@ -277,9 +276,13 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
                 setToastType('success');
                 setToastMessage('전형 단계가 삭제되었어요.');
               },
-              onError: () => {
+              onError: (err) => {
                 setToastType('error');
-                setToastMessage('전형 단계 삭제에 실패했어요.');
+                if (err instanceof ApiClientError && err.code === 'DEFAULT_STAGE_CANNOT_DELETE') {
+                  setToastMessage('기본 전형 단계는 삭제할 수 없어요.');
+                } else {
+                  setToastMessage('전형 단계 삭제에 실패했어요.');
+                }
               },
             }
           );
