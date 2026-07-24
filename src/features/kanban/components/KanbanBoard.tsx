@@ -92,6 +92,9 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
       const toStageId = Number(over.id);
       if (fromStageId === toStageId) return;
 
+      const movingStage = stages.find((s) => s.id === fromStageId);
+      if (!movingStage) return;
+
       let newPosition = 0;
       setStages((prev) => {
         const sorted = [...prev].sort((a, b) => a.position - b.position);
@@ -107,15 +110,24 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
         return reordered.map((s, idx) => ({ ...s, position: idx + 1 }));
       });
 
-      updateStageMutation.mutate(
-        { stageId: fromStageId, position: newPosition },
-        {
-          onError: () => {
-            setStages(initialStages);
-            showToast('error', '전형 단계 순서 변경에 실패했어요.');
-          },
-        }
-      );
+      // 세영님 확인(2026-07-25, K023): 기본 스테이지는 요청에 name 필드가 있기만 해도
+      // "이름 변경 시도"로 간주되어 예외 처리됨. 값이 동일해도 마찬가지라, 기본 스테이지는
+      // position만 보내고 name은 아예 제외해야 함. 커스텀 스테이지는 기존대로 name 포함.
+      const payload = movingStage.isDefault
+        ? { stageId: fromStageId, position: newPosition }
+        : { stageId: fromStageId, name: movingStage.name, position: newPosition };
+
+      updateStageMutation.mutate(payload, {
+        onError: (err) => {
+          setStages(initialStages);
+          setToastType('error');
+          if (err instanceof ApiClientError && err.code === 'K023') {
+            setToastMessage('기본 전형 단계는 이름을 변경할 수 없어요.');
+          } else {
+            setToastMessage('전형 단계 순서 변경에 실패했어요.');
+          }
+        },
+      });
       return;
     }
 
