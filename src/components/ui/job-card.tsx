@@ -1,6 +1,10 @@
+'use client';
+
+import { useState } from 'react';
 import Image from 'next/image';
 import { DeadlineBadge } from './badge';
 import { Button } from './button';
+import { CardThumbnailPlaceholder } from './card-thumbnail-placeholder';
 import { PinIcon, BriefcaseIcon, CalendarIcon } from './icons';
 
 interface JobCardProps {
@@ -50,23 +54,24 @@ export function JobCard({
   onToggleScrap,
   onAddToKanban,
 }: JobCardProps) {
+  const [imgError, setImgError] = useState(false);
+  const showImage = !!thumbnailUrl && !imgError;
+
   return (
     // Card: gap-[20px](spacing/6) — Thumbnail ~ 안쪽 Wrapper 사이 간격
     <div className="flex w-full items-center gap-6 rounded-xl p-3 hover:bg-neutral-100">
       {/* Thumbnail */}
       <div className="relative size-[100px] shrink-0 overflow-hidden rounded-lg bg-neutral-100 p-[6px]">
-        {thumbnailUrl ? (
-          <Image src={thumbnailUrl} alt="" fill className="rounded-lg object-cover" />
+        {showImage ? (
+          <Image
+            src={thumbnailUrl}
+            alt=""
+            fill
+            className="rounded-lg object-cover"
+            onError={() => setImgError(true)}
+          />
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center bg-neutral-100">
-            <Image
-              src="/logo/chwihap-logo.svg"
-              alt=""
-              width={48}
-              height={48}
-              className="object-contain opacity-40"
-            />
-          </div>
+          <CardThumbnailPlaceholder />
         )}
         {/* Wrapper: D-day 뱃지(좌) + 스크랩 아이콘(우), justify-between — Figma 스펙 그대로 */}
         <div className="relative flex h-[83px] w-full items-start justify-between">

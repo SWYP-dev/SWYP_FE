@@ -1,8 +1,10 @@
 'use client';
 
+import { useState } from 'react';
 import Image from 'next/image';
 import { DeadlineBadge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { CardThumbnailPlaceholder } from '@/components/ui/card-thumbnail-placeholder';
 import { CalendarIcon } from '@/components/ui/icons';
 import type { ScrapCardData } from '../types/scrap';
 
@@ -36,22 +38,23 @@ function BookmarkIcon() {
 // 채워 넘어옴 (toScrapCardData 참고). 여기서는 값이 있을 때만 렌더링하도록 방어해서,
 // 지금은 아예 안 보이고 나중에 필드 추가되면 자동으로 나타나게 처리.
 export function ScrapCard({ data, onRemoveScrap, onAddToKanban }: ScrapCardProps) {
+  const [imgError, setImgError] = useState(false);
+  const showImage = !!data.thumbnailUrl && !imgError;
+
   return (
     <div className="flex w-full items-center gap-6 rounded-xl p-3 transition-colors hover:bg-neutral-50">
       {/* Thumbnail — thumbnailUrl 항상 null 확인됨 (공공데이터포털 소스 자체에 필드 없음) */}
       <div className="relative size-[100px] shrink-0 overflow-hidden rounded-lg bg-neutral-100 p-[6px]">
-        {data.thumbnailUrl ? (
-          <Image src={data.thumbnailUrl} alt="" fill className="rounded-lg object-cover" />
+        {showImage ? (
+          <Image
+            src={data.thumbnailUrl}
+            alt=""
+            fill
+            className="rounded-lg object-cover"
+            onError={() => setImgError(true)}
+          />
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center bg-neutral-100">
-            <Image
-              src="/logo/chwihap-logo.svg"
-              alt=""
-              width={48}
-              height={48}
-              className="object-contain opacity-40"
-            />
-          </div>
+          <CardThumbnailPlaceholder />
         )}
         <div className="relative flex h-[83px] w-full items-start justify-between">
           <DeadlineBadge deadline={data.deadline} />
