@@ -32,6 +32,7 @@ export function DeadlineList() {
   const [editingCard, setEditingCard] = useState<KanbanCard | null>(null);
   const [deletingCard, setDeletingCard] = useState<KanbanCard | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toastType, setToastType] = useState<'success' | 'error'>('success');
 
   const entries = useMemo(() => flattenKanbanCards(data?.stages ?? []), [data]);
   const groups = useMemo(() => groupCardsByDeadline(entries), [entries]);
@@ -80,8 +81,10 @@ export function DeadlineList() {
 
       queryClient.invalidateQueries({ queryKey: kanbanKeys.board() });
       setEditingCard(null);
+      setToastType('success');
       setToastMessage('지원 마감일을 수정했어요.');
     } catch {
+      setToastType('error');
       setToastMessage('지원 내역 수정에 실패했어요.');
     }
   }
@@ -91,9 +94,13 @@ export function DeadlineList() {
       onSuccess: () => {
         setDeletingCard(null);
         if (viewingCardId === cardId) setViewingCardId(null);
+        setToastType('success');
         setToastMessage('지원 내역이 삭제되었어요.');
       },
-      onError: () => setToastMessage('지원 내역 삭제에 실패했어요.'),
+      onError: () => {
+        setToastType('error');
+        setToastMessage('지원 내역 삭제에 실패했어요.');
+      },
     });
   }
 
@@ -168,6 +175,7 @@ export function DeadlineList() {
         message={toastMessage ?? ''}
         isVisible={toastMessage !== null}
         onDismiss={() => setToastMessage(null)}
+        type={toastType}
       />
     </>
   );
