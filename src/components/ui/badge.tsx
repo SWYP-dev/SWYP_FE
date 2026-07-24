@@ -42,7 +42,7 @@ export function Badge({
 // 플랫폼 뱃지 (위 Badge를 기반으로 색상만 커스텀)
 // PRD 4.1.2 / API 명세서 Appendix Platform enum 기준
 // ===================================
-export type Platform = 'SARAMIN' | 'WANTED' | 'WORKNET' | 'DIRECT';
+export type Platform = 'SARAMIN' | 'WANTED' | 'WORKNET' | 'DIRECT' | 'PUBLIC' | 'PUBLIC_PERSONNEL';
 
 interface PlatformBadgeProps {
   platform: Platform;
@@ -54,6 +54,8 @@ const PLATFORM_CONFIG: Record<Platform, { label: string; className: string }> = 
   WANTED: { label: '원티드', className: 'bg-service-50 text-service-700' },
   WORKNET: { label: '워크넷', className: 'bg-green-50 text-green-700' },
   DIRECT: { label: '직접등록', className: 'bg-neutral-100 text-neutral-700' },
+  PUBLIC: { label: '공공기관', className: 'bg-neutral-100 text-neutral-700' },
+  PUBLIC_PERSONNEL: { label: '공공기관', className: 'bg-neutral-100 text-neutral-700' },
 };
 
 export function PlatformBadge({ platform }: PlatformBadgeProps) {
