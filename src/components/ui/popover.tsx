@@ -263,7 +263,7 @@ export function Popover({
         opacity: position.ready ? 1 : 0,
         pointerEvents: position.ready ? 'auto' : 'none',
       }}
-      className={`z-50 transition-opacity duration-100 ${className}`}
+      className={`z-[70] transition-opacity duration-100 ${className}`}
     >
       {children}
     </div>,

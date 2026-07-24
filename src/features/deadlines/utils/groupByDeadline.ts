@@ -68,7 +68,8 @@ export function groupCardsByDeadline(entries: DeadlineCardEntry[]): DeadlineGrou
         key: dateKey,
         label,
         ddayLabel,
-        // ⚠️ 가정: 오늘/내일 그룹만 파란색 강조. Figma 시안 기준 추정 — 디자이너 확인 필요.
+        // 오늘(D-Day)·내일(D-1) 여부 — true면 파란색 강조(헤더 텍스트, 카드 Divider).
+        // Figma "지원 마감일 메인"(node 101:17608) 확인 완료 — 오늘/내일만 강조, 그 외는 검정/회색.
         isUrgent: diffDays <= 1,
         cards: [],
       });
