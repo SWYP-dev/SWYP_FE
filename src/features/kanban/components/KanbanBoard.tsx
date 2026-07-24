@@ -265,6 +265,8 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
                         err.code === 'DEFAULT_STAGE_NAME_CHANGE_NOT_ALLOWED'
                       ) {
                         showToast('error', '기본 전형 단계는 이름을 변경할 수 없어요.');
+                      } else if (err instanceof ApiClientError && err.code === 'K007') {
+                        showToast('error', '올바른 전형 이름을 입력해주세요.');
                       } else {
                         showToast('error', '전형 단계 수정에 실패했어요.');
                       }
