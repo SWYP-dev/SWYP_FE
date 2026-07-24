@@ -20,6 +20,7 @@ import {
   useDeleteStage,
 } from '@/features/kanban/api/useKanbanMutations';
 import { ApiClientError } from '@/lib/api/api-client';
+import { useDraftStageStore } from '@/features/kanban/store/draftStageStore';
 
 const MAX_STAGES = 10;
 
@@ -29,7 +30,7 @@ interface KanbanBoardProps {
 
 export function KanbanBoard({ initialStages }: KanbanBoardProps) {
   const [stages, setStages] = useState(initialStages);
-  const [isAddingStage, setIsAddingStage] = useState(false);
+  const { isAddingStage, draftName, startDraft, setDraftName, clearDraft } = useDraftStageStore();
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
   const [deletingStage, setDeletingStage] = useState<KanbanStage | null>(null);
@@ -99,7 +100,7 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
       setToastMessage('전형 단계는 최대 10개까지 추가할 수 있어요.');
       return;
     }
-    setIsAddingStage(true);
+    startDraft();
   }
 
   function handleConfirmDraft(name: string) {
@@ -111,14 +112,14 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
             ...prev,
             { id: res.id, name: res.name, position: res.position, isDefault: false, cards: [] },
           ]);
-          setIsAddingStage(false);
+          clearDraft();
           setToastType('success');
           setToastMessage('전형 단계가 추가되었어요.');
         },
         onError: () => {
           setToastType('error');
           setToastMessage('전형 단계 추가에 실패했어요.');
-          setIsAddingStage(false);
+          clearDraft();
         },
       }
     );
@@ -236,8 +237,10 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
             key="draft"
             stage={draftStage}
             isDraft
+            draftName={draftName}
+            onDraftNameChange={setDraftName}
             onConfirmDraft={handleConfirmDraft}
-            onCancelDraft={() => setIsAddingStage(false)}
+            onCancelDraft={() => clearDraft()}
           />
         )}
       </div>
