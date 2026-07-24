@@ -11,6 +11,8 @@ import { DeleteStageModal } from './DeleteStageModal';
 import { AddCardModal } from './AddCardModal';
 import { DeleteCardModal } from './DeleteCardModal';
 import { CardDetailDrawer } from './CardDetailDrawer';
+import { StageFilterChip } from './StageFilterChip';
+import { DeadlineSoonFilterButton } from '@/features/feed/components/DeadlineSoonFilterButton';
 import {
   useCreateDirectCard,
   useUpdateCard,
@@ -42,6 +44,8 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
   const [editingCard, setEditingCard] = useState<KanbanCard | null>(null);
   const [deletingCard, setDeletingCard] = useState<KanbanCard | null>(null);
   const [viewingCardId, setViewingCardId] = useState<number | null>(null);
+  const [selectedStageIds, setSelectedStageIds] = useState<number[]>([]);
+  const [isDeadlineSoonOnly, setIsDeadlineSoonOnly] = useState(false);
 
   // fix: initialStages 변경 시 stages 동기화 — 컬럼 너비 변형 버그 수정 (버그2)
   // useEffect에서 setState를 호출하면 리렌더링이 한 번 더 발생해 깜빡임(컬럼 너비
@@ -233,12 +237,38 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
     );
   }
 
+  function isDeadlineSoon(deadline: string): boolean {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const diff = Math.ceil((new Date(deadline).getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    return diff >= 0 && diff <= 7;
+  }
+
+  const visibleStages = [...stages]
+    .sort((a, b) => a.position - b.position)
+    .filter((stage) => selectedStageIds.length === 0 || selectedStageIds.includes(stage.id))
+    .map((stage) => ({
+      ...stage,
+      cards: isDeadlineSoonOnly ? stage.cards.filter((c) => isDeadlineSoon(c.deadline)) : stage.cards,
+    }));
+
   return (
     <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-      <div className="flex h-full w-full flex-1 items-stretch gap-5 overflow-x-auto pb-2 kanban-scroll-x">
-        {[...stages]
-          .sort((a, b) => a.position - b.position)
-          .map((stage) => (
+      <div className="flex h-full min-h-0 flex-1 flex-col">
+        <div className="mb-4 flex items-center gap-2">
+          <StageFilterChip
+            stages={stages}
+            appliedStageIds={selectedStageIds}
+            onApply={setSelectedStageIds}
+          />
+          <DeadlineSoonFilterButton
+            isActive={isDeadlineSoonOnly}
+            onToggle={setIsDeadlineSoonOnly}
+          />
+        </div>
+
+        <div className="flex h-full w-full flex-1 items-stretch gap-5 overflow-x-auto pb-2 kanban-scroll-x">
+          {visibleStages.map((stage) => (
             <KanbanColumn
               key={stage.id}
               stage={stage}
@@ -275,9 +305,10 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
               onCardClick={(cardId) => setViewingCardId(cardId)}
             />
           ))}
-      </div>
+        </div>
 
-      <AddStageButton onClick={handleAddStageClick} />
+        <AddStageButton onClick={handleAddStageClick} />
+      </div>
 
       <Toast
         message={toastMessage ?? ''}
