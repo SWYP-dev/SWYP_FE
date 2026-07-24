@@ -2,33 +2,33 @@
 
 import { useState } from 'react';
 import { useDroppable } from '@dnd-kit/core';
-import type { KanbanCard as KanbanCardType, KanbanStage } from '@/types/api';
+import type { KanbanStage } from '@/types/api';
 import { KanbanCard } from './KanbanCard';
 import { DragHandleIcon, EditIcon, PlusSmallIcon, TrashIcon } from '@/components/ui/icons';
 
 interface KanbanColumnProps {
   stage: KanbanStage;
   isDraft?: boolean;
-  onRenameStage?: (stageId: number, newName: string) => void;
+  draftName?: string;
+  onDraftNameChange?: (name: string) => void;
+  onRenameStage?: (stageId: number, newName: string, position: number) => void;
   onDeleteStage?: (stageId: number) => void;
   onConfirmDraft?: (name: string) => void;
   onCancelDraft?: () => void;
   onAddCard?: (stageId: number) => void;
-  onEditCard?: (card: KanbanCardType, stageId: number) => void;
-  onDeleteCard?: (card: KanbanCardType) => void;
-  onCardClick?: (card: KanbanCardType) => void;
+  onCardClick?: (cardId: number) => void;
 }
 
 export function KanbanColumn({
   stage,
   isDraft = false,
+  draftName: draftNameProp,
+  onDraftNameChange,
   onRenameStage,
   onDeleteStage,
   onConfirmDraft,
   onCancelDraft,
   onAddCard,
-  onEditCard,
-  onDeleteCard,
   onCardClick,
 }: KanbanColumnProps) {
   // fix: id를 String으로 통일 — 신규 추가 스테이지 드래그 안 되는 버그 수정 (버그3)
@@ -38,14 +38,26 @@ export function KanbanColumn({
   });
 
   const [isEditingName, setIsEditingName] = useState(isDraft);
-  const [draftName, setDraftName] = useState(isDraft ? '' : stage.name);
+  const [localDraftName, setLocalDraftName] = useState(isDraft ? '' : stage.name);
   const [hasError, setHasError] = useState(false);
+
+  // draft 모드일 땐 zustand 값 우선 사용 — 페이지 이동 후 돌아와도 입력값 유지됨
+  const draftName = isDraft ? (draftNameProp ?? '') : localDraftName;
+
+  function updateDraftName(value: string) {
+    if (isDraft) {
+      onDraftNameChange?.(value);
+    } else {
+      setLocalDraftName(value);
+    }
+    setHasError(false);
+  }
 
   function commit() {
     const trimmed = draftName.trim();
     if (isDraft) {
       if (!trimmed) {
-        onCancelDraft?.();
+        setHasError(true); // fix: 빈 값이면 draft 취소 대신 에러 표시 (Figma node 49:7822)
         return;
       }
       onConfirmDraft?.(trimmed);
@@ -53,9 +65,9 @@ export function KanbanColumn({
     }
     setIsEditingName(false);
     if (trimmed && trimmed !== stage.name) {
-      onRenameStage?.(stage.id, trimmed);
+      onRenameStage?.(stage.id, trimmed, stage.position);
     } else {
-      setDraftName(stage.name);
+      setLocalDraftName(stage.name);
     }
   }
 
@@ -64,7 +76,7 @@ export function KanbanColumn({
       onCancelDraft?.();
       return;
     }
-    setDraftName(stage.name);
+    setLocalDraftName(stage.name);
     setIsEditingName(false);
     setHasError(false);
   }
@@ -86,10 +98,7 @@ export function KanbanColumn({
                 <input
                   autoFocus
                   value={draftName}
-                  onChange={(e) => {
-                    setDraftName(e.target.value);
-                    setHasError(false);
-                  }}
+                  onChange={(e) => updateDraftName(e.target.value)}
                   onBlur={commit}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') commit();
@@ -124,18 +133,20 @@ export function KanbanColumn({
             >
               <PlusSmallIcon size={20} />
             </button>
-            <button
-              type="button"
-              aria-label="스테이지 이름 수정"
-              onClick={() => {
-                setDraftName(stage.name);
-                setIsEditingName(true);
-              }}
-              className="flex size-5 items-center justify-center text-icon-gray"
-            >
-              <EditIcon size={20} />
-            </button>
             {!isDraft && !stage.isDefault && (
+              <button
+                type="button"
+                aria-label="스테이지 이름 수정"
+                onClick={() => {
+                  setLocalDraftName(stage.name);
+                  setIsEditingName(true);
+                }}
+                className="flex size-5 items-center justify-center text-icon-gray"
+              >
+                <EditIcon size={20} />
+              </button>
+            )}
+            {!isDraft && (
               <button
                 type="button"
                 aria-label="스테이지 삭제"
@@ -156,14 +167,7 @@ export function KanbanColumn({
       >
         <div className="flex flex-col gap-3 px-4 pb-4">
           {stage.cards.map((card) => (
-            <KanbanCard
-              key={card.id}
-              card={card}
-              stageId={stage.id}
-              onEdit={() => onEditCard?.(card, stage.id)}
-              onDelete={() => onDeleteCard?.(card)}
-              onClick={() => onCardClick?.(card)}
-            />
+            <KanbanCard key={card.id} card={card} stageId={stage.id} onCardClick={onCardClick} />
           ))}
           {!isDraft && stage.cards.length === 0 && (
             <div className="flex w-full items-center justify-center rounded-xl border border-dashed border-line-secondary py-8 text-2 text-label-description">

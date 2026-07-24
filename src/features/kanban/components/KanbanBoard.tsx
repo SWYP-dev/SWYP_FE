@@ -19,6 +19,8 @@ import {
   useUpdateStage,
   useDeleteStage,
 } from '@/features/kanban/api/useKanbanMutations';
+import { ApiClientError } from '@/lib/api/api-client';
+import { useDraftStageStore } from '@/features/kanban/store/draftStageStore';
 
 const MAX_STAGES = 10;
 
@@ -28,8 +30,12 @@ interface KanbanBoardProps {
 
 export function KanbanBoard({ initialStages }: KanbanBoardProps) {
   const [stages, setStages] = useState(initialStages);
-  const [isAddingStage, setIsAddingStage] = useState(false);
+  const { isAddingStage, draftName, startDraft, setDraftName, clearDraft } = useDraftStageStore();
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toastType, setToastType] = useState<'success' | 'error'>('success');
+  const [toastAction, setToastAction] = useState<{ label: string; onClick: () => void } | null>(
+    null
+  );
   const [deletingStage, setDeletingStage] = useState<KanbanStage | null>(null);
   const [addCardStageId, setAddCardStageId] = useState<number | null>(null);
   const [editingCard, setEditingCard] = useState<KanbanCard | null>(null);
@@ -55,7 +61,21 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
   const deleteStageMutation = useDeleteStage();
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
-  const dismissToast = useCallback(() => setToastMessage(null), []);
+
+  function showToast(
+    type: 'success' | 'error',
+    message: string,
+    action: { label: string; onClick: () => void } | null = null
+  ) {
+    setToastType(type);
+    setToastMessage(message);
+    setToastAction(action);
+  }
+
+  const dismissToast = useCallback(() => {
+    setToastMessage(null);
+    setToastAction(null);
+  }, []);
 
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
@@ -84,7 +104,7 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
       {
         onError: () => {
           setStages(initialStages);
-          setToastMessage('카드 이동에 실패했어요.');
+          showToast('error', '카드 이동에 실패했어요.');
         },
       }
     );
@@ -92,10 +112,10 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
 
   function handleAddStageClick() {
     if (stages.length >= MAX_STAGES) {
-      setToastMessage('전형 단계는 최대 10개까지 추가할 수 있어요.');
+      showToast('error', '전형 단계는 최대 10개까지 추가할 수 있어요.');
       return;
     }
-    setIsAddingStage(true);
+    startDraft();
   }
 
   function handleConfirmDraft(name: string) {
@@ -107,12 +127,12 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
             ...prev,
             { id: res.id, name: res.name, position: res.position, isDefault: false, cards: [] },
           ]);
-          setIsAddingStage(false);
-          setToastMessage('전형 단계가 추가되었어요.');
+          clearDraft();
+          showToast('success', '전형 단계가 추가되었어요.');
         },
         onError: () => {
-          setToastMessage('전형 단계 추가에 실패했어요.');
-          setIsAddingStage(false);
+          showToast('error', '전형 단계 추가에 실패했어요.');
+          clearDraft();
         },
       }
     );
@@ -154,9 +174,9 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
             }))
           );
           setEditingCard(null);
-          setToastMessage('지원 내역이 수정되었어요.');
+          showToast('success', '지원 내역이 수정되었어요.');
         },
-        onError: () => setToastMessage('지원 내역 수정에 실패했어요.'),
+        onError: () => showToast('error', '지원 내역 수정에 실패했어요.'),
       }
     );
   }
@@ -168,10 +188,48 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
           prev.map((s) => ({ ...s, cards: s.cards.filter((c) => c.id !== cardId) }))
         );
         setDeletingCard(null);
-        setToastMessage('지원 내역이 삭제되었어요.');
+        showToast('success', '지원 내역이 삭제되었어요.');
       },
-      onError: () => setToastMessage('지원 내역 삭제에 실패했어요.'),
+      onError: () => showToast('error', '지원 내역 삭제에 실패했어요.'),
     });
+  }
+
+  function handleUndoDeleteStage(name: string, cards: KanbanCard[]) {
+    createStageMutation.mutate(
+      { name },
+      {
+        onSuccess: (res) => {
+          const restoredStage: KanbanStage = {
+            id: res.id,
+            name: res.name,
+            position: res.position,
+            isDefault: false,
+            cards: [],
+          };
+          setStages((prev) => [...prev, restoredStage]);
+
+          cards.forEach((card, idx) => {
+            moveCardMutation.mutate(
+              { cardId: card.id, stageId: res.id, position: idx + 1 },
+              {
+                onSuccess: () => {
+                  setStages((prev) =>
+                    prev.map((s) =>
+                      s.id === res.id && !s.cards.some((c) => c.id === card.id)
+                        ? { ...s, cards: [...s.cards, card] }
+                        : s
+                    )
+                  );
+                },
+              }
+            );
+          });
+
+          showToast('success', '삭제를 취소했어요.');
+        },
+        onError: () => showToast('error', '되돌리기에 실패했어요.'),
+      }
+    );
   }
 
   const draftStage: KanbanStage = {
@@ -191,17 +249,28 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
             <KanbanColumn
               key={stage.id}
               stage={stage}
-              onRenameStage={(stageId, newName) => {
+              onRenameStage={(stageId, newName, position) => {
                 updateStageMutation.mutate(
-                  { stageId, name: newName },
+                  { stageId, name: newName, position },
                   {
                     onSuccess: () => {
                       setStages((prev) =>
                         prev.map((s) => (s.id === stageId ? { ...s, name: newName } : s))
                       );
-                      setToastMessage('전형 단계 이름이 수정되었어요.');
+                      showToast('success', '전형 단계 이름이 수정되었어요.');
                     },
-                    onError: () => setToastMessage('전형 단계 수정에 실패했어요.'),
+                    onError: (err) => {
+                      if (
+                        err instanceof ApiClientError &&
+                        err.code === 'DEFAULT_STAGE_NAME_CHANGE_NOT_ALLOWED'
+                      ) {
+                        showToast('error', '기본 전형 단계는 이름을 변경할 수 없어요.');
+                      } else if (err instanceof ApiClientError && err.code === 'K007') {
+                        showToast('error', '올바른 전형 이름을 입력해주세요.');
+                      } else {
+                        showToast('error', '전형 단계 수정에 실패했어요.');
+                      }
+                    },
                   }
                 );
               }}
@@ -210,9 +279,7 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
                 if (target) setDeletingStage(target);
               }}
               onAddCard={(stageId) => setAddCardStageId(stageId)}
-              onEditCard={(card) => setEditingCard(card)}
-              onDeleteCard={(card) => setDeletingCard(card)}
-              onCardClick={(card) => setViewingCardId(card.id)}
+              onCardClick={(cardId) => setViewingCardId(cardId)}
             />
           ))}
         {isAddingStage && (
@@ -220,8 +287,10 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
             key="draft"
             stage={draftStage}
             isDraft
+            draftName={draftName}
+            onDraftNameChange={setDraftName}
             onConfirmDraft={handleConfirmDraft}
-            onCancelDraft={() => setIsAddingStage(false)}
+            onCancelDraft={() => clearDraft()}
           />
         )}
       </div>
@@ -232,6 +301,10 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
         message={toastMessage ?? ''}
         isVisible={toastMessage !== null}
         onDismiss={dismissToast}
+        type={toastType}
+        hasButton={toastAction !== null}
+        actionLabel={toastAction?.label}
+        onAction={toastAction?.onClick}
       />
 
       <DeleteStageModal
@@ -240,25 +313,37 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
         otherStages={stages.filter((s) => s.id !== deletingStage?.id)}
         onClose={() => setDeletingStage(null)}
         onConfirm={(stageId, moveToStageId) => {
+          const target = stages.find((s) => s.id === stageId);
+          const deletedName = target?.name ?? '';
+          const deletedCards = target?.cards ?? [];
+
           deleteStageMutation.mutate(
             { stageId, moveToStageId },
             {
               onSuccess: () => {
                 setStages((prev) => {
                   if (moveToStageId !== undefined) {
-                    const targetCards = prev.find((s) => s.id === stageId)?.cards ?? [];
                     return prev
                       .filter((s) => s.id !== stageId)
                       .map((s) =>
-                        s.id === moveToStageId ? { ...s, cards: [...s.cards, ...targetCards] } : s
+                        s.id === moveToStageId ? { ...s, cards: [...s.cards, ...deletedCards] } : s
                       );
                   }
                   return prev.filter((s) => s.id !== stageId);
                 });
                 setDeletingStage(null);
-                setToastMessage('전형 단계가 삭제되었어요.');
+                showToast('success', `'${deletedName}' 단계를 삭제했어요.`, {
+                  label: '되돌리기',
+                  onClick: () => handleUndoDeleteStage(deletedName, deletedCards),
+                });
               },
-              onError: () => setToastMessage('전형 단계 삭제에 실패했어요.'),
+              onError: (err) => {
+                if (err instanceof ApiClientError && err.code === 'DEFAULT_STAGE_CANNOT_DELETE') {
+                  showToast('error', '기본 전형 단계는 삭제할 수 없어요.');
+                } else {
+                  showToast('error', '전형 단계 삭제에 실패했어요.');
+                }
+              },
             }
           );
         }}
@@ -305,9 +390,9 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
                   )
                 );
                 setAddCardStageId(null);
-                setToastMessage('지원 내역이 추가되었어요.');
+                showToast('success', '지원 내역이 추가되었어요.');
               },
-              onError: () => setToastMessage('지원 내역 추가에 실패했어요.'),
+              onError: () => showToast('error', '지원 내역 추가에 실패했어요.'),
             }
           );
         }}

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import { Header } from '@/components/layout/header';
 import { Sidebar } from '@/components/layout/sidebar';
 import { JobCard } from '@/components/ui/job-card';
@@ -14,7 +15,7 @@ import {
   buildCareerParam,
   type CareerTagId,
 } from '@/features/feed/components/CareerFilterChip';
-import { RegionFilterButton } from '@/features/feed/components/RegionFilterButton';
+import { RegionFilterButton, buildRegionParam } from '@/features/feed/components/RegionFilterButton';
 import { JobCategoryFilterButton } from '@/features/feed/components/JobCategoryFilterButton';
 import { DeadlineSoonFilterButton } from '@/features/feed/components/DeadlineSoonFilterButton';
 import { useFeedQuery } from '@/features/feed/api/useFeedQuery';
@@ -77,6 +78,7 @@ function formatDeadline(deadline: string): string {
 
 export default function FeedPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [sort, setSort] = useState<SortOption>('LATEST');
   const [deadlineSoon, setDeadlineSoon] = useState(false);
   const [keyword, setKeyword] = useState('');
@@ -106,6 +108,7 @@ export default function FeedPage() {
       jobCategoryValue && jobCategoryValue.childIds.length > 0
         ? jobCategoryValue.childIds.join(',')
         : undefined,
+    region: buildRegionParam(regionValue),
     career: buildCareerParam(careerTags),
   });
 
@@ -117,6 +120,8 @@ export default function FeedPage() {
       if (!currentlyScrapped) {
         const res = await postScrap(feedId);
         setJobPostingIdMap((prev) => ({ ...prev, [feedId]: res.jobPostingId }));
+        setToastType('success');
+        setToastMessage('스크랩했어요.');
       } else {
         const jobPostingId = jobPostingIdMap[feedId];
         if (!jobPostingId) {
@@ -126,7 +131,11 @@ export default function FeedPage() {
           return;
         }
         await deleteScrap(jobPostingId);
+        setToastType('success');
+        setToastMessage('스크랩을 해제했어요.');
       }
+      queryClient.invalidateQueries({ queryKey: ['feed'] });
+      queryClient.invalidateQueries({ queryKey: ['scraps'] });
     } catch (err) {
       // 실패 시 롤백
       setScrapOverrides((prev) => ({ ...prev, [feedId]: currentlyScrapped }));

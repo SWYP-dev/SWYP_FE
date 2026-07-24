@@ -419,3 +419,20 @@ export function RegionFilterButton({ value, onApply }: RegionFilterButtonProps) 
     </>
   );
 }
+
+// 지역 선택 결과 → API `region` 쿼리 파라미터(콤마 구분) 변환.
+// "전국" 선택 시 필터 없음. 그룹만 선택(하위 지역 미선택) 시 그룹 라벨(예: "서울") 그대로 전송.
+export function buildRegionParam(value: SelectionValue | null): string | undefined {
+  if (!value || value.groupId === 'nationwide') return undefined;
+
+  const group = REGION_GROUPS.find((g) => g.id === value.groupId);
+  if (!group) return undefined;
+
+  if (value.childIds.length === 0) return group.label;
+
+  const labels = value.childIds
+    .map((childId) => group.children.find((c) => c.id === childId)?.label)
+    .filter((l): l is string => !!l);
+
+  return labels.length > 0 ? labels.join(',') : group.label;
+}

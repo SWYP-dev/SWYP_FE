@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import type { NextPage } from 'next';
 import { Sidebar } from '@/components/layout/sidebar';
 import { Header } from '@/components/layout/header';
@@ -22,23 +23,23 @@ import type { ScrapCardData } from '@/features/scraps/types/scrap';
 import type { ScrapItem } from '@/types/api';
 
 // ScrapItem(API 2.5 응답)에는 platform/jobCategory/region/career 필드가 아직 없음
-// (features/scraps/types/scrap.ts 상단 주석 참고). 백엔드 확장 전까지는 빈 값으로
-// 채워서 카드 레이아웃만 유지하고, 실제 값이 있는 필드(회사명/공고명/마감일 등)만 API 응답을 그대로 사용.
-// TODO: API 2.5 응답에 필드가 추가되면 세영님 확인 후 실제 값으로 교체.
+// (features/scraps/types/scrap.ts 상단 주석 참고). API 2.5가 필드를 안 내려주는 동안은
+// '' 대신 '-'로 채워 피드 카드와 표기 방식을 통일.
 function toScrapCardData(item: ScrapItem): ScrapCardData {
   return {
     ...item,
     deadlineLabel: formatDeadlineText(item.deadline),
     platformLabel: '',
     jobCategoryLabel: '',
-    region: '',
-    careerLabel: '',
+    region: '-',
+    careerLabel: '-',
   };
 }
 
 // Figma "스크랩 메인 페이지"(node 75:13324). sidebar의 '/scraps' 라우팅 대상.
 const ScrapsPage: NextPage = () => {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [currentPage, setCurrentPage] = useState(0);
 
   // ⚠️ 보류: API 명세서 2.5는 page/size만 지원. 아래 필터/정렬 UI는 통합 공고 피드와 동일하게
@@ -64,7 +65,10 @@ const ScrapsPage: NextPage = () => {
 
     try {
       await deleteScrap(jobPostingId);
-      refetch(); // 서버 기준 totalElements/totalPages 동기화
+      refetch();
+      queryClient.invalidateQueries({ queryKey: ['feed'] });
+      setToastType('success');
+      setToastMessage('스크랩을 해제했어요.');
     } catch (err) {
       setRemovedIds((prev) => {
         const next = new Set(prev);

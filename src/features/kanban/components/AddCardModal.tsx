@@ -45,6 +45,13 @@ interface FormErrors {
   deadline?: string;
 }
 
+// 사용자가 프로토콜 없이 URL을 입력해도(예: "naver.com") 서버 검증을 통과하도록 보정
+function normalizeUrl(url: string): string {
+  const trimmed = url.trim();
+  if (!trimmed) return trimmed;
+  return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+}
+
 // Figma "지원 내역 추가"(49:8042) / "지원 내역 수정"(49:8083) 모달 스펙 반영.
 // 두 화면이 동일한 4개 필드 구조 + 동일한 레이아웃 → mode prop으로 구분.
 // 추가: 전체 빈 상태 → 확인 버튼 비활성(disabled)
@@ -96,7 +103,7 @@ export function AddCardModal({
     onConfirm({
       companyName: form.companyName.trim(),
       jobTitle: form.jobTitle.trim(),
-      originalUrl: form.originalUrl.trim(),
+      originalUrl: normalizeUrl(form.originalUrl),
       deadline: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`,
       stageId,
       cardId: mode === 'edit' ? card?.id : undefined,
