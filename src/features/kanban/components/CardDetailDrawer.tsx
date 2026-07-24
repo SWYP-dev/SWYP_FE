@@ -227,16 +227,18 @@ export function CardDetailDrawer({
             {/* 첨부 파일 */}
             <div className="flex flex-col gap-2">
               <p className="text-3 font-medium text-label-body">첨부 파일</p>
-              {detail.documents
-                .filter((doc): doc is Extract<typeof doc, { type: 'FILE' }> => doc.type === 'FILE')
-                .map((doc) => (
-                  <AttachedFileItem
-                    key={doc.id}
-                    document={doc}
-                    onDownload={() => downloadDocument.mutate(doc.id)}
-                    onDelete={() => deleteDocumentMutation.mutate(doc.id)}
-                  />
-                ))}
+              <div className="flex min-w-0 flex-col gap-2">
+                {detail.documents
+                  .filter((doc): doc is Extract<typeof doc, { type: 'FILE' }> => doc.type === 'FILE')
+                  .map((doc) => (
+                    <AttachedFileItem
+                      key={doc.id}
+                      document={doc}
+                      onDownload={() => downloadDocument.mutate(doc.id)}
+                      onDelete={() => deleteDocumentMutation.mutate(doc.id)}
+                    />
+                  ))}
+              </div>
               <Button variant="secondary" className="w-full" onClick={handleFileButtonClick}>
                 + 첨부 파일 추가
               </Button>
@@ -245,15 +247,17 @@ export function CardDetailDrawer({
             {/* URL — Figma node 94:13318 카테고리 드롭다운 반영 */}
             <div className="flex flex-col gap-2">
               <p className="text-3 font-medium text-label-body">URL</p>
-              {detail.documents
-                .filter((doc): doc is Extract<typeof doc, { type: 'LINK' }> => doc.type === 'LINK')
-                .map((doc) => (
-                  <AttachedLinkItem
-                    key={doc.id}
-                    document={doc}
-                    onDelete={() => deleteDocumentMutation.mutate(doc.id)}
-                  />
-                ))}
+              <div className="flex min-w-0 flex-col gap-2">
+                {detail.documents
+                  .filter((doc): doc is Extract<typeof doc, { type: 'LINK' }> => doc.type === 'LINK')
+                  .map((doc) => (
+                    <AttachedLinkItem
+                      key={doc.id}
+                      document={doc}
+                      onDelete={() => deleteDocumentMutation.mutate(doc.id)}
+                    />
+                  ))}
+              </div>
 
               {isAddingLink ? (
                 <div className="flex flex-col gap-2">
