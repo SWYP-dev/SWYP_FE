@@ -9,9 +9,7 @@ import { formatDeadlineText } from '../utils/formatDeadline';
 interface KanbanCardProps {
   card: KanbanCardType;
   stageId: number;
-  onEdit?: () => void;
-  onDelete?: () => void;
-  onClick?: () => void;
+  onCardClick?: (cardId: number) => void;
 }
 
 function handleOriginalLinkClick(event: React.MouseEvent<HTMLAnchorElement>) {
@@ -36,7 +34,7 @@ function ExternalLinkIcon() {
   return <Image src="/icons/external-link.svg" alt="" width={14} height={14} />;
 }
 
-export function KanbanCard({ card, stageId, onClick }: KanbanCardProps) {
+export function KanbanCard({ card, stageId, onCardClick }: KanbanCardProps) {
   // fix: id를 String으로 통일 — 신규 추가 스테이지 드래그 안 되는 버그 수정 (버그3)
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: String(card.id),
@@ -53,7 +51,7 @@ export function KanbanCard({ card, stageId, onClick }: KanbanCardProps) {
       style={style}
       {...listeners}
       {...attributes}
-      onClick={onClick}
+      onClick={() => onCardClick?.(card.id)}
       className={`flex w-full cursor-grab flex-col items-start justify-center active:cursor-grabbing ${isDragging ? 'z-50' : ''}`}
     >
       <div className="flex w-full items-start rounded-xl bg-base-white px-5 pb-3 pt-4">
