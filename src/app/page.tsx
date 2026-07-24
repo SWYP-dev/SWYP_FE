@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Header } from '@/components/layout/header';
 import { Sidebar } from '@/components/layout/sidebar';
 import { JobCard } from '@/components/ui/job-card';
@@ -17,6 +18,8 @@ import { JobCategoryFilterButton } from '@/features/feed/components/JobCategoryF
 import { DeadlineSoonFilterButton } from '@/features/feed/components/DeadlineSoonFilterButton';
 import { useFeedQuery } from '@/features/feed/api/useFeedQuery';
 import { postScrap, deleteScrap } from '@/features/feed/api/scrap';
+import { registerKanbanCard } from '@/features/kanban/api/registerCard';
+import { ApiClientError } from '@/lib/api/api-client';
 import type { FeedQueryParams } from '@/types/api';
 
 type SortOption = NonNullable<FeedQueryParams['sort']>;
@@ -72,6 +75,7 @@ function formatDeadline(deadline: string): string {
 }
 
 export default function FeedPage() {
+  const router = useRouter();
   const [sort, setSort] = useState<SortOption>('LATEST');
   const [deadlineSoon, setDeadlineSoon] = useState(false);
   const [keyword, setKeyword] = useState('');
@@ -126,6 +130,30 @@ export default function FeedPage() {
       setScrapOverrides((prev) => ({ ...prev, [feedId]: currentlyScrapped }));
       console.error('스크랩 처리 실패', err);
       setToastMessage(currentlyScrapped ? '스크랩 해제에 실패했어요.' : '스크랩에 실패했어요.');
+    }
+  }
+
+  // Figma "통합 공고 탐색 페이지(지원 현황 추가 버튼 클릭)"(node 133:23462) 반영.
+  // API 3.2 정책상 칸반 등록은 jobPostingId(스크랩 사본 id) 필수라, 피드에서 바로
+  // 누르면 먼저 스크랩 처리(postScrap은 이미 스크랩된 공고 재요청 시 기존 사본 재사용) 후 등록.
+  async function handleAddToKanban(feedId: number) {
+    try {
+      let jobPostingId = jobPostingIdMap[feedId];
+      if (!jobPostingId) {
+        const res = await postScrap(feedId);
+        jobPostingId = res.jobPostingId;
+        setJobPostingIdMap((prev) => ({ ...prev, [feedId]: jobPostingId }));
+        setScrapOverrides((prev) => ({ ...prev, [feedId]: true }));
+      }
+      await registerKanbanCard(jobPostingId);
+      setToastMessage('지원 현황에 추가했어요.');
+    } catch (err) {
+      if (err instanceof ApiClientError && err.code === 'ALREADY_REGISTERED') {
+        setToastMessage('이미 지원 현황에 등록된 공고예요.');
+      } else {
+        console.error('지원 현황 추가 실패', err);
+        setToastMessage('지원 현황 추가에 실패했어요.');
+      }
     }
   }
 
@@ -192,6 +220,7 @@ export default function FeedPage() {
                         originalUrl={job.originalUrl}
                         isScrapped={isScrapped}
                         onToggleScrap={() => handleToggleScrap(job.id, isScrapped)}
+                        onAddToKanban={() => handleAddToKanban(job.id)}
                       />
                     );
                   })}
@@ -215,6 +244,9 @@ export default function FeedPage() {
         message={toastMessage ?? ''}
         isVisible={toastMessage !== null}
         onDismiss={() => setToastMessage(null)}
+        hasButton={toastMessage === '지원 현황에 추가했어요.'}
+        actionLabel="지원 현황 이동"
+        onAction={() => router.push('/kanban')}
       />
     </div>
   );
