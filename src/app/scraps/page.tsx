@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import type { NextPage } from 'next';
 import { Sidebar } from '@/components/layout/sidebar';
 import { Header } from '@/components/layout/header';
@@ -39,6 +40,7 @@ function toScrapCardData(item: ScrapItem): ScrapCardData {
 // Figma "스크랩 메인 페이지"(node 75:13324). sidebar의 '/scraps' 라우팅 대상.
 const ScrapsPage: NextPage = () => {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [currentPage, setCurrentPage] = useState(0);
 
   // ⚠️ 보류: API 명세서 2.5는 page/size만 지원. 아래 필터/정렬 UI는 통합 공고 피드와 동일하게
@@ -64,7 +66,8 @@ const ScrapsPage: NextPage = () => {
 
     try {
       await deleteScrap(jobPostingId);
-      refetch(); // 서버 기준 totalElements/totalPages 동기화
+      refetch();
+      queryClient.invalidateQueries({ queryKey: ['feed'] });
       setToastType('success');
       setToastMessage('스크랩을 해제했어요.');
     } catch (err) {

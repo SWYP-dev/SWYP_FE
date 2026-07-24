@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import { Header } from '@/components/layout/header';
 import { Sidebar } from '@/components/layout/sidebar';
 import { JobCard } from '@/components/ui/job-card';
@@ -77,6 +78,7 @@ function formatDeadline(deadline: string): string {
 
 export default function FeedPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [sort, setSort] = useState<SortOption>('LATEST');
   const [deadlineSoon, setDeadlineSoon] = useState(false);
   const [keyword, setKeyword] = useState('');
@@ -132,6 +134,8 @@ export default function FeedPage() {
         setToastType('success');
         setToastMessage('스크랩을 해제했어요.');
       }
+      queryClient.invalidateQueries({ queryKey: ['feed'] });
+      queryClient.invalidateQueries({ queryKey: ['scraps'] });
     } catch (err) {
       // 실패 시 롤백
       setScrapOverrides((prev) => ({ ...prev, [feedId]: currentlyScrapped }));
