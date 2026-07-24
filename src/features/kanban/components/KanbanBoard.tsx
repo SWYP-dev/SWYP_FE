@@ -92,9 +92,6 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
       const toStageId = Number(over.id);
       if (fromStageId === toStageId) return;
 
-      const movingStage = stages.find((s) => s.id === fromStageId);
-      if (!movingStage) return;
-
       let newPosition = 0;
       setStages((prev) => {
         const sorted = [...prev].sort((a, b) => a.position - b.position);
@@ -110,19 +107,16 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
         return reordered.map((s, idx) => ({ ...s, position: idx + 1 }));
       });
 
-      // 세영님 확인(2026-07-25): name은 항상 필수(K005) — 기본/커스텀 스테이지 구분 없이
-      // 항상 현재 이름을 그대로 실어서 보내야 함. (K023은 "실제로 이름 값을 바꾸려는 시도"에만
-      // 걸리는 것으로 추정 — 기존 이름 그대로면 통과됨.)
+      // 세영님 확인(2026-07-25): PATCH /kanban/stages/{id}는 name, position 각각 생략 가능.
+      // 한쪽만 보내면 다른 쪽은 기존 값 그대로 유지됨 — 순서만 바꿀 땐 position만 보내면 됨.
       updateStageMutation.mutate(
-        { stageId: fromStageId, name: movingStage.name, position: newPosition },
+        { stageId: fromStageId, position: newPosition },
         {
           onError: (err) => {
             setStages(initialStages);
             setToastType('error');
             if (err instanceof ApiClientError && err.code === 'K023') {
               setToastMessage('기본 전형 단계는 이름을 변경할 수 없어요.');
-            } else if (err instanceof ApiClientError && err.code === 'K005') {
-              setToastMessage('전형 이름이 누락되어 순서 변경에 실패했어요.');
             } else {
               setToastMessage('전형 단계 순서 변경에 실패했어요.');
             }
