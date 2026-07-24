@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Header } from '@/components/layout/header';
 import { Sidebar } from '@/components/layout/sidebar';
 import { JobCard } from '@/components/ui/job-card';
+import { EmptyJobPosting } from '@/components/ui/empty-job-posting';
 import { Pagination } from '@/components/ui/pagination';
 import { Toast } from '@/components/ui/toast';
 import type { SelectionValue } from '@/components/ui/selection-modal';
@@ -157,6 +158,13 @@ export default function FeedPage() {
     }
   }
 
+  function resetFilters() {
+    setJobCategoryValue(null);
+    setRegionValue(null);
+    setCareerTags([]);
+    setDeadlineSoon(false);
+  }
+
   return (
     <div className="w-full h-screen relative bg-base-white overflow-hidden flex text-left text-label-base font-pretendard">
       <Sidebar />
@@ -195,16 +203,21 @@ export default function FeedPage() {
         <div className="flex-1 flex flex-col px-11 py-5 bg-surface-card">
           <div className="flex flex-col gap-6">
             <div className="flex flex-col gap-8">
-              <div className="flex flex-col items-center gap-3 p-3 bg-base-white border border-line-secondary rounded-[20px]">
+              <div className="flex flex-1 flex-col items-center gap-3 rounded-[20px] border border-line-secondary bg-base-white p-3">
                 {isLoading && <p className="py-11 text-label-description">불러오는 중...</p>}
                 {isError && (
                   <p className="py-11 text-status-negative">
                     공고를 불러오지 못했어요. 잠시 후 다시 시도해주세요.
                   </p>
                 )}
+                {!isLoading && !isError && (data?.items.length ?? 0) === 0 && (
+                  <EmptyJobPosting onResetFilters={resetFilters} />
+                )}
                 {!isLoading &&
                   !isError &&
-                  data?.items.map((job) => {
+                  data &&
+                  data.items.length > 0 &&
+                  data.items.map((job) => {
                     const isScrapped = scrapOverrides[job.id] ?? job.isScrapped;
                     return (
                       <JobCard
@@ -226,7 +239,7 @@ export default function FeedPage() {
                   })}
               </div>
 
-              {data && (
+              {data && data.items.length > 0 && (
                 <div className="flex justify-center">
                   <Pagination
                     currentPage={currentPage}
