@@ -4,7 +4,7 @@
  */
 export interface JobPosting {
   id: number;
-  platform: 'SARAMIN' | 'WANTED' | 'WORKNET' | 'DIRECT';
+  platform: 'SARAMIN' | 'WANTED' | 'WORKNET' | 'DIRECT' | 'PUBLIC' | 'PUBLIC_PERSONNEL';
   companyName: string;
   jobTitle: string;
   jobCategories: string[]; // 백엔드 확정 전까지 임시로 배열 가정
