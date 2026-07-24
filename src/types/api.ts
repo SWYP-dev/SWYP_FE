@@ -86,6 +86,10 @@ export interface ScrapItem {
   originalUrl: string;
   isKanbanRegistered: boolean;
   scrappedAt: string;
+  platform?: Platform;
+  jobCategory?: JobCategory | string;
+  region?: string | null;
+  career?: string | null;
 }
 
 // ===================================
