@@ -65,6 +65,8 @@ const ScrapsPage: NextPage = () => {
     try {
       await deleteScrap(jobPostingId);
       refetch(); // 서버 기준 totalElements/totalPages 동기화
+      setToastType('success');
+      setToastMessage('스크랩을 해제했어요.');
     } catch (err) {
       setRemovedIds((prev) => {
         const next = new Set(prev);
