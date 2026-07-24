@@ -9,6 +9,8 @@ import { DragHandleIcon, EditIcon, PlusSmallIcon, TrashIcon } from '@/components
 interface KanbanColumnProps {
   stage: KanbanStage;
   isDraft?: boolean;
+  draftName?: string;
+  onDraftNameChange?: (name: string) => void;
   onRenameStage?: (stageId: number, newName: string) => void;
   onDeleteStage?: (stageId: number) => void;
   onConfirmDraft?: (name: string) => void;
@@ -20,6 +22,8 @@ interface KanbanColumnProps {
 export function KanbanColumn({
   stage,
   isDraft = false,
+  draftName: draftNameProp,
+  onDraftNameChange,
   onRenameStage,
   onDeleteStage,
   onConfirmDraft,
@@ -34,14 +38,26 @@ export function KanbanColumn({
   });
 
   const [isEditingName, setIsEditingName] = useState(isDraft);
-  const [draftName, setDraftName] = useState(isDraft ? '' : stage.name);
+  const [localDraftName, setLocalDraftName] = useState(isDraft ? '' : stage.name);
   const [hasError, setHasError] = useState(false);
+
+  // draft 모드일 땐 zustand 값 우선 사용 — 페이지 이동 후 돌아와도 입력값 유지됨
+  const draftName = isDraft ? (draftNameProp ?? '') : localDraftName;
+
+  function updateDraftName(value: string) {
+    if (isDraft) {
+      onDraftNameChange?.(value);
+    } else {
+      setLocalDraftName(value);
+    }
+    setHasError(false);
+  }
 
   function commit() {
     const trimmed = draftName.trim();
     if (isDraft) {
       if (!trimmed) {
-        onCancelDraft?.();
+        setHasError(true); // fix: 빈 값이면 draft 취소 대신 에러 표시 (Figma node 49:7822)
         return;
       }
       onConfirmDraft?.(trimmed);
@@ -51,7 +67,7 @@ export function KanbanColumn({
     if (trimmed && trimmed !== stage.name) {
       onRenameStage?.(stage.id, trimmed);
     } else {
-      setDraftName(stage.name);
+      setLocalDraftName(stage.name);
     }
   }
 
@@ -60,7 +76,7 @@ export function KanbanColumn({
       onCancelDraft?.();
       return;
     }
-    setDraftName(stage.name);
+    setLocalDraftName(stage.name);
     setIsEditingName(false);
     setHasError(false);
   }
@@ -82,10 +98,7 @@ export function KanbanColumn({
                 <input
                   autoFocus
                   value={draftName}
-                  onChange={(e) => {
-                    setDraftName(e.target.value);
-                    setHasError(false);
-                  }}
+                  onChange={(e) => updateDraftName(e.target.value)}
                   onBlur={commit}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') commit();
@@ -124,7 +137,7 @@ export function KanbanColumn({
               type="button"
               aria-label="스테이지 이름 수정"
               onClick={() => {
-                setDraftName(stage.name);
+                setLocalDraftName(stage.name);
                 setIsEditingName(true);
               }}
               className="flex size-5 items-center justify-center text-icon-gray"
