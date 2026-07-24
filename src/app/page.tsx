@@ -94,6 +94,7 @@ export default function FeedPage() {
   const [scrapOverrides, setScrapOverrides] = useState<Record<number, boolean>>({});
   const [jobPostingIdMap, setJobPostingIdMap] = useState<Record<number, number>>({});
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toastType, setToastType] = useState<'success' | 'error'>('success');
 
   const { data, isLoading, isError } = useFeedQuery({
     page: currentPage,
@@ -130,6 +131,7 @@ export default function FeedPage() {
       // 실패 시 롤백
       setScrapOverrides((prev) => ({ ...prev, [feedId]: currentlyScrapped }));
       console.error('스크랩 처리 실패', err);
+      setToastType('error');
       setToastMessage(currentlyScrapped ? '스크랩 해제에 실패했어요.' : '스크랩에 실패했어요.');
     }
   }
@@ -147,8 +149,10 @@ export default function FeedPage() {
         setScrapOverrides((prev) => ({ ...prev, [feedId]: true }));
       }
       await registerKanbanCard(jobPostingId);
+      setToastType('success');
       setToastMessage('지원 현황에 추가했어요.');
     } catch (err) {
+      setToastType('error');
       if (err instanceof ApiClientError && err.code === 'ALREADY_REGISTERED') {
         setToastMessage('이미 지원 현황에 등록된 공고예요.');
       } else {
@@ -280,7 +284,8 @@ export default function FeedPage() {
         message={toastMessage ?? ''}
         isVisible={toastMessage !== null}
         onDismiss={() => setToastMessage(null)}
-        hasButton={toastMessage === '지원 현황에 추가했어요.'}
+        type={toastType}
+        hasButton={toastType === 'success' && toastMessage === '지원 현황에 추가했어요.'}
         actionLabel="지원 현황 이동"
         onAction={() => router.push('/kanban')}
       />
