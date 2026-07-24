@@ -15,10 +15,13 @@ import {
 } from '@/features/documents/api/useDocumentMutations';
 import { AttachedFileItem } from '@/features/documents/components/AttachedFileItem';
 import { AttachedLinkItem } from '@/features/documents/components/AttachedLinkItem';
+import { ApiClientError } from '@/lib/api/api-client';
 
 // Figma node 94:13318 기준 — URL 카테고리 드롭다운 옵션
 const URL_CATEGORIES = ['이력서', '포트폴리오', '개인 채널', '기타'] as const;
 type UrlCategory = (typeof URL_CATEGORIES)[number];
+
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB (API 명세서 4.4.2 정책)
 
 // career 값 → 표시 텍스트 변환
 function formatCareer(career: string | null): string {
@@ -60,6 +63,7 @@ export function CardDetailDrawer({
   const [linkCategory, setLinkCategory] = useState<UrlCategory | null>(null);
   const [linkUrl, setLinkUrl] = useState('');
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+  const [fileError, setFileError] = useState<string | null>(null);
 
   // 상세 데이터 로드 시 1회만 memo 초기값 동기화
   if (detail && !isMemoSynced) {
@@ -72,6 +76,7 @@ export function CardDetailDrawer({
     setLinkCategory(null);
     setLinkUrl('');
     setShowCategoryDropdown(false);
+    setFileError(null);
   }
 
   function handleMemoBlur() {
@@ -83,10 +88,29 @@ export function CardDetailDrawer({
   function handleFileButtonClick() {
     const input = window.document.createElement('input');
     input.type = 'file';
-    input.accept = '.pdf,.docx,.pptx'; // 수정: .doc, .ppt 제거 (API 4.1 허용 형식은 PDF/DOCX/PPTX만)
+    input.accept = '.pdf,.docx,.pptx';
     input.onchange = () => {
       const file = input.files?.[0];
-      if (file) uploadFile.mutate({ file, name: file.name });
+      if (!file) return;
+
+      if (file.size > MAX_FILE_SIZE) {
+        setFileError('파일 용량은 10MB를 초과할 수 없어요.');
+        return;
+      }
+
+      setFileError(null);
+      uploadFile.mutate(
+        { file, name: file.name },
+        {
+          onError: (err) => {
+            if (err instanceof ApiClientError && err.code === 'STORAGE_LIMIT_EXCEEDED') {
+              setFileError('계정 저장 용량(100MB)이 초과되어 첨부할 수 없어요.');
+            } else {
+              setFileError('파일 첨부에 실패했어요. 10MB 이내의 파일만 첨부 가능합니다.');
+            }
+          },
+        }
+      );
     };
     input.click();
   }
@@ -242,6 +266,9 @@ export function CardDetailDrawer({
               <Button variant="secondary" className="w-full" onClick={handleFileButtonClick}>
                 + 첨부 파일 추가
               </Button>
+              {fileError && (
+                <p className="text-1 font-medium text-status-negative">{fileError}</p>
+              )}
             </div>
 
             {/* URL — Figma node 94:13318 카테고리 드롭다운 반영 */}
