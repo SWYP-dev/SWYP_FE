@@ -4,12 +4,12 @@ interface EmptyJobPostingProps {
   onResetFilters: () => void;
 }
 
-// Figma "필터링 된 채용 공고가 없는 경우"(node 133:23477) EmptyJobPosting 컴포넌트 반영.
-// public에 empty-search.svg가 없어 search.svg 사용 (40×40 스케일).
+// Figma "필터링 된 채용 공고가 없는 경우"(node 133:23497) EmptyJobPosting 컴포넌트 반영.
+// size-full + justify-center로 부모 영역 전체를 채운 뒤 중앙 정렬 (Figma 스펙 그대로).
 export function EmptyJobPosting({ onResetFilters }: EmptyJobPostingProps) {
   return (
-    <div className="flex w-full flex-1 flex-col items-center justify-center gap-4 py-20">
-      <Image src="/icons/search.svg" alt="" width={40} height={40} />
+    <div className="flex h-full w-full min-h-[420px] flex-1 flex-col items-center justify-center gap-4">
+      <Image src="/icons/empty-search.svg" alt="" width={40} height={40} />
       <div className="flex flex-col items-center gap-1 text-center">
         <p className="text-9 font-semibold leading-[1.4] text-label-base">
           조건에 맞는 채용 공고가 없어요
