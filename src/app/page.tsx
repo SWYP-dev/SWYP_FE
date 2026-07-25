@@ -20,7 +20,7 @@ import { JobCategoryFilterButton, buildJobCategoryParam } from '@/features/feed/
 import { DeadlineSoonFilterButton } from '@/features/feed/components/DeadlineSoonFilterButton';
 import { useFeedQuery } from '@/features/feed/api/useFeedQuery';
 import { postScrap, deleteScrap } from '@/features/feed/api/scrap';
-import { registerKanbanCard } from '@/features/kanban/api/registerCard';
+import { registerKanbanCard, registerKanbanCardDirect } from '@/features/kanban/api/registerCard';
 import { kanbanKeys } from '@/features/kanban/api/useKanbanQuery';
 import { ApiClientError } from '@/lib/api/api-client';
 import { formatCareer } from '@/features/feed/utils/formatCareer';
@@ -142,19 +142,16 @@ export default function FeedPage() {
     }
   }
 
-  // Figma "통합 공고 탐색 페이지(지원 현황 추가 버튼 클릭)"(node 133:23462) 반영.
-  // API 3.2 정책상 칸반 등록은 jobPostingId(스크랩 사본 id) 필수라, 피드에서 바로
-  // 누르면 먼저 스크랩 처리(postScrap은 이미 스크랩된 공고 재요청 시 기존 사본 재사용) 후 등록.
   async function handleAddToKanban(feedId: number) {
     try {
-      let jobPostingId = jobPostingIdMap[feedId];
-      if (!jobPostingId) {
-        const res = await postScrap(feedId);
-        jobPostingId = res.jobPostingId;
-        setJobPostingIdMap((prev) => ({ ...prev, [feedId]: jobPostingId }));
-        setScrapOverrides((prev) => ({ ...prev, [feedId]: true }));
+      const existingJobPostingId = jobPostingIdMap[feedId];
+      if (existingJobPostingId) {
+        // 이미 스크랩된 공고라면 기존 3.2 등록 그대로 사용
+        await registerKanbanCard(existingJobPostingId);
+      } else {
+        // ⚠️ [QA 반영] 스크랩 처리 없이 바로 등록 (2.6) — 스크랩 탭에 노출되지 않음
+        await registerKanbanCardDirect(feedId);
       }
-      await registerKanbanCard(jobPostingId);
       queryClient.invalidateQueries({ queryKey: kanbanKeys.board() });
       setToastType('success');
       setToastMessage('지원 현황에 추가했어요.');
