@@ -380,6 +380,8 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
               }}
               onAddCard={(stageId) => setAddCardStageId(stageId)}
               onCardClick={(cardId) => setViewingCardId(cardId)}
+              onEditCard={(card) => setEditingCard(card)}
+              onDeleteCard={(card) => setDeletingCard(card)}
             />
           ))}
         </div>

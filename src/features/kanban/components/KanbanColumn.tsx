@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
-import type { KanbanStage } from '@/types/api';
+import type { KanbanStage, KanbanCard as KanbanCardType } from '@/types/api';
 import { KanbanCard } from './KanbanCard';
 import { DragHandleIcon, EditIcon, PlusSmallIcon, TrashIcon } from '@/components/ui/icons';
 
@@ -18,6 +18,8 @@ interface KanbanColumnProps {
   onCancelDraft?: () => void;
   onAddCard?: (stageId: number) => void;
   onCardClick?: (cardId: number) => void;
+  onEditCard?: (card: KanbanCardType) => void;
+  onDeleteCard?: (card: KanbanCardType) => void;
 }
 
 export function KanbanColumn({
@@ -31,6 +33,8 @@ export function KanbanColumn({
   onCancelDraft,
   onAddCard,
   onCardClick,
+  onEditCard,
+  onDeleteCard,
 }: KanbanColumnProps) {
   // fix: id를 String으로 통일 — 신규 추가 스테이지 드래그 안 되는 버그 수정 (버그3)
   const { setNodeRef, isOver } = useDroppable({
@@ -193,7 +197,14 @@ export function KanbanColumn({
       >
         <div className="flex flex-col gap-3 px-4 pb-4">
           {stage.cards.map((card) => (
-            <KanbanCard key={card.id} card={card} stageId={stage.id} onCardClick={onCardClick} />
+            <KanbanCard
+              key={card.id}
+              card={card}
+              stageId={stage.id}
+              onCardClick={onCardClick}
+              onEditCard={onEditCard}
+              onDeleteCard={onDeleteCard}
+            />
           ))}
           {!isDraft && stage.cards.length === 0 && (
             <div className="flex w-full items-center justify-center rounded-xl border border-dashed border-line-secondary py-8 text-2 text-label-description">
