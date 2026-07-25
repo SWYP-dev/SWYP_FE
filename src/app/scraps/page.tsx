@@ -84,7 +84,7 @@ const ScrapsPage: NextPage = () => {
       await registerKanbanCard(jobPostingId);
       queryClient.invalidateQueries({ queryKey: kanbanKeys.board() });
       setToastType('success');
-      setToastMessage('지원 현황에 추가했어요.');
+      setToastMessage('지원 현황에 추가되었어요.');
     } catch (err) {
       setToastType('error');
       if (
@@ -162,7 +162,7 @@ const ScrapsPage: NextPage = () => {
         isVisible={toastMessage !== null}
         onDismiss={() => setToastMessage(null)}
         type={toastType}
-        hasButton={toastType === 'success' && toastMessage === '지원 현황에 추가했어요.'}
+        hasButton={toastType === 'success' && toastMessage === '지원 현황에 추가되었어요.'}
         actionLabel="지원 현황 이동"
         onAction={() => router.push('/kanban')}
       />
