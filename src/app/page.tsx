@@ -157,8 +157,8 @@ export default function FeedPage() {
       setToastMessage('지원 현황에 추가했어요.');
     } catch (err) {
       setToastType('error');
-      if (err instanceof ApiClientError && err.code === 'ALREADY_REGISTERED') {
-        setToastMessage('이미 지원 현황에 등록된 공고예요.');
+      if (err instanceof ApiClientError && err.code === 'DUPLICATE_KANBAN_CARD') {
+        setToastMessage('이미 등록된 공고예요.');
       } else {
         console.error('지원 현황 추가 실패', err);
         setToastMessage('지원 현황 추가에 실패했어요.');
