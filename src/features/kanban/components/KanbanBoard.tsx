@@ -164,23 +164,53 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
     // 카드 이동
     const cardId = Number(active.id);
     const fromStageId = active.data.current?.stageId as number;
-    const toStageId = Number(over.id);
+    const overData = over.data.current as
+      | { type?: string; stageId?: number; cardId?: number }
+      | undefined;
 
-    if (!fromStageId || fromStageId === toStageId) return;
+    // 카드 위에 놓았으면 그 카드 위치 기준, 스테이지 빈 영역에 놓았으면 스테이지 자체 id
+    const toStageId = overData?.type === 'card-zone' ? (overData.stageId as number) : Number(over.id);
+    const overCardId = overData?.type === 'card-zone' ? (overData.cardId as number) : null;
 
-    setStages((prev) => {
-      const fromStage = prev.find((s) => s.id === fromStageId);
-      const card = fromStage?.cards.find((c) => c.id === cardId);
-      if (!card) return prev;
-      return prev.map((s) => {
-        if (s.id === fromStageId) return { ...s, cards: s.cards.filter((c) => c.id !== cardId) };
-        if (s.id === toStageId) return { ...s, cards: [...s.cards, card] };
-        return s;
-      });
+    if (!fromStageId) return;
+    if (overCardId === cardId) return; // 자기 자신 위에 드롭 — 변화 없음
+
+    const fromStage = stages.find((s) => s.id === fromStageId);
+    const draggedCard = fromStage?.cards.find((c) => c.id === cardId);
+    if (!draggedCard) return;
+
+    let newPosition = 1;
+
+    const nextStages = stages.map((s) => {
+      if (s.id === fromStageId && s.id === toStageId) {
+        // 같은 스테이지 내 순서 변경
+        const withoutCard = s.cards.filter((c) => c.id !== cardId);
+        const targetIndex = overCardId ? withoutCard.findIndex((c) => c.id === overCardId) : -1;
+        const insertAt = targetIndex === -1 ? withoutCard.length : targetIndex;
+        const reordered = [...withoutCard];
+        reordered.splice(insertAt, 0, draggedCard);
+        newPosition = insertAt + 1;
+        return { ...s, cards: reordered };
+      }
+      if (s.id === fromStageId) {
+        return { ...s, cards: s.cards.filter((c) => c.id !== cardId) };
+      }
+      if (s.id === toStageId) {
+        // 다른 스테이지로 이동 — 놓은 카드의 위치에 끼워넣기 (없으면 맨 끝)
+        const targetIndex = overCardId ? s.cards.findIndex((c) => c.id === overCardId) : -1;
+        const insertAt = targetIndex === -1 ? s.cards.length : targetIndex;
+        const reordered = [...s.cards];
+        reordered.splice(insertAt, 0, draggedCard);
+        newPosition = insertAt + 1;
+        return { ...s, cards: reordered };
+      }
+      return s;
     });
 
+    setStages(nextStages);
+
     moveCardMutation.mutate(
-      { cardId, stageId: toStageId, position: 1 },
+      { cardId, stageId: toStageId, position: newPosition },
       {
         onError: () => {
           setStages(initialStages);

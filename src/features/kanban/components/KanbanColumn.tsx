@@ -39,7 +39,7 @@ export function KanbanColumn({
   // fix: id를 String으로 통일 — 신규 추가 스테이지 드래그 안 되는 버그 수정 (버그3)
   const { setNodeRef, isOver } = useDroppable({
     id: String(stage.id),
-    data: { stageId: stage.id },
+    data: { stageId: stage.id, type: 'stage-zone' },
   });
 
   const {
