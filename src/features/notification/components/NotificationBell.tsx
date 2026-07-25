@@ -1,8 +1,11 @@
 'use client';
 
+import { useState } from 'react';
 import { Popover, usePopoverTrigger } from '@/components/ui/popover';
 import { NotificationModal } from './NotificationModal';
 import { useNotificationInbox } from '../api/useNotificationQuery';
+import { useAuthStore } from '@/features/auth/store/authStore';
+import { LoginModal } from '@/features/auth/components/LoginModal';
 
 function BellIcon() {
   return (
@@ -23,17 +26,31 @@ function BellIcon() {
 // unreadCount > 0일 때만 벨 우측 상단에 빨간 점 표시. 클릭 시 Popover로 NotificationModal
 // 오픈 — Figma 시안에 전체화면 딤 처리가 없어서(일반 Modal이 아니라 팝오버 형태) 기존
 // Popover 패턴(ProfileMenu·AttachmentCategoryDropdown과 동일)을 재사용.
+//
+// ⚠️ [QA 반영] 비로그인 상태에서 클릭하면 알림 팝오버 대신 로그인 모달을 띄우도록 처리.
+// useNotificationInbox는 enabled: isAuthenticated라 비로그인 땐 애초에 데이터가 없어
+// 팝오버를 열어도 빈 화면/에러 상태만 보였음 — Sidebar의 로그인 유도 패턴과 동일하게 처리.
 export function NotificationBell() {
   const { isOpen, triggerRef, toggle, close } = usePopoverTrigger<HTMLButtonElement>();
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const { data } = useNotificationInbox();
   const hasUnread = (data?.unreadCount ?? 0) > 0;
+
+  function handleClick() {
+    if (!isAuthenticated) {
+      setIsLoginModalOpen(true);
+      return;
+    }
+    toggle();
+  }
 
   return (
     <>
       <button
         ref={triggerRef}
         type="button"
-        onClick={toggle}
+        onClick={handleClick}
         aria-label="알림"
         className="relative flex size-6 items-center justify-center"
       >
@@ -44,6 +61,8 @@ export function NotificationBell() {
       <Popover isOpen={isOpen} onClose={close} triggerRef={triggerRef} align="end">
         <NotificationModal />
       </Popover>
+
+      <LoginModal isOpen={isLoginModalOpen} onClose={() => setIsLoginModalOpen(false)} />
     </>
   );
 }
