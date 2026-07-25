@@ -9,7 +9,7 @@ import { AddStageButton } from './AddStageButton';
 import { AddStageModal } from './AddStageModal';
 import { Toast } from '@/components/ui/toast';
 import { DeleteStageModal } from './DeleteStageModal';
-import { AddCardModal } from './AddCardModal';
+import { AddCardModal, type FormErrors } from './AddCardModal';
 import { DeleteCardModal } from './DeleteCardModal';
 import { CardDetailDrawer } from './CardDetailDrawer';
 import { StageFilterChip } from './StageFilterChip';
@@ -28,6 +28,38 @@ import { useDraftStageStore } from '@/features/kanban/store/draftStageStore';
 import { kanbanKeys } from '@/features/kanban/api/useKanbanQuery';
 
 const MAX_STAGES = 10;
+
+// API 명세서 3.10/3.11 에러 코드 → 필드별 에러 매핑 공용 헬퍼
+function mapCardErrorCode(code: string): FormErrors | null {
+  switch (code) {
+    case 'K011':
+      return { companyName: '회사명을 입력해 주세요.' };
+    case 'K012':
+      return { companyName: '회사명에 사용할 수 없는 문자가 포함돼 있어요.' };
+    case 'K013':
+      return { companyName: '회사명은 2자 이상 입력해 주세요.' };
+    case 'K014':
+      return { companyName: '회사명은 50자를 초과할 수 없어요.' };
+    case 'K015':
+      return { jobTitle: '공고명을 입력해 주세요.' };
+    case 'K016':
+      return { jobTitle: '공고명에 사용할 수 없는 문자가 포함돼 있어요.' };
+    case 'K017':
+      return { jobTitle: '공고명은 2자 이상 입력해 주세요.' };
+    case 'K018':
+      return { jobTitle: '공고명은 100자를 초과할 수 없어요.' };
+    case 'K019':
+      return { originalUrl: '공고 링크를 입력해 주세요.' };
+    case 'K020':
+      return { originalUrl: '올바른 URL 형식이 아니에요.' };
+    case 'K021':
+      return { originalUrl: '공고 링크는 2048자를 초과할 수 없어요.' };
+    case 'K003':
+      return { originalUrl: '이미 등록된 공고 링크예요.' };
+    default:
+      return null;
+  }
+}
 
 interface KanbanBoardProps {
   initialStages: KanbanStage[];
@@ -216,49 +248,6 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
             clearDraft();
           }
         },
-      }
-    );
-  }
-
-  function handleConfirmEditCard(data: {
-    companyName: string;
-    jobTitle: string;
-    originalUrl: string;
-    deadline: string;
-    stageId: number;
-    cardId?: number;
-  }) {
-    if (!data.cardId) return;
-    updateCardMutation.mutate(
-      {
-        cardId: data.cardId,
-        companyName: data.companyName,
-        title: data.jobTitle,
-        originalUrl: data.originalUrl,
-        deadline: data.deadline,
-      },
-      {
-        onSuccess: () => {
-          setStages((prev) =>
-            prev.map((s) => ({
-              ...s,
-              cards: s.cards.map((c) =>
-                c.id === data.cardId
-                  ? {
-                      ...c,
-                      companyName: data.companyName,
-                      jobTitle: data.jobTitle,
-                      originalUrl: data.originalUrl,
-                      deadline: data.deadline,
-                    }
-                  : c
-              ),
-            }))
-          );
-          setEditingCard(null);
-          showToast('success', '지원 내역이 수정되었어요.');
-        },
-        onError: () => showToast('error', '지원 내역 수정에 실패했어요.'),
       }
     );
   }
@@ -455,79 +444,50 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
         mode="add"
         stageId={addCardStageId ?? 0}
         onClose={() => setAddCardStageId(null)}
-        onConfirm={(data) => {
-          const targetStageId = data.stageId;
-
-          createDirectCardMutation.mutate(
-            {
+        onConfirm={async (data) => {
+          try {
+            const res = await createDirectCardMutation.mutateAsync({
               companyName: data.companyName,
               title: data.jobTitle,
               originalUrl: data.originalUrl,
               deadline: data.deadline,
-            },
-            {
-              onSuccess: (res) => {
-                const newCard = {
-                  id: res.cardId,
-                  postingId: res.postingId,
-                  companyName: res.companyName,
-                  jobTitle: res.jobTitle,
-                  deadline: res.deadline,
-                  thumbnailUrl: '',
-                  originalUrl: data.originalUrl,
-                  deadlineChanged: false,
-                  memo: '',
-                  registeredAt: new Date().toISOString(),
-                };
-
-                if (res.stageId !== targetStageId) {
-                  setStages((prev) =>
-                    prev.map((s) =>
-                      s.id === targetStageId ? { ...s, cards: [...s.cards, newCard] } : s
-                    )
-                  );
-                  moveCardMutation.mutate(
-                    { cardId: res.cardId, stageId: targetStageId, position: 1 },
-                    {
-                      onSuccess: () => {
-                        // ⚠️ 등록+이동이 전부 끝난 뒤 딱 한 번만 재조회 — 중간 재조회로
-                        // 인한 "지원 전" 깜빡임 방지
-                        queryClient.invalidateQueries({ queryKey: kanbanKeys.board() });
-                      },
-                      onError: () => {
-                        setStages((prev) =>
-                          prev.map((s) => {
-                            if (s.id === targetStageId) {
-                              return { ...s, cards: s.cards.filter((c) => c.id !== res.cardId) };
-                            }
-                            if (s.id === res.stageId) {
-                              return { ...s, cards: [...s.cards, newCard] };
-                            }
-                            return s;
-                          })
-                        );
-                        queryClient.invalidateQueries({ queryKey: kanbanKeys.board() });
-                        showToast(
-                          'error',
-                          '카드는 등록됐지만 선택한 단계로 이동은 실패했어요. 지원 전 단계에서 확인해주세요.'
-                        );
-                      },
-                    }
-                  );
-                } else {
-                  setStages((prev) =>
-                    prev.map((s) => (s.id === res.stageId ? { ...s, cards: [...s.cards, newCard] } : s))
-                  );
-                  // 이동이 필요 없는 경우(원래도 "지원 전"에서 등록)엔 여기서 한 번만 재조회
-                  queryClient.invalidateQueries({ queryKey: kanbanKeys.board() });
-                }
-
-                setAddCardStageId(null);
-                showToast('success', '지원 내역이 추가되었어요.');
-              },
-              onError: () => showToast('error', '지원 내역 추가에 실패했어요.'),
+            });
+            const targetStageId = data.stageId;
+            const newCard = {
+              id: res.cardId,
+              postingId: res.postingId,
+              companyName: res.companyName,
+              jobTitle: res.jobTitle,
+              deadline: res.deadline,
+              thumbnailUrl: '',
+              originalUrl: data.originalUrl,
+              deadlineChanged: false,
+              memo: '',
+              registeredAt: new Date().toISOString(),
+            };
+            if (res.stageId !== targetStageId) {
+              setStages((prev) =>
+                prev.map((s) => (s.id === targetStageId ? { ...s, cards: [...s.cards, newCard] } : s))
+              );
+              await moveCardMutation.mutateAsync({ cardId: res.cardId, stageId: targetStageId, position: 1 });
+              queryClient.invalidateQueries({ queryKey: kanbanKeys.board() });
+            } else {
+              setStages((prev) =>
+                prev.map((s) => (s.id === res.stageId ? { ...s, cards: [...s.cards, newCard] } : s))
+              );
+              queryClient.invalidateQueries({ queryKey: kanbanKeys.board() });
             }
-          );
+            setAddCardStageId(null);
+            showToast('success', '지원 내역이 추가되었어요.');
+            return undefined;
+          } catch (err) {
+            if (err instanceof ApiClientError) {
+              const mapped = mapCardErrorCode(err.code);
+              if (mapped) return mapped;
+            }
+            showToast('error', '지원 내역 추가에 실패했어요.');
+            return undefined;
+          }
         }}
       />
 
@@ -538,7 +498,52 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
         stageId={stages.find((s) => s.cards.some((c) => c.id === editingCard?.id))?.id ?? 0}
         card={editingCard ?? undefined}
         onClose={() => setEditingCard(null)}
-        onConfirm={handleConfirmEditCard}
+        onConfirm={async (data) => {
+          if (!data.cardId) return undefined;
+          try {
+            await updateCardMutation.mutateAsync({
+              cardId: data.cardId,
+              companyName: data.companyName,
+              title: data.jobTitle,
+              originalUrl: data.originalUrl,
+              deadline: data.deadline,
+            });
+            setStages((prev) =>
+              prev.map((s) => ({
+                ...s,
+                cards: s.cards.map((c) =>
+                  c.id === data.cardId
+                    ? {
+                        ...c,
+                        companyName: data.companyName,
+                        jobTitle: data.jobTitle,
+                        originalUrl: data.originalUrl,
+                        deadline: data.deadline,
+                      }
+                    : c
+                ),
+              }))
+            );
+            setEditingCard(null);
+            showToast('success', '지원 내역이 수정되었어요.');
+            return undefined;
+          } catch (err) {
+            if (err instanceof ApiClientError) {
+              // ⚠️ [QA 반영] K010은 특정 필드 문제가 아니라 "이 카드 자체를 수정할 수 없음"
+              // (피드/스크랩에서 등록된 카드 — 3.11은 직접 등록한 카드만 수정 가능)이라
+              // 필드 에러가 아니라 토스트로 명확히 안내하고 모달을 닫음.
+              if (err.code === 'K010' || err.code === 'CARD_UPDATE_NOT_ALLOWED') {
+                setEditingCard(null);
+                showToast('error', '피드에서 등록된 공고는 수정할 수 없어요. (직접 등록한 공고만 수정 가능)');
+                return undefined;
+              }
+              const mapped = mapCardErrorCode(err.code);
+              if (mapped) return mapped;
+            }
+            showToast('error', '지원 내역 수정에 실패했어요.');
+            return undefined;
+          }
+        }}
       />
 
       <DeleteCardModal

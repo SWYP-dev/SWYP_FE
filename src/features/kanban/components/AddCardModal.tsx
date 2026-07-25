@@ -11,24 +11,22 @@ interface AddCardModalProps {
   isOpen: boolean;
   mode: ModalMode;
   stageId: number;
-  /** 수정 모드일 때 기존 카드 데이터 */
   card?: KanbanCard;
-  /**
-   * 상세 Drawer가 이미 열려있는 상태에서 뜬 모달인지 여부.
-   * true면 Drawer가 이미 배경을 딤 처리하고 있으므로 이 모달은 자체 딤을 생략하고
-   * Drawer보다 위(z-[60])에만 떠서, 뒤의 상세 정보 패널이 이중 딤으로 안 보이게 되는
-   * 문제를 막는다. (지원 마감일 페이지에서 "수정" 클릭 시 Drawer가 사라지는 버그 수정)
-   */
   isOverDrawer?: boolean;
   onClose: () => void;
+  /**
+   * ⚠️ [QA 반영] 서버 검증 실패(K011~K021)를 모달 내 인라인 에러로 보여주기 위해
+   * Promise<FormErrors | undefined>로 변경. undefined 반환 시 성공으로 간주하고
+   * 부모가 모달을 닫음. FormErrors 반환 시 모달은 열린 채로 해당 필드에 에러 표시.
+   */
   onConfirm: (data: {
     companyName: string;
     jobTitle: string;
     originalUrl: string;
     deadline: string;
     stageId: number;
-    cardId?: number; // 수정 모드일 때만
-  }) => void;
+    cardId?: number;
+  }) => Promise<FormErrors | undefined>;
 }
 
 interface FormState {
@@ -38,24 +36,58 @@ interface FormState {
   deadline: Date | null;
 }
 
-interface FormErrors {
+export interface FormErrors {
   companyName?: string;
   jobTitle?: string;
   originalUrl?: string;
   deadline?: string;
 }
 
-// 사용자가 프로토콜 없이 URL을 입력해도(예: "naver.com") 서버 검증을 통과하도록 보정
 function normalizeUrl(url: string): string {
   const trimmed = url.trim();
   if (!trimmed) return trimmed;
   return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
 }
 
+// API 명세서 3.10/3.11 필드 검증 규칙(K011~K021)과 동일한 기준으로 클라이언트 사전 검증.
+// 서버 왕복 없이도 대부분의 케이스를 즉시 안내하기 위함.
+function validateField(key: keyof FormState, form: FormState): string | undefined {
+  if (key === 'companyName') {
+    const trimmed = form.companyName.trim();
+    if (!trimmed) return '회사명을 입력해 주세요.';
+    if (trimmed.length < 2) return '회사명은 2자 이상 입력해 주세요.';
+    if (trimmed.length > 50) return '회사명은 50자를 초과할 수 없어요.';
+  }
+  if (key === 'jobTitle') {
+    const trimmed = form.jobTitle.trim();
+    if (!trimmed) return '공고명을 입력해 주세요.';
+    if (trimmed.length < 2) return '공고명은 2자 이상 입력해 주세요.';
+    if (trimmed.length > 100) return '공고명은 100자를 초과할 수 없어요.';
+  }
+  if (key === 'originalUrl') {
+    const trimmed = form.originalUrl.trim();
+    if (!trimmed) return '공고 링크를 입력해 주세요.';
+    try {
+      new URL(normalizeUrl(trimmed));
+    } catch {
+      return '올바른 URL 형식이 아니에요.';
+    }
+    if (trimmed.length > 2048) return '공고 링크는 2048자를 초과할 수 없어요.';
+  }
+  if (key === 'deadline' && !form.deadline) return '지원 마감일을 입력해 주세요.';
+  return undefined;
+}
+
+function validateAll(form: FormState): FormErrors {
+  return {
+    companyName: validateField('companyName', form),
+    jobTitle: validateField('jobTitle', form),
+    originalUrl: validateField('originalUrl', form),
+    deadline: validateField('deadline', form),
+  };
+}
+
 // Figma "지원 내역 추가"(49:8042) / "지원 내역 수정"(49:8083) 모달 스펙 반영.
-// 두 화면이 동일한 4개 필드 구조 + 동일한 레이아웃 → mode prop으로 구분.
-// 추가: 전체 빈 상태 → 확인 버튼 비활성(disabled)
-// 수정: 기존 값 채워진 상태로 열림 → 확인 버튼 처음부터 활성
 export function AddCardModal({
   isOpen,
   mode,
@@ -78,36 +110,41 @@ export function AddCardModal({
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!isOpen) return null;
 
-  const isAllFilled =
-    form.companyName.trim() !== '' &&
-    form.jobTitle.trim() !== '' &&
-    form.originalUrl.trim() !== '' &&
-    form.deadline !== null;
+  // ⚠️ [QA 반영] 필드가 비어있지 않아도 길이·형식 규칙을 어기면 확인 버튼이 비활성 상태를
+  // 유지하도록, 매 렌더마다 실시간으로 검증 결과를 계산 (제출 시점까지 기다리지 않음).
+  const liveErrors = validateAll(form);
+  const isFormValid = Object.values(liveErrors).every((e) => !e);
 
-  function validate(): boolean {
-    const next: FormErrors = {};
-    if (!form.companyName.trim()) next.companyName = '회사명을 입력해 주세요.';
-    if (!form.jobTitle.trim()) next.jobTitle = '공고명을 입력해 주세요.';
-    if (!form.originalUrl.trim()) next.originalUrl = '공고 링크를 입력해 주세요.';
-    if (!form.deadline) next.deadline = '지원 마감일을 입력해 주세요.';
-    setErrors(next);
-    return Object.keys(next).length === 0;
+  function updateField(key: keyof FormState, value: FormState[typeof key]) {
+    const nextForm = { ...form, [key]: value } as FormState;
+    setForm(nextForm);
+    setErrors((prev) => ({ ...prev, [key]: validateField(key, nextForm) }));
   }
 
-  function handleConfirm() {
-    if (!validate()) return;
+  async function handleConfirm() {
+    const finalErrors = validateAll(form);
+    setErrors(finalErrors);
+    if (Object.values(finalErrors).some(Boolean)) return;
+
     const d = form.deadline!;
-    onConfirm({
-      companyName: form.companyName.trim(),
-      jobTitle: form.jobTitle.trim(),
-      originalUrl: normalizeUrl(form.originalUrl),
-      deadline: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`,
-      stageId,
-      cardId: mode === 'edit' ? card?.id : undefined,
-    });
+    setIsSubmitting(true);
+    try {
+      const serverErrors = await onConfirm({
+        companyName: form.companyName.trim(),
+        jobTitle: form.jobTitle.trim(),
+        originalUrl: normalizeUrl(form.originalUrl),
+        deadline: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`,
+        stageId,
+        cardId: mode === 'edit' ? card?.id : undefined,
+      });
+      if (serverErrors) setErrors(serverErrors);
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   function handleClose() {
@@ -115,7 +152,6 @@ export function AddCardModal({
     onClose();
   }
 
-  // Figma 마감일 표시 형식: "2026. 7. 2"
   const deadlineText = form.deadline
     ? `${form.deadline.getFullYear()}. ${form.deadline.getMonth() + 1}. ${form.deadline.getDate()}`
     : '';
@@ -136,6 +172,8 @@ export function AddCardModal({
     },
   ];
 
+  const canSubmit = isFormValid && !isSubmitting;
+
   return (
     <div className={`fixed inset-0 flex items-center justify-center ${isOverDrawer ? 'z-[60]' : 'z-50'}`}>
       <div
@@ -144,7 +182,6 @@ export function AddCardModal({
         aria-hidden="true"
       />
       <div className="relative flex w-[394px] flex-col gap-6 overflow-visible rounded-[20px] bg-base-white py-6 shadow-spread-small">
-        {/* 헤더 */}
         <div className="flex items-center justify-between px-8">
           <p className="text-7 font-semibold text-label-base">
             {mode === 'add' ? '지원 내역 추가' : '지원 내역 수정'}
@@ -154,7 +191,6 @@ export function AddCardModal({
           </button>
         </div>
 
-        {/* 폼 */}
         <div className="flex flex-col gap-5 px-8">
           {FIELDS.map(({ key, label, placeholder, type }) => (
             <div key={key} className="flex flex-col gap-2">
@@ -165,22 +201,16 @@ export function AddCardModal({
               <input
                 type={type ?? 'text'}
                 value={form[key]}
-                onChange={(e) => {
-                  setForm((prev) => ({ ...prev, [key]: e.target.value }));
-                  if (errors[key]) setErrors((prev) => ({ ...prev, [key]: undefined }));
-                }}
+                onChange={(e) => updateField(key, e.target.value)}
                 placeholder={placeholder}
                 className={`w-full rounded-xl border px-4 py-3 text-5 font-medium text-label-base placeholder:text-label-placeholder outline-none ${
                   errors[key] ? 'border-status-negative' : 'border-line-secondary'
                 }`}
               />
-              {errors[key] && (
-                <p className="text-1 font-medium text-status-negative">{errors[key]}</p>
-              )}
+              {errors[key] && <p className="text-1 font-medium text-status-negative">{errors[key]}</p>}
             </div>
           ))}
 
-          {/* 지원 마감일 */}
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-1">
               <p className="text-3 font-semibold text-label-base">지원 마감일</p>
@@ -202,9 +232,8 @@ export function AddCardModal({
                   <DatePicker
                     value={form.deadline}
                     onChange={(date) => {
-                      setForm((prev) => ({ ...prev, deadline: date }));
+                      updateField('deadline', date);
                       setShowDatePicker(false);
-                      if (errors.deadline) setErrors((prev) => ({ ...prev, deadline: undefined }));
                     }}
                   />
                 </div>
@@ -216,14 +245,13 @@ export function AddCardModal({
           </div>
         </div>
 
-        {/* 푸터 */}
         <div className="px-8">
           <button
             type="button"
             onClick={handleConfirm}
-            disabled={!isAllFilled}
+            disabled={!canSubmit}
             className={`flex w-full items-center justify-center rounded-xl py-3 text-5 font-semibold text-base-white transition-colors ${
-              isAllFilled
+              canSubmit
                 ? 'bg-fill-primary hover:bg-action-primary-hover'
                 : 'bg-action-primary-disabled cursor-not-allowed'
             }`}
