@@ -1,6 +1,8 @@
 import type { ApiResponse } from '@/types/api';
 import { clearTokens, getAccessToken, getRefreshToken, setAccessToken } from './token';
 import { clearAuthUserOutsideReact } from '@/features/auth/store/authStore';
+import { openLoginModalOutsideReact } from '@/features/auth/store/loginModalStore';
+import { queryClient } from './query-client';
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -74,13 +76,15 @@ export async function apiFetch<T>(
     } catch {
       clearTokens();
       clearAuthUserOutsideReact();
-      // ⚠️ [2026-07-23] 무한 리로드 버그 수정: 로그인 안 한 상태에서 인증이 필요한
-      // API(예: 알림 벨의 notifications/inbox)를 호출하면 401 → 이 catch 진입 →
-      // window.location.href='/' → 페이지 리로드 → 알림 벨이 다시 401 호출 → 무한 반복.
-      // 이미 '/'에 있을 때는 리다이렉트하지 않도록 방어.
-      if (typeof window !== 'undefined' && window.location.pathname !== '/') {
-        window.location.href = '/';
-      }
+      // ⚠️ [QA 반영] 세션이 자연 만료(Refresh Token도 무효)된 경우에도 로그아웃과
+      // 동일하게 캐시를 비워야, 남아있던 보호된 데이터가 화면에 계속 보이는 걸 막을 수 있음.
+      queryClient.clear();
+      // ⚠️ [QA 반영] 기존엔 window.location.href = '/'로 강제 이동시켰음 — 비로그인
+      // 상태로 보호된 페이지(칸반/스크랩/마감일 등)에 들어가면 페이지가 잠깐 보였다가
+      // 다시 통합 공고 탐색으로 튕기는 것처럼 보여 UX가 나빴음. 페이지 이동 대신
+      // 전역 로그인 모달을 띄워서, 사용자가 현재 페이지에 머문 채로 로그인을
+      // 유도받도록 변경.
+      openLoginModalOutsideReact();
       throw new Error('인증이 만료되었습니다. 다시 로그인해주세요.');
     }
   }
