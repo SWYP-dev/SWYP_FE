@@ -22,3 +22,15 @@ export async function registerKanbanCard(
     body: { postingId: jobPostingId },
   });
 }
+
+// 2.6 스크랩 없이 바로 칸반 등록 (POST /api/v1/feed/{postingId}/kanban-card)
+// ⚠️ [QA 반영] 기존엔 이 전용 API가 구현돼 있지 않아서, "지원 현황 추가" 클릭 시
+// 스크랩(2.3)을 먼저 거친 뒤 등록(3.2)했음 — 그 결과 스크랩 탭에도 자동으로
+// 올라가는 문제가 있었음. 이 API를 쓰면 스크랩 처리 없이 바로 등록됨.
+export async function registerKanbanCardDirect(
+  postingId: number
+): Promise<KanbanCardRegisterResponse> {
+  return apiFetch<KanbanCardRegisterResponse>(`/api/v1/feed/${postingId}/kanban-card`, {
+    method: 'POST',
+  });
+}
