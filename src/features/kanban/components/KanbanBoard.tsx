@@ -309,14 +309,71 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
     );
   }
 
+  function handleUndoDeleteCard(card: KanbanCard, stageId: number, position: number) {
+    createDirectCardMutation.mutate(
+      {
+        companyName: card.companyName,
+        title: card.jobTitle,
+        originalUrl: card.originalUrl,
+        deadline: card.deadline,
+      },
+      {
+        onSuccess: (res) => {
+          const restoredCard = {
+            id: res.cardId,
+            postingId: res.postingId,
+            companyName: res.companyName,
+            jobTitle: res.jobTitle,
+            deadline: res.deadline,
+            thumbnailUrl: card.thumbnailUrl,
+            originalUrl: card.originalUrl,
+            deadlineChanged: false,
+            memo: '', // ⚠️ 재등록 API로 복구하는 방식이라 메모는 복구 불가
+            registeredAt: new Date().toISOString(),
+          };
+
+          if (res.stageId !== stageId) {
+            setStages((prev) =>
+              prev.map((s) => (s.id === stageId ? { ...s, cards: [...s.cards, restoredCard] } : s))
+            );
+            moveCardMutation.mutate(
+              { cardId: res.cardId, stageId, position },
+              {
+                onSuccess: () => queryClient.invalidateQueries({ queryKey: kanbanKeys.board() }),
+              }
+            );
+          } else {
+            setStages((prev) =>
+              prev.map((s) => (s.id === stageId ? { ...s, cards: [...s.cards, restoredCard] } : s))
+            );
+            queryClient.invalidateQueries({ queryKey: kanbanKeys.board() });
+          }
+        },
+        onError: () => showToast('error', '되돌리기에 실패했어요.'),
+      }
+    );
+  }
+
   function handleConfirmDeleteCard(cardId: number) {
+    const fromStage = stages.find((s) => s.cards.some((c) => c.id === cardId));
+    const deletedCard = fromStage?.cards.find((c) => c.id === cardId);
+    const deletedStageId = fromStage?.id;
+    const deletedPosition = fromStage ? fromStage.cards.findIndex((c) => c.id === cardId) + 1 : 1;
+
     deleteCardMutation.mutate(cardId, {
       onSuccess: () => {
         setStages((prev) =>
           prev.map((s) => ({ ...s, cards: s.cards.filter((c) => c.id !== cardId) }))
         );
         setDeletingCard(null);
-        showToast('success', '지원 내역이 삭제되었어요.');
+        showToast('success', '지원 현황이 삭제되었어요.', {
+          label: '되돌리기',
+          onClick: () => {
+            if (deletedCard && deletedStageId) {
+              handleUndoDeleteCard(deletedCard, deletedStageId, deletedPosition);
+            }
+          },
+        });
       },
       onError: () => showToast('error', '지원 내역 삭제에 실패했어요.'),
     });
