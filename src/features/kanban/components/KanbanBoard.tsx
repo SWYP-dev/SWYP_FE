@@ -167,7 +167,13 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
 
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
-    if (!over) return;
+    if (!over) {
+      // ⚠️ [QA 반영] 유효하지 않은 위치에 드롭하면 handleDragOver가 이미 낙관적으로
+      // 옮겨놓은 로컬 상태가 서버에 반영되지 않은 채 남아있을 수 있어, 서버 기준
+      // 상태로 되돌림 (다른 페이지에서 스테이지가 안 맞아 보이는 문제 방지).
+      setStages(initialStages);
+      return;
+    }
 
     // 스테이지(컬럼) 순서 변경 — over.data.stageId를 사용 (over.id 파싱하지 않음)
     if (active.data.current?.type === 'stage') {
@@ -309,22 +315,79 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
     );
   }
 
+  function handleUndoDeleteCard(card: KanbanCard, stageId: number, position: number) {
+    createDirectCardMutation.mutate(
+      {
+        companyName: card.companyName,
+        title: card.jobTitle,
+        originalUrl: card.originalUrl,
+        deadline: card.deadline,
+      },
+      {
+        onSuccess: (res) => {
+          const restoredCard = {
+            id: res.cardId,
+            postingId: res.postingId,
+            companyName: res.companyName,
+            jobTitle: res.jobTitle,
+            deadline: res.deadline,
+            thumbnailUrl: card.thumbnailUrl,
+            originalUrl: card.originalUrl,
+            deadlineChanged: false,
+            memo: '', // ⚠️ 재등록 API로 복구하는 방식이라 메모는 복구 불가
+            registeredAt: new Date().toISOString(),
+          };
+
+          if (res.stageId !== stageId) {
+            setStages((prev) =>
+              prev.map((s) => (s.id === stageId ? { ...s, cards: [...s.cards, restoredCard] } : s))
+            );
+            moveCardMutation.mutate(
+              { cardId: res.cardId, stageId, position },
+              {
+                onSuccess: () => queryClient.invalidateQueries({ queryKey: kanbanKeys.board() }),
+              }
+            );
+          } else {
+            setStages((prev) =>
+              prev.map((s) => (s.id === stageId ? { ...s, cards: [...s.cards, restoredCard] } : s))
+            );
+            queryClient.invalidateQueries({ queryKey: kanbanKeys.board() });
+          }
+        },
+        onError: () => showToast('error', '되돌리기에 실패했어요.'),
+      }
+    );
+  }
+
   function handleConfirmDeleteCard(cardId: number) {
+    const fromStage = stages.find((s) => s.cards.some((c) => c.id === cardId));
+    const deletedCard = fromStage?.cards.find((c) => c.id === cardId);
+    const deletedStageId = fromStage?.id;
+    const deletedPosition = fromStage ? fromStage.cards.findIndex((c) => c.id === cardId) + 1 : 1;
+
     deleteCardMutation.mutate(cardId, {
       onSuccess: () => {
         setStages((prev) =>
           prev.map((s) => ({ ...s, cards: s.cards.filter((c) => c.id !== cardId) }))
         );
         setDeletingCard(null);
-        showToast('success', '지원 내역이 삭제되었어요.');
+        showToast('success', '지원 현황이 삭제되었어요.', {
+          label: '되돌리기',
+          onClick: () => {
+            if (deletedCard && deletedStageId) {
+              handleUndoDeleteCard(deletedCard, deletedStageId, deletedPosition);
+            }
+          },
+        });
       },
       onError: () => showToast('error', '지원 내역 삭제에 실패했어요.'),
     });
   }
 
-  function handleUndoDeleteStage(name: string, cards: KanbanCard[]) {
+  function handleUndoDeleteStage(name: string, cards: KanbanCard[], position: number) {
     createStageMutation.mutate(
-      { name },
+      { name, position },
       {
         onSuccess: (res) => {
           const restoredStage: KanbanStage = {
@@ -353,7 +416,10 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
             );
           });
 
-          showToast('success', '삭제를 취소했어요.');
+          // ⚠️ [QA 반영] 되돌리기 성공 토스트 제거 — 디자인 명세에 없고, 삭제 취소라는
+          // 결과가 화면에 이미 바로 반영되므로 추가 안내가 불필요함.
+          // 위치가 다른 스테이지들에 영향(재정렬) 줄 수 있어 최종 상태 재조회.
+          queryClient.invalidateQueries({ queryKey: kanbanKeys.board() });
         },
         onError: () => showToast('error', '되돌리기에 실패했어요.'),
       }
@@ -459,6 +525,7 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
           const target = stages.find((s) => s.id === stageId);
           const deletedName = target?.name ?? '';
           const deletedCards = target?.cards ?? [];
+          const deletedPosition = target?.position ?? 1;
 
           deleteStageMutation.mutate(
             { stageId, moveToStageId },
@@ -477,7 +544,7 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
                 setDeletingStage(null);
                 showToast('success', `'${deletedName}' 단계를 삭제했어요.`, {
                   label: '되돌리기',
-                  onClick: () => handleUndoDeleteStage(deletedName, deletedCards),
+                  onClick: () => handleUndoDeleteStage(deletedName, deletedCards, deletedPosition),
                 });
               },
               onError: (err) => {

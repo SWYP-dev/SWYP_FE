@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { CloseIcon } from '@/components/ui/icons';
 import { DatePicker } from '@/components/ui/date-picker';
+import { useEscapeKey } from '@/lib/hooks/useEscapeKey';
 import type { KanbanCard } from '@/types/api';
 
 type ModalMode = 'add' | 'edit';
@@ -111,6 +112,11 @@ export function AddCardModal({
   const [errors, setErrors] = useState<FormErrors>({});
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEscapeKey(isOpen, () => {
+    setShowDatePicker(false);
+    onClose();
+  });
 
   if (!isOpen) return null;
 

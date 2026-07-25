@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Modal } from '@/components/ui/modal';
+import { useEscapeKey } from '@/lib/hooks/useEscapeKey';
 
 interface AddStageModalProps {
   isOpen: boolean;
@@ -19,6 +20,8 @@ interface AddStageModalProps {
 // 특수문자/중복 이름 검증은 서버 규칙 확정본이 없어 서버 응답(K006/K007)에 위임.
 export function AddStageModal({ isOpen, value, onChange, onClose, onConfirm }: AddStageModalProps) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEscapeKey(isOpen, onClose);
 
   if (!isOpen) return null;
 
