@@ -175,9 +175,43 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
           clearDraft();
           showToast('success', '전형 단계가 추가되었어요.');
         },
-        onError: () => {
-          showToast('error', '전형 단계 추가에 실패했어요.');
-          clearDraft();
+        onError: (err) => {
+          if (err instanceof ApiClientError) {
+            switch (err.code) {
+              case 'K005':
+                showToast('error', '전형 이름을 입력해주세요.');
+                break;
+              case 'K006':
+                showToast('error', '이미 존재하는 전형 이름이에요.');
+                break;
+              case 'K007':
+                showToast('error', '전형 이름에 사용할 수 없는 문자가 포함돼 있어요.');
+                break;
+              case 'K008':
+                showToast('error', '전형 이름은 2자 이상 입력해주세요.');
+                break;
+              case 'K009':
+                showToast('error', '전형 이름은 20자를 초과할 수 없어요.');
+                break;
+              case 'K001':
+                showToast('error', '전형 단계는 최대 10개까지 추가할 수 있어요.');
+                break;
+              default:
+                showToast('error', '전형 단계 추가에 실패했어요.');
+            }
+          } else {
+            showToast('error', '전형 단계 추가에 실패했어요.');
+          }
+          // ⚠️ 유효성 오류(이름 관련)는 입력값을 유지해 재입력하기 편하도록 clearDraft()를 호출하지 않음.
+          // 그 외(한도 초과 등) 오류는 기존처럼 초안을 닫음.
+          if (
+            !(
+              err instanceof ApiClientError &&
+              ['K005', 'K006', 'K007', 'K008', 'K009'].includes(err.code)
+            )
+          ) {
+            clearDraft();
+          }
         },
       }
     );
