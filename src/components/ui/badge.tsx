@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { getDeadlineDiffDays } from '@/lib/utils/deadline';
 
 // Figma "Badge" 컴포넌트(node 9:7202) 스펙 그대로 반영.
 // 크기(padding/radius/font)는 고정, 색상은 type 또는 className으로 확장.
@@ -71,12 +72,7 @@ interface DeadlineBadgeProps {
 }
 
 export function DeadlineBadge({ deadline }: DeadlineBadgeProps) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const target = new Date(deadline);
-  target.setHours(0, 0, 0, 0);
-
-  const diffDays = Math.ceil((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  const diffDays = getDeadlineDiffDays(deadline);
 
   if (diffDays < 0) {
     return <Badge className="bg-base-white text-neutral-500">마감</Badge>;
