@@ -112,7 +112,7 @@ export function KanbanCard({ card, stageId, onCardClick, onEditCard, onDeleteCar
             target="_blank"
             rel="noreferrer"
             onClick={handleOriginalLinkClick}
-            className="flex items-center gap-1 py-[6px] text-1 font-medium text-label-primary"
+            className="flex w-fit items-center gap-1 py-[6px] text-1 font-medium text-label-primary"
           >
             원본 공고 이동
             <ExternalLinkIcon />
