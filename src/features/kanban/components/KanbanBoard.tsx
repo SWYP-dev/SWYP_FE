@@ -451,6 +451,8 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
         stageId={addCardStageId ?? 0}
         onClose={() => setAddCardStageId(null)}
         onConfirm={(data) => {
+          const targetStageId = data.stageId;
+
           createDirectCardMutation.mutate(
             {
               companyName: data.companyName,
@@ -460,30 +462,57 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
             },
             {
               onSuccess: (res) => {
-                setStages((prev) =>
-                  prev.map((s) =>
-                    s.id === data.stageId
-                      ? {
-                          ...s,
-                          cards: [
-                            ...s.cards,
-                            {
-                              id: res.cardId,
-                              postingId: res.postingId,
-                              companyName: res.companyName,
-                              jobTitle: res.jobTitle,
-                              deadline: res.deadline,
-                              thumbnailUrl: '',
-                              originalUrl: data.originalUrl,
-                              deadlineChanged: false,
-                              memo: '',
-                              registeredAt: new Date().toISOString(),
-                            },
-                          ],
-                        }
-                      : s
-                  )
-                );
+                const newCard = {
+                  id: res.cardId,
+                  postingId: res.postingId,
+                  companyName: res.companyName,
+                  jobTitle: res.jobTitle,
+                  deadline: res.deadline,
+                  thumbnailUrl: '',
+                  originalUrl: data.originalUrl,
+                  deadlineChanged: false,
+                  memo: '',
+                  registeredAt: new Date().toISOString(),
+                };
+
+                // ⚠️ API 명세서 3.10: 직접 등록 카드는 요청에 stageId 파라미터가 없고
+                // 서버가 항상 "지원 전"(res.stageId)에만 생성함. "지원 전"이 아닌 다른
+                // 컬럼에서 등록한 경우, 생성 직후 3.3 이동 API로 클릭한 컬럼으로 옮겨줌.
+                if (res.stageId !== targetStageId) {
+                  setStages((prev) =>
+                    prev.map((s) =>
+                      s.id === targetStageId ? { ...s, cards: [...s.cards, newCard] } : s
+                    )
+                  );
+                  moveCardMutation.mutate(
+                    { cardId: res.cardId, stageId: targetStageId, position: 1 },
+                    {
+                      onError: () => {
+                        // 이동 실패 시 원래 위치("지원 전")로 롤백
+                        setStages((prev) =>
+                          prev.map((s) => {
+                            if (s.id === targetStageId) {
+                              return { ...s, cards: s.cards.filter((c) => c.id !== res.cardId) };
+                            }
+                            if (s.id === res.stageId) {
+                              return { ...s, cards: [...s.cards, newCard] };
+                            }
+                            return s;
+                          })
+                        );
+                        showToast(
+                          'error',
+                          '카드는 등록됐지만 선택한 단계로 이동은 실패했어요. 지원 전 단계에서 확인해주세요.'
+                        );
+                      },
+                    }
+                  );
+                } else {
+                  setStages((prev) =>
+                    prev.map((s) => (s.id === res.stageId ? { ...s, cards: [...s.cards, newCard] } : s))
+                  );
+                }
+
                 setAddCardStageId(null);
                 showToast('success', '지원 내역이 추가되었어요.');
               },
