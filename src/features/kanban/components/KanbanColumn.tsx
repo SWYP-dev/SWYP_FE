@@ -104,7 +104,10 @@ export function KanbanColumn({
 
   return (
     // fix: overflow-hidden 제거 — 드래그 시 카드가 컬럼에 잘리는 버그 수정 (버그1)
+    // ⚠️ [QA 반영] 드롭 가능 영역(ref={setNodeRef})을 카드 목록 부분에서 컬럼 전체
+    // (헤더 포함)로 확장 — 헤더 위에 드롭해도 스테이지 순서 변경이 인식되도록 함.
     <div
+      ref={setNodeRef}
       style={stageDragStyle}
       className={`flex h-full min-w-[296px] flex-1 flex-col items-start rounded-2xl transition-colors ${
         isOver ? 'bg-fill-primary-light' : 'bg-surface-card'
@@ -191,10 +194,7 @@ export function KanbanColumn({
       </div>
 
       {/* Card List */}
-      <div
-        ref={setNodeRef}
-        className="w-full flex-1 overflow-y-auto overflow-x-hidden kanban-scroll-y"
-      >
+      <div className="w-full flex-1 overflow-y-auto overflow-x-hidden kanban-scroll-y">
         <div className="flex flex-col gap-3 px-4 pb-4">
           {stage.cards.map((card) => (
             <KanbanCard
