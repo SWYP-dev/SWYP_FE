@@ -70,6 +70,23 @@ function mapCardErrorCode(code: string): FormErrors | null {
   }
 }
 
+function mapStageNameErrorCode(code: string): string | null {
+  switch (code) {
+    case 'K005':
+      return '전형 단계 이름을 입력해 주세요.';
+    case 'K006':
+      return '이미 존재하는 전형 단계 이름이에요.';
+    case 'K007':
+      return '올바른 전형 단계 이름을 입력해 주세요.';
+    case 'K008':
+      return '2자 이상 입력해 주세요.';
+    case 'K009':
+      return '20자를 초과하여 입력할 수 없어요.';
+    default:
+      return null;
+  }
+}
+
 interface KanbanBoardProps {
   initialStages: KanbanStage[];
 }
@@ -274,40 +291,16 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
           showToast('success', `'${res.name}' 단계가 추가되었어요.`);
         },
         onError: (err) => {
-          if (err instanceof ApiClientError) {
-            switch (err.code) {
-              case 'K005':
-                showToast('error', '전형 이름을 입력해주세요.');
-                break;
-              case 'K006':
-                showToast('error', '이미 존재하는 전형 이름이에요.');
-                break;
-              case 'K007':
-                showToast('error', '전형 이름에 사용할 수 없는 문자가 포함돼 있어요.');
-                break;
-              case 'K008':
-                showToast('error', '전형 이름은 2자 이상 입력해주세요.');
-                break;
-              case 'K009':
-                showToast('error', '전형 이름은 20자를 초과할 수 없어요.');
-                break;
-              case 'K001':
-                showToast('error', '전형 단계는 최대 10개까지 추가할 수 있어요.');
-                break;
-              default:
-                showToast('error', '전형 단계 추가에 실패했어요.');
-            }
+          const mapped = err instanceof ApiClientError ? mapStageNameErrorCode(err.code) : null;
+          if (mapped) {
+            showToast('error', mapped);
+          } else if (err instanceof ApiClientError && err.code === 'K001') {
+            showToast('error', '전형 단계는 최대 10개까지 추가할 수 있어요.');
           } else {
             showToast('error', '전형 단계 추가에 실패했어요.');
           }
           // ⚠️ 유효성 오류(이름 관련)는 입력값을 유지해 재입력하기 편하도록 clearDraft()를 호출하지 않음.
-          // 그 외(한도 초과 등) 오류는 기존처럼 초안을 닫음.
-          if (
-            !(
-              err instanceof ApiClientError &&
-              ['K005', 'K006', 'K007', 'K008', 'K009'].includes(err.code)
-            )
-          ) {
+          if (!mapped) {
             clearDraft();
           }
         },
@@ -482,11 +475,10 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
                         err.code === 'DEFAULT_STAGE_NAME_CHANGE_NOT_ALLOWED'
                       ) {
                         showToast('error', '기본 전형 단계는 이름을 변경할 수 없어요.');
-                      } else if (err instanceof ApiClientError && err.code === 'K007') {
-                        showToast('error', '올바른 전형 이름을 입력해주세요.');
-                      } else {
-                        showToast('error', '전형 단계 수정에 실패했어요.');
+                        return;
                       }
+                      const mapped = err instanceof ApiClientError ? mapStageNameErrorCode(err.code) : null;
+                      showToast('error', mapped ?? '전형 단계 수정에 실패했어요.');
                     },
                   }
                 );

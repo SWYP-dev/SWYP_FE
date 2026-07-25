@@ -28,15 +28,15 @@ export function AddStageModal({ isOpen, value, onChange, onClose, onConfirm }: A
   function handleConfirm() {
     const trimmed = value.trim();
     if (!trimmed) {
-      setErrorMessage('전형 이름을 입력해주세요.');
+      setErrorMessage('전형 단계 이름을 입력해 주세요.');
       return;
     }
     if (trimmed.length < 2) {
-      setErrorMessage('전형 이름은 2자 이상 입력해주세요.');
+      setErrorMessage('2자 이상 입력해 주세요.');
       return;
     }
     if (trimmed.length > 20) {
-      setErrorMessage('전형 이름은 20자를 초과할 수 없어요.');
+      setErrorMessage('20자를 초과하여 입력할 수 없어요.');
       return;
     }
     onConfirm(trimmed);
