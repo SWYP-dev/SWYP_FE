@@ -12,13 +12,13 @@ import {
 import { kanbanKeys } from './useKanbanQuery';
 
 // 카드 직접 등록
+// ⚠️ 기존엔 여기서 onSuccess 시 즉시 재조회(invalidateQueries)했는데, KanbanBoard의
+// "등록 후 다른 컬럼으로 이동" 체이닝 흐름과 타이밍이 겹치면서 화면이 "지원 전"으로
+// 잠깐 덮어써지는 깜빡임이 있었음. 재조회 책임을 호출부(KanbanBoard)로 옮겨서,
+// 등록+이동이 전부 끝난 뒤 한 번만 재조회하도록 변경.
 export function useCreateDirectCard() {
-  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: createDirectCard,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: kanbanKeys.board() });
-    },
   });
 }
 
@@ -55,8 +55,14 @@ export function useMoveCard() {
       stageId: number;
       position: number;
     }) => moveCard(cardId, { stageId, position }),
+    // ⚠️ 기존엔 onError에서만 재조회(롤백용)했음. 카드 등록 직후 이동을 체이닝하는
+    // 흐름(KanbanBoard의 직접 등록 onConfirm)에서, 등록 API의 invalidateQueries가
+    // 이동 완료 전에 먼저 응답하면서 화면이 "지원 전" 상태로 덮어써진 채 멈추는
+    // 버그가 있어, 이동 성공 시에도 재조회하도록 추가함.
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: kanbanKeys.board() });
+    },
     onError: () => {
-      // 실패 시 서버 데이터로 롤백
       queryClient.invalidateQueries({ queryKey: kanbanKeys.board() });
     },
   });

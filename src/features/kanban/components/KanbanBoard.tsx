@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { DndContext, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
 import type { KanbanCard, KanbanStage } from '@/types/api';
 import { KanbanColumn } from './KanbanColumn';
@@ -24,6 +25,7 @@ import {
 } from '@/features/kanban/api/useKanbanMutations';
 import { ApiClientError } from '@/lib/api/api-client';
 import { useDraftStageStore } from '@/features/kanban/store/draftStageStore';
+import { kanbanKeys } from '@/features/kanban/api/useKanbanQuery';
 
 const MAX_STAGES = 10;
 
@@ -32,6 +34,7 @@ interface KanbanBoardProps {
 }
 
 export function KanbanBoard({ initialStages }: KanbanBoardProps) {
+  const queryClient = useQueryClient();
   const [stages, setStages] = useState(initialStages);
   const { isAddingStage, draftName, startDraft, setDraftName, clearDraft } = useDraftStageStore();
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -451,6 +454,8 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
         stageId={addCardStageId ?? 0}
         onClose={() => setAddCardStageId(null)}
         onConfirm={(data) => {
+          const targetStageId = data.stageId;
+
           createDirectCardMutation.mutate(
             {
               companyName: data.companyName,
@@ -460,30 +465,61 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
             },
             {
               onSuccess: (res) => {
-                setStages((prev) =>
-                  prev.map((s) =>
-                    s.id === data.stageId
-                      ? {
-                          ...s,
-                          cards: [
-                            ...s.cards,
-                            {
-                              id: res.cardId,
-                              postingId: res.postingId,
-                              companyName: res.companyName,
-                              jobTitle: res.jobTitle,
-                              deadline: res.deadline,
-                              thumbnailUrl: '',
-                              originalUrl: data.originalUrl,
-                              deadlineChanged: false,
-                              memo: '',
-                              registeredAt: new Date().toISOString(),
-                            },
-                          ],
-                        }
-                      : s
-                  )
-                );
+                const newCard = {
+                  id: res.cardId,
+                  postingId: res.postingId,
+                  companyName: res.companyName,
+                  jobTitle: res.jobTitle,
+                  deadline: res.deadline,
+                  thumbnailUrl: '',
+                  originalUrl: data.originalUrl,
+                  deadlineChanged: false,
+                  memo: '',
+                  registeredAt: new Date().toISOString(),
+                };
+
+                if (res.stageId !== targetStageId) {
+                  setStages((prev) =>
+                    prev.map((s) =>
+                      s.id === targetStageId ? { ...s, cards: [...s.cards, newCard] } : s
+                    )
+                  );
+                  moveCardMutation.mutate(
+                    { cardId: res.cardId, stageId: targetStageId, position: 1 },
+                    {
+                      onSuccess: () => {
+                        // ⚠️ 등록+이동이 전부 끝난 뒤 딱 한 번만 재조회 — 중간 재조회로
+                        // 인한 "지원 전" 깜빡임 방지
+                        queryClient.invalidateQueries({ queryKey: kanbanKeys.board() });
+                      },
+                      onError: () => {
+                        setStages((prev) =>
+                          prev.map((s) => {
+                            if (s.id === targetStageId) {
+                              return { ...s, cards: s.cards.filter((c) => c.id !== res.cardId) };
+                            }
+                            if (s.id === res.stageId) {
+                              return { ...s, cards: [...s.cards, newCard] };
+                            }
+                            return s;
+                          })
+                        );
+                        queryClient.invalidateQueries({ queryKey: kanbanKeys.board() });
+                        showToast(
+                          'error',
+                          '카드는 등록됐지만 선택한 단계로 이동은 실패했어요. 지원 전 단계에서 확인해주세요.'
+                        );
+                      },
+                    }
+                  );
+                } else {
+                  setStages((prev) =>
+                    prev.map((s) => (s.id === res.stageId ? { ...s, cards: [...s.cards, newCard] } : s))
+                  );
+                  // 이동이 필요 없는 경우(원래도 "지원 전"에서 등록)엔 여기서 한 번만 재조회
+                  queryClient.invalidateQueries({ queryKey: kanbanKeys.board() });
+                }
+
                 setAddCardStageId(null);
                 showToast('success', '지원 내역이 추가되었어요.');
               },
