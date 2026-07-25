@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { DndContext, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
 import type { KanbanCard, KanbanStage } from '@/types/api';
 import { KanbanColumn } from './KanbanColumn';
@@ -24,6 +25,7 @@ import {
 } from '@/features/kanban/api/useKanbanMutations';
 import { ApiClientError } from '@/lib/api/api-client';
 import { useDraftStageStore } from '@/features/kanban/store/draftStageStore';
+import { kanbanKeys } from '@/features/kanban/api/useKanbanQuery';
 
 const MAX_STAGES = 10;
 
@@ -32,6 +34,7 @@ interface KanbanBoardProps {
 }
 
 export function KanbanBoard({ initialStages }: KanbanBoardProps) {
+  const queryClient = useQueryClient();
   const [stages, setStages] = useState(initialStages);
   const { isAddingStage, draftName, startDraft, setDraftName, clearDraft } = useDraftStageStore();
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -475,9 +478,6 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
                   registeredAt: new Date().toISOString(),
                 };
 
-                // ⚠️ API 명세서 3.10: 직접 등록 카드는 요청에 stageId 파라미터가 없고
-                // 서버가 항상 "지원 전"(res.stageId)에만 생성함. "지원 전"이 아닌 다른
-                // 컬럼에서 등록한 경우, 생성 직후 3.3 이동 API로 클릭한 컬럼으로 옮겨줌.
                 if (res.stageId !== targetStageId) {
                   setStages((prev) =>
                     prev.map((s) =>
@@ -487,8 +487,12 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
                   moveCardMutation.mutate(
                     { cardId: res.cardId, stageId: targetStageId, position: 1 },
                     {
+                      onSuccess: () => {
+                        // ⚠️ 등록+이동이 전부 끝난 뒤 딱 한 번만 재조회 — 중간 재조회로
+                        // 인한 "지원 전" 깜빡임 방지
+                        queryClient.invalidateQueries({ queryKey: kanbanKeys.board() });
+                      },
                       onError: () => {
-                        // 이동 실패 시 원래 위치("지원 전")로 롤백
                         setStages((prev) =>
                           prev.map((s) => {
                             if (s.id === targetStageId) {
@@ -500,6 +504,7 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
                             return s;
                           })
                         );
+                        queryClient.invalidateQueries({ queryKey: kanbanKeys.board() });
                         showToast(
                           'error',
                           '카드는 등록됐지만 선택한 단계로 이동은 실패했어요. 지원 전 단계에서 확인해주세요.'
@@ -511,6 +516,8 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
                   setStages((prev) =>
                     prev.map((s) => (s.id === res.stageId ? { ...s, cards: [...s.cards, newCard] } : s))
                   );
+                  // 이동이 필요 없는 경우(원래도 "지원 전"에서 등록)엔 여기서 한 번만 재조회
+                  queryClient.invalidateQueries({ queryKey: kanbanKeys.board() });
                 }
 
                 setAddCardStageId(null);
