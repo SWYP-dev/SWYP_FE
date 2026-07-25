@@ -16,7 +16,7 @@ import {
   type CareerTagId,
 } from '@/features/feed/components/CareerFilterChip';
 import { RegionFilterButton, buildRegionParam } from '@/features/feed/components/RegionFilterButton';
-import { JobCategoryFilterButton } from '@/features/feed/components/JobCategoryFilterButton';
+import { JobCategoryFilterButton, buildJobCategoryParam } from '@/features/feed/components/JobCategoryFilterButton';
 import { DeadlineSoonFilterButton } from '@/features/feed/components/DeadlineSoonFilterButton';
 import { useFeedQuery } from '@/features/feed/api/useFeedQuery';
 import { postScrap, deleteScrap } from '@/features/feed/api/scrap';
@@ -99,10 +99,7 @@ export default function FeedPage() {
     sort,
     deadlineSoon: deadlineSoon || undefined,
     keyword: keyword || undefined,
-    jobCategory:
-      jobCategoryValue && jobCategoryValue.childIds.length > 0
-        ? jobCategoryValue.childIds.join(',')
-        : undefined,
+    jobCategory: buildJobCategoryParam(jobCategoryValue),
     region: buildRegionParam(regionValue),
     career: buildCareerParam(careerTags),
   });
