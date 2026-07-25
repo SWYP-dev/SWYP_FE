@@ -100,7 +100,7 @@ export function DeadlineList() {
         setDeletingCard(null);
         if (viewingCardId === cardId) setViewingCardId(null);
         setToastType('success');
-        setToastMessage('지원 내역이 삭제되었어요.');
+        setToastMessage('지원 현황이 삭제되었어요.');
       },
       onError: () => {
         setToastType('error');
