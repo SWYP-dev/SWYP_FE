@@ -167,7 +167,13 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
 
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
-    if (!over) return;
+    if (!over) {
+      // ⚠️ [QA 반영] 유효하지 않은 위치에 드롭하면 handleDragOver가 이미 낙관적으로
+      // 옮겨놓은 로컬 상태가 서버에 반영되지 않은 채 남아있을 수 있어, 서버 기준
+      // 상태로 되돌림 (다른 페이지에서 스테이지가 안 맞아 보이는 문제 방지).
+      setStages(initialStages);
+      return;
+    }
 
     // 스테이지(컬럼) 순서 변경 — over.data.stageId를 사용 (over.id 파싱하지 않음)
     if (active.data.current?.type === 'stage') {
