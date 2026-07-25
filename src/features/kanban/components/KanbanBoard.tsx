@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { DndContext, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
 import type { KanbanCard, KanbanStage } from '@/types/api';
 import { KanbanColumn } from './KanbanColumn';
@@ -24,6 +25,7 @@ import {
 } from '@/features/kanban/api/useKanbanMutations';
 import { ApiClientError } from '@/lib/api/api-client';
 import { useDraftStageStore } from '@/features/kanban/store/draftStageStore';
+import { kanbanKeys } from '@/features/kanban/api/useKanbanQuery';
 
 const MAX_STAGES = 10;
 
@@ -32,6 +34,7 @@ interface KanbanBoardProps {
 }
 
 export function KanbanBoard({ initialStages }: KanbanBoardProps) {
+  const queryClient = useQueryClient();
   const [stages, setStages] = useState(initialStages);
   const { isAddingStage, draftName, startDraft, setDraftName, clearDraft } = useDraftStageStore();
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -175,9 +178,43 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
           clearDraft();
           showToast('success', '전형 단계가 추가되었어요.');
         },
-        onError: () => {
-          showToast('error', '전형 단계 추가에 실패했어요.');
-          clearDraft();
+        onError: (err) => {
+          if (err instanceof ApiClientError) {
+            switch (err.code) {
+              case 'K005':
+                showToast('error', '전형 이름을 입력해주세요.');
+                break;
+              case 'K006':
+                showToast('error', '이미 존재하는 전형 이름이에요.');
+                break;
+              case 'K007':
+                showToast('error', '전형 이름에 사용할 수 없는 문자가 포함돼 있어요.');
+                break;
+              case 'K008':
+                showToast('error', '전형 이름은 2자 이상 입력해주세요.');
+                break;
+              case 'K009':
+                showToast('error', '전형 이름은 20자를 초과할 수 없어요.');
+                break;
+              case 'K001':
+                showToast('error', '전형 단계는 최대 10개까지 추가할 수 있어요.');
+                break;
+              default:
+                showToast('error', '전형 단계 추가에 실패했어요.');
+            }
+          } else {
+            showToast('error', '전형 단계 추가에 실패했어요.');
+          }
+          // ⚠️ 유효성 오류(이름 관련)는 입력값을 유지해 재입력하기 편하도록 clearDraft()를 호출하지 않음.
+          // 그 외(한도 초과 등) 오류는 기존처럼 초안을 닫음.
+          if (
+            !(
+              err instanceof ApiClientError &&
+              ['K005', 'K006', 'K007', 'K008', 'K009'].includes(err.code)
+            )
+          ) {
+            clearDraft();
+          }
         },
       }
     );
@@ -417,6 +454,8 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
         stageId={addCardStageId ?? 0}
         onClose={() => setAddCardStageId(null)}
         onConfirm={(data) => {
+          const targetStageId = data.stageId;
+
           createDirectCardMutation.mutate(
             {
               companyName: data.companyName,
@@ -426,30 +465,61 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
             },
             {
               onSuccess: (res) => {
-                setStages((prev) =>
-                  prev.map((s) =>
-                    s.id === data.stageId
-                      ? {
-                          ...s,
-                          cards: [
-                            ...s.cards,
-                            {
-                              id: res.cardId,
-                              postingId: res.postingId,
-                              companyName: res.companyName,
-                              jobTitle: res.jobTitle,
-                              deadline: res.deadline,
-                              thumbnailUrl: '',
-                              originalUrl: data.originalUrl,
-                              deadlineChanged: false,
-                              memo: '',
-                              registeredAt: new Date().toISOString(),
-                            },
-                          ],
-                        }
-                      : s
-                  )
-                );
+                const newCard = {
+                  id: res.cardId,
+                  postingId: res.postingId,
+                  companyName: res.companyName,
+                  jobTitle: res.jobTitle,
+                  deadline: res.deadline,
+                  thumbnailUrl: '',
+                  originalUrl: data.originalUrl,
+                  deadlineChanged: false,
+                  memo: '',
+                  registeredAt: new Date().toISOString(),
+                };
+
+                if (res.stageId !== targetStageId) {
+                  setStages((prev) =>
+                    prev.map((s) =>
+                      s.id === targetStageId ? { ...s, cards: [...s.cards, newCard] } : s
+                    )
+                  );
+                  moveCardMutation.mutate(
+                    { cardId: res.cardId, stageId: targetStageId, position: 1 },
+                    {
+                      onSuccess: () => {
+                        // ⚠️ 등록+이동이 전부 끝난 뒤 딱 한 번만 재조회 — 중간 재조회로
+                        // 인한 "지원 전" 깜빡임 방지
+                        queryClient.invalidateQueries({ queryKey: kanbanKeys.board() });
+                      },
+                      onError: () => {
+                        setStages((prev) =>
+                          prev.map((s) => {
+                            if (s.id === targetStageId) {
+                              return { ...s, cards: s.cards.filter((c) => c.id !== res.cardId) };
+                            }
+                            if (s.id === res.stageId) {
+                              return { ...s, cards: [...s.cards, newCard] };
+                            }
+                            return s;
+                          })
+                        );
+                        queryClient.invalidateQueries({ queryKey: kanbanKeys.board() });
+                        showToast(
+                          'error',
+                          '카드는 등록됐지만 선택한 단계로 이동은 실패했어요. 지원 전 단계에서 확인해주세요.'
+                        );
+                      },
+                    }
+                  );
+                } else {
+                  setStages((prev) =>
+                    prev.map((s) => (s.id === res.stageId ? { ...s, cards: [...s.cards, newCard] } : s))
+                  );
+                  // 이동이 필요 없는 경우(원래도 "지원 전"에서 등록)엔 여기서 한 번만 재조회
+                  queryClient.invalidateQueries({ queryKey: kanbanKeys.board() });
+                }
+
                 setAddCardStageId(null);
                 showToast('success', '지원 내역이 추가되었어요.');
               },

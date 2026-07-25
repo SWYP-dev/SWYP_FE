@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { LoginModal } from '@/features/auth/components/LoginModal';
@@ -24,15 +24,35 @@ const NAV_ITEMS = [
 //  - 로그인 상태(node 111:23074): 아바타+닉네임+이메일 → 클릭 시 로그아웃 드롭다운(ProfileMenu)
 export function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+
+  // ⚠️ TODO: 통합 공고 탐색(page.tsx)의 검색어/필터가 아직 로컬 useState 기반이라
+  // (URL 쿼리 파라미터 연동 전 — 추후 고도화 예정 항목), 이미 '/'에 있을 때
+  // Link/router.push만으로는 경로가 바뀌지 않아 상태가 초기화되지 않음.
+  // 그래서 '/'에 있을 때만 강제 리로드로 완전히 초기화된 상태로 복귀시킴.
+  // 필터 상태가 URL 쿼리로 이전되면 이 분기 제거하고 router.push('/')로 통일 가능.
+  function handleLogoClick(e: React.MouseEvent<HTMLAnchorElement>) {
+    if (pathname === '/') {
+      e.preventDefault();
+      window.location.href = '/';
+      return;
+    }
+    router.push('/');
+  }
 
   return (
     <aside className="flex h-full w-[257px] flex-col items-start justify-between border-r border-line-secondary bg-base-white">
       <div className="flex w-full flex-col items-start">
-        <div className="flex h-[80px] w-full flex-col items-start justify-center gap-3 px-6 py-3">
+        <Link
+          href="/"
+          onClick={handleLogoClick}
+          aria-label="통합 공고 탐색으로 이동"
+          className="flex h-[80px] w-full flex-col items-start justify-center gap-3 px-6 py-3"
+        >
           <ChwihapWordmark className="h-5 w-auto" />
-        </div>
+        </Link>
 
         <nav className="flex w-full flex-col items-start gap-2 px-6">
           {NAV_ITEMS.map((item) => {

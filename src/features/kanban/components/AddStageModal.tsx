@@ -13,15 +13,27 @@ interface AddStageModalProps {
 
 // Figma "전형 단계 추가"(node 164:28872) 반영.
 // 기존엔 컬럼 안에 인라인 입력창(draft column)이 떴는데, 중앙 팝업 모달로 교체.
+//
+// API 명세서 v1.11 (3.7)의 이름 검증 규칙(2~20자, STAGE_NAME_TOO_SHORT/TOO_LONG) 중
+// 길이 조건만 클라이언트에서 우선 검증해 불필요한 API 호출을 줄임.
+// 특수문자/중복 이름 검증은 서버 규칙 확정본이 없어 서버 응답(K006/K007)에 위임.
 export function AddStageModal({ isOpen, value, onChange, onClose, onConfirm }: AddStageModalProps) {
-  const [hasError, setHasError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
   function handleConfirm() {
     const trimmed = value.trim();
     if (!trimmed) {
-      setHasError(true);
+      setErrorMessage('전형 이름을 입력해주세요.');
+      return;
+    }
+    if (trimmed.length < 2) {
+      setErrorMessage('전형 이름은 2자 이상 입력해주세요.');
+      return;
+    }
+    if (trimmed.length > 20) {
+      setErrorMessage('전형 이름은 20자를 초과할 수 없어요.');
       return;
     }
     onConfirm(trimmed);
@@ -45,16 +57,16 @@ export function AddStageModal({ isOpen, value, onChange, onClose, onConfirm }: A
               value={value}
               onChange={(e) => {
                 onChange(e.target.value);
-                setHasError(false);
+                setErrorMessage(null);
               }}
               onKeyDown={(e) => e.key === 'Enter' && handleConfirm()}
               placeholder="텍스트를 입력해 주세요."
               className={`w-full rounded-xl border-2 bg-transparent px-4 py-3 text-4 font-medium text-label-base placeholder:text-label-placeholder outline-none ${
-                hasError ? 'border-status-negative' : 'border-line-secondary focus:border-line-primary'
+                errorMessage ? 'border-status-negative' : 'border-line-secondary focus:border-line-primary'
               }`}
             />
-            {hasError && (
-              <p className="text-1 font-medium text-status-negative">전형 이름을 입력해주세요.</p>
+            {errorMessage && (
+              <p className="text-1 font-medium text-status-negative">{errorMessage}</p>
             )}
           </div>
         </Modal>
