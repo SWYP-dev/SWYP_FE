@@ -183,7 +183,7 @@ export function KanbanColumn({
                 <EditIcon size={20} />
               </button>
             )}
-            {!isDraft && (
+            {!isDraft && !stage.isDefault && (
               <button
                 type="button"
                 aria-label="스테이지 삭제"
