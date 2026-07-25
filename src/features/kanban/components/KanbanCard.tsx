@@ -23,12 +23,7 @@ function CalendarSmallIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
       <rect x="2" y="3" width="10" height="9" rx="1.2" stroke="#9E9EA1" strokeWidth="1.2" />
-      <path
-        d="M2 5.5h10M4.5 1.5v3M9.5 1.5v3"
-        stroke="#9E9EA1"
-        strokeWidth="1.2"
-        strokeLinecap="round"
-      />
+      <path d="M2 5.5h10M4.5 1.5v3M9.5 1.5v3" stroke="#9E9EA1" strokeWidth="1.2" strokeLinecap="round" />
     </svg>
   );
 }
@@ -37,11 +32,6 @@ function ExternalLinkIcon() {
   return <Image src="/icons/external-link.svg" alt="" width={14} height={14} />;
 }
 
-// ⚠️ [QA 재작업] 기존엔 useDraggable+useDroppable을 직접 조합해서 카드 간 재정렬을
-// 만들려 했는데, 기본 collisionDetection(rectIntersection)이 "카드"와 "카드를 감싸는
-// 스테이지 전체"를 구분 못해 제대로 동작하지 않았음. 이미 설치돼 있던 @dnd-kit/sortable의
-// useSortable로 교체 — 정확히 이런 "리스트 내 재정렬 + 여러 컨테이너 간 이동"을 위해
-// 만들어진 라이브러리라 충돌 문제 없이 동작함.
 export function KanbanCard({ card, stageId, onCardClick, onEditCard, onDeleteCard }: KanbanCardProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: String(card.id),

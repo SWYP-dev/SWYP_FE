@@ -129,20 +129,15 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
   function handleDragOver(event: DragOverEvent) {
     const { active, over } = event;
     if (!over) return;
-    if (active.data.current?.type === 'stage') return; // 컬럼 드래그는 dragEnd에서만 처리
+    if (active.data.current?.type === 'stage') return;
 
     const activeCardId = Number(active.id);
     const activeStageId = active.data.current?.stageId as number;
     if (!activeStageId) return;
 
     const overData = over.data.current as { type?: string; stageId?: number } | undefined;
-    const overStageId =
-      overData?.type === 'card' || overData?.type === 'stage-container'
-        ? (overData.stageId as number)
-        : undefined;
+    const overStageId = overData?.stageId;
 
-    // 다른 스테이지 위로 드래그 중일 때만 실시간으로 배열을 옮김 (같은 스테이지 내
-    // 재정렬은 onDragEnd에서 arrayMove로 한 번에 확정)
     if (!overStageId || activeStageId === overStageId) return;
 
     setStages((prev) => {
@@ -174,17 +169,12 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
     const { active, over } = event;
     if (!over) return;
 
-    // 스테이지(컬럼) 순서 변경
+    // 스테이지(컬럼) 순서 변경 — over.data.stageId를 사용 (over.id 파싱하지 않음)
     if (active.data.current?.type === 'stage') {
       const fromStageId = active.data.current.stageId as number;
-      const overData = over.data.current as { type?: string; stageId?: number } | undefined;
-      const toStageId =
-        overData?.type === 'stage-container'
-          ? (overData.stageId as number)
-          : overData?.type === 'stage'
-            ? (overData.stageId as number)
-            : Number(over.id);
-      if (fromStageId === toStageId) return;
+      const overData = over.data.current as { stageId?: number } | undefined;
+      const toStageId = overData?.stageId;
+      if (!toStageId || fromStageId === toStageId) return;
 
       let newPosition = 0;
       setStages((prev) => {
@@ -220,8 +210,8 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
       return;
     }
 
-    // 카드 이동/재정렬 — 스테이지 간 이동은 이미 handleDragOver에서 반영됐으므로,
-    // 여기서는 최종적으로 속한 스테이지 내에서 정확한 순서만 확정
+    // 카드 이동/재정렬 — 스테이지 간 이동은 handleDragOver에서 이미 반영됨.
+    // 여기서는 최종 소속 스테이지 내에서 정확한 순서만 확정.
     const cardId = Number(active.id);
     const currentStageId = stages.find((s) => s.cards.some((c) => c.id === cardId))?.id;
     if (!currentStageId) return;
