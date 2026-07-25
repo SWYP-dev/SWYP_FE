@@ -87,7 +87,10 @@ const ScrapsPage: NextPage = () => {
       setToastMessage('지원 현황에 추가했어요.');
     } catch (err) {
       setToastType('error');
-      if (err instanceof ApiClientError && err.code === 'DUPLICATE_KANBAN_CARD') {
+      if (
+        err instanceof ApiClientError &&
+        (err.code === 'K003' || err.code === 'DUPLICATE_KANBAN_CARD')
+      ) {
         setToastMessage('이미 등록된 공고예요.');
       } else {
         console.error('칸반 등록 실패', err);
