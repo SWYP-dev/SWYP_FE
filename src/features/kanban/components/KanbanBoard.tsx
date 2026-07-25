@@ -511,32 +511,21 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
       <DeleteStageModal
         isOpen={deletingStage !== null}
         stage={deletingStage}
-        otherStages={stages.filter((s) => s.id !== deletingStage?.id)}
         onClose={() => setDeletingStage(null)}
-        onConfirm={(stageId, moveToStageId) => {
+        onConfirm={(stageId) => {
           const target = stages.find((s) => s.id === stageId);
           const deletedName = target?.name ?? '';
-          const deletedCards = target?.cards ?? [];
           const deletedPosition = target?.position ?? 1;
 
           deleteStageMutation.mutate(
-            { stageId, moveToStageId },
+            { stageId },
             {
               onSuccess: () => {
-                setStages((prev) => {
-                  if (moveToStageId !== undefined) {
-                    return prev
-                      .filter((s) => s.id !== stageId)
-                      .map((s) =>
-                        s.id === moveToStageId ? { ...s, cards: [...s.cards, ...deletedCards] } : s
-                      );
-                  }
-                  return prev.filter((s) => s.id !== stageId);
-                });
+                setStages((prev) => prev.filter((s) => s.id !== stageId));
                 setDeletingStage(null);
                 showToast('success', `'${deletedName}' 단계를 삭제했어요.`, {
                   label: '되돌리기',
-                  onClick: () => handleUndoDeleteStage(deletedName, deletedCards, deletedPosition),
+                  onClick: () => handleUndoDeleteStage(deletedName, [], deletedPosition),
                 });
               },
               onError: (err) => {
