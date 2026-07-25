@@ -271,7 +271,7 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
             { id: res.id, name: res.name, position: res.position, isDefault: false, cards: [] },
           ]);
           clearDraft();
-          showToast('success', '전형 단계가 추가되었어요.');
+          showToast('success', `'${res.name}' 단계가 추가되었어요.`);
         },
         onError: (err) => {
           if (err instanceof ApiClientError) {
