@@ -44,27 +44,44 @@ function mapCardErrorCode(code: string): FormErrors | null {
     case 'K011':
       return { companyName: '회사명을 입력해 주세요.' };
     case 'K012':
-      return { companyName: '회사명에 사용할 수 없는 문자가 포함돼 있어요.' };
+      return { companyName: '올바른 회사명을 입력해 주세요.' };
     case 'K013':
-      return { companyName: '회사명은 2자 이상 입력해 주세요.' };
+      return { companyName: '2자 이상 입력해 주세요.' };
     case 'K014':
-      return { companyName: '회사명은 50자를 초과할 수 없어요.' };
+      return { companyName: '50자를 초과하여 입력할 수 없어요.' };
     case 'K015':
       return { jobTitle: '공고명을 입력해 주세요.' };
     case 'K016':
-      return { jobTitle: '공고명에 사용할 수 없는 문자가 포함돼 있어요.' };
+      return { jobTitle: '올바른 공고명을 입력해 주세요.' };
     case 'K017':
-      return { jobTitle: '공고명은 2자 이상 입력해 주세요.' };
+      return { jobTitle: '2자 이상 입력해 주세요.' };
     case 'K018':
-      return { jobTitle: '공고명은 100자를 초과할 수 없어요.' };
+      return { jobTitle: '100자를 초과하여 입력할 수 없어요.' };
     case 'K019':
       return { originalUrl: '공고 링크를 입력해 주세요.' };
     case 'K020':
-      return { originalUrl: '올바른 URL 형식이 아니에요.' };
+      return { originalUrl: '올바른 공고 링크를 입력해 주세요.' };
     case 'K021':
-      return { originalUrl: '공고 링크는 2048자를 초과할 수 없어요.' };
+      return { originalUrl: '2048자를 초과하여 입력할 수 없어요.' };
     case 'K003':
-      return { originalUrl: '이미 등록된 공고 링크예요.' };
+      return { originalUrl: '이미 등록된 공고예요.' };
+    default:
+      return null;
+  }
+}
+
+function mapStageNameErrorCode(code: string): string | null {
+  switch (code) {
+    case 'K005':
+      return '전형 단계 이름을 입력해 주세요.';
+    case 'K006':
+      return '이미 존재하는 전형 단계 이름이에요.';
+    case 'K007':
+      return '올바른 전형 단계 이름을 입력해 주세요.';
+    case 'K008':
+      return '2자 이상 입력해 주세요.';
+    case 'K009':
+      return '20자를 초과하여 입력할 수 없어요.';
     default:
       return null;
   }
@@ -167,7 +184,13 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
 
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
-    if (!over) return;
+    if (!over) {
+      // ⚠️ [QA 반영] 유효하지 않은 위치에 드롭하면 handleDragOver가 이미 낙관적으로
+      // 옮겨놓은 로컬 상태가 서버에 반영되지 않은 채 남아있을 수 있어, 서버 기준
+      // 상태로 되돌림 (다른 페이지에서 스테이지가 안 맞아 보이는 문제 방지).
+      setStages(initialStages);
+      return;
+    }
 
     // 스테이지(컬럼) 순서 변경 — over.data.stageId를 사용 (over.id 파싱하지 않음)
     if (active.data.current?.type === 'stage') {
@@ -265,43 +288,19 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
             { id: res.id, name: res.name, position: res.position, isDefault: false, cards: [] },
           ]);
           clearDraft();
-          showToast('success', '전형 단계가 추가되었어요.');
+          showToast('success', `'${res.name}' 단계가 추가되었어요.`);
         },
         onError: (err) => {
-          if (err instanceof ApiClientError) {
-            switch (err.code) {
-              case 'K005':
-                showToast('error', '전형 이름을 입력해주세요.');
-                break;
-              case 'K006':
-                showToast('error', '이미 존재하는 전형 이름이에요.');
-                break;
-              case 'K007':
-                showToast('error', '전형 이름에 사용할 수 없는 문자가 포함돼 있어요.');
-                break;
-              case 'K008':
-                showToast('error', '전형 이름은 2자 이상 입력해주세요.');
-                break;
-              case 'K009':
-                showToast('error', '전형 이름은 20자를 초과할 수 없어요.');
-                break;
-              case 'K001':
-                showToast('error', '전형 단계는 최대 10개까지 추가할 수 있어요.');
-                break;
-              default:
-                showToast('error', '전형 단계 추가에 실패했어요.');
-            }
+          const mapped = err instanceof ApiClientError ? mapStageNameErrorCode(err.code) : null;
+          if (mapped) {
+            showToast('error', mapped);
+          } else if (err instanceof ApiClientError && err.code === 'K001') {
+            showToast('error', '전형 단계는 최대 10개까지 추가할 수 있어요.');
           } else {
             showToast('error', '전형 단계 추가에 실패했어요.');
           }
           // ⚠️ 유효성 오류(이름 관련)는 입력값을 유지해 재입력하기 편하도록 clearDraft()를 호출하지 않음.
-          // 그 외(한도 초과 등) 오류는 기존처럼 초안을 닫음.
-          if (
-            !(
-              err instanceof ApiClientError &&
-              ['K005', 'K006', 'K007', 'K008', 'K009'].includes(err.code)
-            )
-          ) {
+          if (!mapped) {
             clearDraft();
           }
         },
@@ -309,22 +308,79 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
     );
   }
 
+  function handleUndoDeleteCard(card: KanbanCard, stageId: number, position: number) {
+    createDirectCardMutation.mutate(
+      {
+        companyName: card.companyName,
+        title: card.jobTitle,
+        originalUrl: card.originalUrl,
+        deadline: card.deadline,
+      },
+      {
+        onSuccess: (res) => {
+          const restoredCard = {
+            id: res.cardId,
+            postingId: res.postingId,
+            companyName: res.companyName,
+            jobTitle: res.jobTitle,
+            deadline: res.deadline,
+            thumbnailUrl: card.thumbnailUrl,
+            originalUrl: card.originalUrl,
+            deadlineChanged: false,
+            memo: '', // ⚠️ 재등록 API로 복구하는 방식이라 메모는 복구 불가
+            registeredAt: new Date().toISOString(),
+          };
+
+          if (res.stageId !== stageId) {
+            setStages((prev) =>
+              prev.map((s) => (s.id === stageId ? { ...s, cards: [...s.cards, restoredCard] } : s))
+            );
+            moveCardMutation.mutate(
+              { cardId: res.cardId, stageId, position },
+              {
+                onSuccess: () => queryClient.invalidateQueries({ queryKey: kanbanKeys.board() }),
+              }
+            );
+          } else {
+            setStages((prev) =>
+              prev.map((s) => (s.id === stageId ? { ...s, cards: [...s.cards, restoredCard] } : s))
+            );
+            queryClient.invalidateQueries({ queryKey: kanbanKeys.board() });
+          }
+        },
+        onError: () => showToast('error', '되돌리기에 실패했어요.'),
+      }
+    );
+  }
+
   function handleConfirmDeleteCard(cardId: number) {
+    const fromStage = stages.find((s) => s.cards.some((c) => c.id === cardId));
+    const deletedCard = fromStage?.cards.find((c) => c.id === cardId);
+    const deletedStageId = fromStage?.id;
+    const deletedPosition = fromStage ? fromStage.cards.findIndex((c) => c.id === cardId) + 1 : 1;
+
     deleteCardMutation.mutate(cardId, {
       onSuccess: () => {
         setStages((prev) =>
           prev.map((s) => ({ ...s, cards: s.cards.filter((c) => c.id !== cardId) }))
         );
         setDeletingCard(null);
-        showToast('success', '지원 내역이 삭제되었어요.');
+        showToast('success', '지원 현황이 삭제되었어요.', {
+          label: '되돌리기',
+          onClick: () => {
+            if (deletedCard && deletedStageId) {
+              handleUndoDeleteCard(deletedCard, deletedStageId, deletedPosition);
+            }
+          },
+        });
       },
       onError: () => showToast('error', '지원 내역 삭제에 실패했어요.'),
     });
   }
 
-  function handleUndoDeleteStage(name: string, cards: KanbanCard[]) {
+  function handleUndoDeleteStage(name: string, cards: KanbanCard[], position: number) {
     createStageMutation.mutate(
-      { name },
+      { name, position },
       {
         onSuccess: (res) => {
           const restoredStage: KanbanStage = {
@@ -353,7 +409,10 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
             );
           });
 
-          showToast('success', '삭제를 취소했어요.');
+          // ⚠️ [QA 반영] 되돌리기 성공 토스트 제거 — 디자인 명세에 없고, 삭제 취소라는
+          // 결과가 화면에 이미 바로 반영되므로 추가 안내가 불필요함.
+          // 위치가 다른 스테이지들에 영향(재정렬) 줄 수 있어 최종 상태 재조회.
+          queryClient.invalidateQueries({ queryKey: kanbanKeys.board() });
         },
         onError: () => showToast('error', '되돌리기에 실패했어요.'),
       }
@@ -416,11 +475,10 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
                         err.code === 'DEFAULT_STAGE_NAME_CHANGE_NOT_ALLOWED'
                       ) {
                         showToast('error', '기본 전형 단계는 이름을 변경할 수 없어요.');
-                      } else if (err instanceof ApiClientError && err.code === 'K007') {
-                        showToast('error', '올바른 전형 이름을 입력해주세요.');
-                      } else {
-                        showToast('error', '전형 단계 수정에 실패했어요.');
+                        return;
                       }
+                      const mapped = err instanceof ApiClientError ? mapStageNameErrorCode(err.code) : null;
+                      showToast('error', mapped ?? '전형 단계 수정에 실패했어요.');
                     },
                   }
                 );
@@ -453,31 +511,21 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
       <DeleteStageModal
         isOpen={deletingStage !== null}
         stage={deletingStage}
-        otherStages={stages.filter((s) => s.id !== deletingStage?.id)}
         onClose={() => setDeletingStage(null)}
-        onConfirm={(stageId, moveToStageId) => {
+        onConfirm={(stageId) => {
           const target = stages.find((s) => s.id === stageId);
           const deletedName = target?.name ?? '';
-          const deletedCards = target?.cards ?? [];
+          const deletedPosition = target?.position ?? 1;
 
           deleteStageMutation.mutate(
-            { stageId, moveToStageId },
+            { stageId },
             {
               onSuccess: () => {
-                setStages((prev) => {
-                  if (moveToStageId !== undefined) {
-                    return prev
-                      .filter((s) => s.id !== stageId)
-                      .map((s) =>
-                        s.id === moveToStageId ? { ...s, cards: [...s.cards, ...deletedCards] } : s
-                      );
-                  }
-                  return prev.filter((s) => s.id !== stageId);
-                });
+                setStages((prev) => prev.filter((s) => s.id !== stageId));
                 setDeletingStage(null);
                 showToast('success', `'${deletedName}' 단계를 삭제했어요.`, {
                   label: '되돌리기',
-                  onClick: () => handleUndoDeleteStage(deletedName, deletedCards),
+                  onClick: () => handleUndoDeleteStage(deletedName, [], deletedPosition),
                 });
               },
               onError: (err) => {
@@ -540,7 +588,7 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
               queryClient.invalidateQueries({ queryKey: kanbanKeys.board() });
             }
             setAddCardStageId(null);
-            showToast('success', '지원 내역이 추가되었어요.');
+            showToast('success', '지원 현황이 추가되었어요.');
             return undefined;
           } catch (err) {
             if (err instanceof ApiClientError) {

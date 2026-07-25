@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Modal } from '@/components/ui/modal';
 import { FilterTriggerButton } from '@/components/ui/filter-trigger-button';
+import { useEscapeKey } from '@/lib/hooks/useEscapeKey';
 import type { KanbanStage } from '@/types/api';
 
 interface StageFilterChipProps {
@@ -17,6 +18,8 @@ interface StageFilterChipProps {
 export function StageFilterChip({ stages, appliedStageIds, onApply }: StageFilterChipProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [draft, setDraft] = useState<number[]>(appliedStageIds);
+
+  useEscapeKey(isOpen, () => setIsOpen(false));
 
   const openModal = () => {
     setDraft(appliedStageIds);

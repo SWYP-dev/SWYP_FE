@@ -83,7 +83,7 @@ export function DeadlineList() {
       queryClient.invalidateQueries({ queryKey: kanbanKeys.board() });
       setEditingCard(null);
       setToastType('success');
-      setToastMessage('지원 마감일을 수정했어요.');
+      setToastMessage('수정 사항이 저장되었어요.');
     } catch (err) {
       setToastType('error');
       if (err instanceof ApiClientError && err.code === 'K010') {
@@ -100,7 +100,7 @@ export function DeadlineList() {
         setDeletingCard(null);
         if (viewingCardId === cardId) setViewingCardId(null);
         setToastType('success');
-        setToastMessage('지원 내역이 삭제되었어요.');
+        setToastMessage('지원 현황이 삭제되었어요.');
       },
       onError: () => {
         setToastType('error');

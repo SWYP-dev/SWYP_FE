@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { CloseIcon } from '@/components/ui/icons';
 import { DatePicker } from '@/components/ui/date-picker';
+import { useEscapeKey } from '@/lib/hooks/useEscapeKey';
 import type { KanbanCard } from '@/types/api';
 
 type ModalMode = 'add' | 'edit';
@@ -49,30 +50,41 @@ function normalizeUrl(url: string): string {
   return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
 }
 
+// 문자(한글/영문 등)나 숫자가 하나도 없으면 특수문자/이모지로만 이루어진 것으로 간주
+function hasNoLetterOrDigit(value: string): boolean {
+  return !/[\p{L}\p{N}]/u.test(value);
+}
+
 // API 명세서 3.10/3.11 필드 검증 규칙(K011~K021)과 동일한 기준으로 클라이언트 사전 검증.
 // 서버 왕복 없이도 대부분의 케이스를 즉시 안내하기 위함.
 function validateField(key: keyof FormState, form: FormState): string | undefined {
   if (key === 'companyName') {
     const trimmed = form.companyName.trim();
     if (!trimmed) return '회사명을 입력해 주세요.';
-    if (trimmed.length < 2) return '회사명은 2자 이상 입력해 주세요.';
-    if (trimmed.length > 50) return '회사명은 50자를 초과할 수 없어요.';
+    if (trimmed.length < 2) return '2자 이상 입력해 주세요.';
+    if (trimmed.length > 50) return '50자를 초과하여 입력할 수 없어요.';
+    if (hasNoLetterOrDigit(trimmed)) return '올바른 회사명을 입력해 주세요.';
   }
   if (key === 'jobTitle') {
     const trimmed = form.jobTitle.trim();
     if (!trimmed) return '공고명을 입력해 주세요.';
-    if (trimmed.length < 2) return '공고명은 2자 이상 입력해 주세요.';
-    if (trimmed.length > 100) return '공고명은 100자를 초과할 수 없어요.';
+    if (trimmed.length < 2) return '2자 이상 입력해 주세요.';
+    if (trimmed.length > 100) return '100자를 초과하여 입력할 수 없어요.';
+    if (hasNoLetterOrDigit(trimmed)) return '올바른 공고명을 입력해 주세요.';
   }
   if (key === 'originalUrl') {
     const trimmed = form.originalUrl.trim();
     if (!trimmed) return '공고 링크를 입력해 주세요.';
+    // 최소한의 도메인 형태(점 포함) 검증 — "abcde" 같은 비URL 텍스트 차단
+    if (!trimmed.includes('.') || trimmed.includes(' ')) {
+      return '올바른 공고 링크를 입력해 주세요.';
+    }
     try {
       new URL(normalizeUrl(trimmed));
     } catch {
-      return '올바른 URL 형식이 아니에요.';
+      return '올바른 공고 링크를 입력해 주세요.';
     }
-    if (trimmed.length > 2048) return '공고 링크는 2048자를 초과할 수 없어요.';
+    if (trimmed.length > 2048) return '2048자를 초과하여 입력할 수 없어요.';
   }
   if (key === 'deadline' && !form.deadline) return '지원 마감일을 입력해 주세요.';
   return undefined;
@@ -111,6 +123,11 @@ export function AddCardModal({
   const [errors, setErrors] = useState<FormErrors>({});
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEscapeKey(isOpen, () => {
+    setShowDatePicker(false);
+    onClose();
+  });
 
   if (!isOpen) return null;
 

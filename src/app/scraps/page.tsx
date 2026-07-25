@@ -66,8 +66,6 @@ const ScrapsPage: NextPage = () => {
       await deleteScrap(jobPostingId);
       refetch();
       queryClient.invalidateQueries({ queryKey: ['feed'] });
-      setToastType('success');
-      setToastMessage('스크랩을 해제했어요.');
     } catch (err) {
       setRemovedIds((prev) => {
         const next = new Set(prev);
@@ -86,11 +84,14 @@ const ScrapsPage: NextPage = () => {
       await registerKanbanCard(jobPostingId);
       queryClient.invalidateQueries({ queryKey: kanbanKeys.board() });
       setToastType('success');
-      setToastMessage('지원 현황에 추가했어요.');
+      setToastMessage('지원 현황에 추가되었어요.');
     } catch (err) {
       setToastType('error');
-      if (err instanceof ApiClientError && err.code === 'ALREADY_REGISTERED') {
-        setToastMessage('이미 지원 현황에 등록된 공고예요.');
+      if (
+        err instanceof ApiClientError &&
+        (err.code === 'K003' || err.code === 'DUPLICATE_KANBAN_CARD')
+      ) {
+        setToastMessage('이미 등록된 공고예요.');
       } else {
         console.error('칸반 등록 실패', err);
         setToastMessage('지원 현황 추가에 실패했어요.');
@@ -161,7 +162,7 @@ const ScrapsPage: NextPage = () => {
         isVisible={toastMessage !== null}
         onDismiss={() => setToastMessage(null)}
         type={toastType}
-        hasButton={toastType === 'success' && toastMessage === '지원 현황에 추가했어요.'}
+        hasButton={toastType === 'success' && toastMessage === '지원 현황에 추가되었어요.'}
         actionLabel="지원 현황 이동"
         onAction={() => router.push('/kanban')}
       />

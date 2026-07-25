@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Modal } from '@/components/ui/modal';
 import { FilterTriggerButton } from '@/components/ui/filter-trigger-button';
+import { useEscapeKey } from '@/lib/hooks/useEscapeKey';
 
 export type CareerTagId = 'EXPERIENCED' | 'NEW' | 'BOTH' | 'FOREIGN';
 
@@ -48,6 +49,8 @@ function formatChipLabel(tags: CareerTagId[]): string {
 export function CareerFilterChip({ appliedTags, onApply }: CareerFilterChipProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [draft, setDraft] = useState<CareerTagId[]>(appliedTags);
+
+  useEscapeKey(isOpen, () => setIsOpen(false));
 
   const openModal = () => {
     setDraft(appliedTags);
