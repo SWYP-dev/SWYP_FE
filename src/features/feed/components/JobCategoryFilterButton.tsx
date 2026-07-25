@@ -4,16 +4,12 @@ import { useState } from 'react';
 import { FilterTriggerButton } from '@/components/ui/filter-trigger-button';
 import {
   SelectionModal,
+  getSelectionSummary,
   type SelectionGroup,
   type SelectionValue,
 } from '@/components/ui/selection-modal';
 
 // 세영님/동섭님 확인(2026-07-19) 기준 실제 jobCategory 값 24개.
-// API가 콤마 구분 다중값을 받으므로, 그룹 드릴다운 없이 하나의 그룹 안에
-// 24개를 전부 체크박스로 넣는 구조로 처리함.
-// TODO(디자인 확인): 왼쪽 그룹 패널에 "직군" 1개만 항상 선택된 채로 뜨는 게
-// UX상 불필요해 보일 수 있음 — 그룹 패널 자체를 없애고 24개 체크박스만
-// 바로 보여주는 방식으로 갈지 진영님과 논의 필요.
 const JOB_CATEGORY_GROUPS: SelectionGroup[] = [
   {
     id: 'all',
@@ -55,12 +51,14 @@ interface JobCategoryFilterButtonProps {
 export function JobCategoryFilterButton({ value, onApply }: JobCategoryFilterButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
 
+  // includeGroupLabel: false — 그룹이 "직군" 하나뿐이라 프리픽스와 중복되므로 직무명만 표시
+  const summary = getSelectionSummary(value, JOB_CATEGORY_GROUPS, false);
   const label =
-    value === null
+    summary === null
       ? '직군 · 직무'
-      : value.childIds.length === 0
-        ? '직군 · 직무'
-        : `직군 · 직무 · ${value.childIds.length}개`;
+      : summary.totalCount === 1
+        ? `직군 · 직무 · ${summary.firstLabel}`
+        : `직군 · 직무 · ${summary.firstLabel} 외 ${summary.totalCount - 1}개`;
 
   return (
     <>
@@ -82,4 +80,14 @@ export function JobCategoryFilterButton({ value, onApply }: JobCategoryFilterBut
       />
     </>
   );
+}
+
+// 직군·직무 선택 결과 → API `jobCategory` 쿼리 파라미터(콤마 구분) 변환.
+export function buildJobCategoryParam(value: SelectionValue | null): string | undefined {
+  if (!value || value.length === 0) return undefined;
+
+  const ids: string[] = [];
+  value.forEach((gv) => ids.push(...gv.childIds));
+
+  return ids.length > 0 ? ids.join(',') : undefined;
 }

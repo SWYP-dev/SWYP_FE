@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { FilterTriggerButton } from '@/components/ui/filter-trigger-button';
 import {
   SelectionModal,
+  getSelectionSummary,
   type SelectionGroup,
   type SelectionValue,
 } from '@/components/ui/selection-modal';
@@ -388,15 +389,19 @@ interface RegionFilterButtonProps {
   onApply: (value: SelectionValue | null) => void;
 }
 
+// 지역 필터 기본값: Figma 초기 화면(node 133:23198) 기준 "전국"이 기본 선택 상태
+const REGION_DEFAULT_VALUE: SelectionValue = [{ groupId: 'nationwide', childIds: [] }];
+
 export function RegionFilterButton({ value, onApply }: RegionFilterButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
 
+  const summary = getSelectionSummary(value, REGION_GROUPS);
   const label =
-    value === null
+    summary === null
       ? '지역'
-      : value.childIds.length === 0
-        ? `지역 · ${REGION_GROUPS.find((g) => g.id === value.groupId)?.label ?? ''} 전체`
-        : `지역 · ${value.childIds.length}개`;
+      : summary.totalCount === 1
+        ? `지역 · ${summary.firstLabel}`
+        : `지역 · ${summary.firstLabel} 외 ${summary.totalCount - 1}개`;
 
   return (
     <>
@@ -408,6 +413,7 @@ export function RegionFilterButton({ value, onApply }: RegionFilterButtonProps) 
         title="지역"
         groups={REGION_GROUPS}
         value={value}
+        defaultValue={REGION_DEFAULT_VALUE}
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
         onApply={(next) => {
@@ -421,18 +427,25 @@ export function RegionFilterButton({ value, onApply }: RegionFilterButtonProps) 
 }
 
 // 지역 선택 결과 → API `region` 쿼리 파라미터(콤마 구분) 변환.
-// "전국" 선택 시 필터 없음. 그룹만 선택(하위 지역 미선택) 시 그룹 라벨(예: "서울") 그대로 전송.
+// "전국" 선택 시 필터 없음. 여러 그룹이 선택된 경우 각 그룹의 라벨/하위 지역 라벨을 모두 합쳐 전송.
 export function buildRegionParam(value: SelectionValue | null): string | undefined {
-  if (!value || value.groupId === 'nationwide') return undefined;
+  if (!value || value.length === 0) return undefined;
+  if (value.some((gv) => gv.groupId === 'nationwide')) return undefined;
 
-  const group = REGION_GROUPS.find((g) => g.id === value.groupId);
-  if (!group) return undefined;
+  const labels: string[] = [];
+  for (const gv of value) {
+    const group = REGION_GROUPS.find((g) => g.id === gv.groupId);
+    if (!group) continue;
 
-  if (value.childIds.length === 0) return group.label;
+    if (gv.childIds.length === 0) {
+      labels.push(group.label);
+    } else {
+      gv.childIds.forEach((childId) => {
+        const child = group.children.find((c) => c.id === childId);
+        if (child) labels.push(child.label);
+      });
+    }
+  }
 
-  const labels = value.childIds
-    .map((childId) => group.children.find((c) => c.id === childId)?.label)
-    .filter((l): l is string => !!l);
-
-  return labels.length > 0 ? labels.join(',') : group.label;
+  return labels.length > 0 ? labels.join(',') : undefined;
 }
