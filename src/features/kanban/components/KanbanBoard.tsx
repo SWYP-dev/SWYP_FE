@@ -178,22 +178,22 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
         onError: (err) => {
           if (err instanceof ApiClientError) {
             switch (err.code) {
-              case 'STAGE_NAME_REQUIRED':
+              case 'K005':
                 showToast('error', '전형 이름을 입력해주세요.');
                 break;
-              case 'STAGE_NAME_DUPLICATE':
+              case 'K006':
                 showToast('error', '이미 존재하는 전형 이름이에요.');
                 break;
-              case 'STAGE_NAME_SPECIAL_CHAR':
+              case 'K007':
                 showToast('error', '전형 이름에 사용할 수 없는 문자가 포함돼 있어요.');
                 break;
-              case 'STAGE_NAME_TOO_SHORT':
+              case 'K008':
                 showToast('error', '전형 이름은 2자 이상 입력해주세요.');
                 break;
-              case 'STAGE_NAME_TOO_LONG':
+              case 'K009':
                 showToast('error', '전형 이름은 20자를 초과할 수 없어요.');
                 break;
-              case 'STAGE_LIMIT_EXCEEDED':
+              case 'K001':
                 showToast('error', '전형 단계는 최대 10개까지 추가할 수 있어요.');
                 break;
               default:
@@ -207,13 +207,7 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
           if (
             !(
               err instanceof ApiClientError &&
-              [
-                'STAGE_NAME_REQUIRED',
-                'STAGE_NAME_DUPLICATE',
-                'STAGE_NAME_SPECIAL_CHAR',
-                'STAGE_NAME_TOO_SHORT',
-                'STAGE_NAME_TOO_LONG',
-              ].includes(err.code)
+              ['K005', 'K006', 'K007', 'K008', 'K009'].includes(err.code)
             )
           ) {
             clearDraft();
