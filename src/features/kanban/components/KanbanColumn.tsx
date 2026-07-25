@@ -2,8 +2,9 @@
 
 import { useState } from 'react';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import type { KanbanStage } from '@/types/api';
+import type { KanbanCard as KanbanCardType, KanbanStage } from '@/types/api';
 import { KanbanCard } from './KanbanCard';
 import { DragHandleIcon, EditIcon, PlusSmallIcon, TrashIcon } from '@/components/ui/icons';
 
@@ -18,6 +19,8 @@ interface KanbanColumnProps {
   onCancelDraft?: () => void;
   onAddCard?: (stageId: number) => void;
   onCardClick?: (cardId: number) => void;
+  onEditCard?: (card: KanbanCardType) => void;
+  onDeleteCard?: (card: KanbanCardType) => void;
 }
 
 export function KanbanColumn({
@@ -31,11 +34,17 @@ export function KanbanColumn({
   onCancelDraft,
   onAddCard,
   onCardClick,
+  onEditCard,
+  onDeleteCard,
 }: KanbanColumnProps) {
-  // fix: id를 String으로 통일 — 신규 추가 스테이지 드래그 안 되는 버그 수정 (버그3)
+  // 컬럼 전체(헤더 포함)를 드롭 대상으로 등록.
+  // - 스테이지(컬럼) 자체를 드래그해서 순서 변경할 때의 타깃
+  // - 카드가 하나도 없는 빈 스테이지에 카드를 드롭할 때의 폴백 타깃
+  // data.stageId를 항상 넣어둬서, over.id를 숫자로 파싱하지 않고 data.stageId만
+  // 읽으면 되도록 통일 (id에 접두어가 붙어도 안전).
   const { setNodeRef, isOver } = useDroppable({
-    id: String(stage.id),
-    data: { stageId: stage.id },
+    id: `stage-${stage.id}`,
+    data: { type: 'stage-container', stageId: stage.id },
   });
 
   const {
@@ -45,7 +54,7 @@ export function KanbanColumn({
     transform: stageTransform,
     isDragging: isStageDragging,
   } = useDraggable({
-    id: `stage-${stage.id}`,
+    id: `stage-drag-${stage.id}`,
     data: { type: 'stage', stageId: stage.id },
     disabled: isDraft,
   });
@@ -58,7 +67,6 @@ export function KanbanColumn({
   const [localDraftName, setLocalDraftName] = useState(isDraft ? '' : stage.name);
   const [hasError, setHasError] = useState(false);
 
-  // draft 모드일 땐 zustand 값 우선 사용 — 페이지 이동 후 돌아와도 입력값 유지됨
   const draftName = isDraft ? (draftNameProp ?? '') : localDraftName;
 
   function updateDraftName(value: string) {
@@ -74,18 +82,21 @@ export function KanbanColumn({
     const trimmed = draftName.trim();
     if (isDraft) {
       if (!trimmed) {
-        setHasError(true); // fix: 빈 값이면 draft 취소 대신 에러 표시 (Figma node 49:7822)
+        setHasError(true);
         return;
       }
       onConfirmDraft?.(trimmed);
       return;
     }
-    setIsEditingName(false);
-    if (trimmed && trimmed !== stage.name) {
-      onRenameStage?.(stage.id, trimmed, stage.position);
-    } else {
+    if (!trimmed) {
       setLocalDraftName(stage.name);
+      setIsEditingName(false);
+      return;
     }
+    if (trimmed !== stage.name) {
+      onRenameStage?.(stage.id, trimmed, stage.position);
+    }
+    setIsEditingName(false);
   }
 
   function cancel() {
@@ -99,8 +110,8 @@ export function KanbanColumn({
   }
 
   return (
-    // fix: overflow-hidden 제거 — 드래그 시 카드가 컬럼에 잘리는 버그 수정 (버그1)
     <div
+      ref={setNodeRef}
       style={stageDragStyle}
       className={`flex h-full min-w-[296px] flex-1 flex-col items-start rounded-2xl transition-colors ${
         isOver ? 'bg-fill-primary-light' : 'bg-surface-card'
@@ -187,20 +198,29 @@ export function KanbanColumn({
       </div>
 
       {/* Card List */}
-      <div
-        ref={setNodeRef}
-        className="w-full flex-1 overflow-y-auto overflow-x-hidden kanban-scroll-y"
-      >
-        <div className="flex flex-col gap-3 px-4 pb-4">
-          {stage.cards.map((card) => (
-            <KanbanCard key={card.id} card={card} stageId={stage.id} onCardClick={onCardClick} />
-          ))}
-          {!isDraft && stage.cards.length === 0 && (
-            <div className="flex w-full items-center justify-center rounded-xl border border-dashed border-line-secondary py-8 text-2 text-label-description">
-              등록된 공고가 없어요
-            </div>
-          )}
-        </div>
+      <div className="w-full flex-1 overflow-y-auto overflow-x-hidden kanban-scroll-y">
+        <SortableContext
+          items={stage.cards.map((c) => String(c.id))}
+          strategy={verticalListSortingStrategy}
+        >
+          <div className="flex flex-col gap-3 px-4 pb-4">
+            {stage.cards.map((card) => (
+              <KanbanCard
+                key={card.id}
+                card={card}
+                stageId={stage.id}
+                onCardClick={onCardClick}
+                onEditCard={onEditCard}
+                onDeleteCard={onDeleteCard}
+              />
+            ))}
+            {!isDraft && stage.cards.length === 0 && (
+              <div className="flex w-full items-center justify-center rounded-xl border border-dashed border-line-secondary py-8 text-2 text-label-description">
+                등록된 공고가 없어요
+              </div>
+            )}
+          </div>
+        </SortableContext>
       </div>
     </div>
   );

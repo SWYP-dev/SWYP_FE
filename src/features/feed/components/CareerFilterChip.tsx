@@ -28,10 +28,11 @@ interface CareerFilterChipProps {
 
 function formatChipLabel(tags: CareerTagId[]): string {
   if (tags.length === 0) return '경력';
+  const firstLabel = CAREER_TAG_OPTIONS.find((t) => t.id === tags[0])?.label ?? '';
   if (tags.length === 1) {
-    return `경력 · ${CAREER_TAG_OPTIONS.find((t) => t.id === tags[0])?.label}`;
+    return `경력 · ${firstLabel}`;
   }
-  return `경력 · ${tags.length}개`;
+  return `경력 · ${firstLabel} 외 ${tags.length - 1}개`;
 }
 
 /**
