@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { CloseIcon } from '@/components/ui/icons';
+import { useEscapeKey } from '@/lib/hooks/useEscapeKey';
 import type { KanbanStage } from '@/types/api';
 
 interface DeleteStageModalProps {
@@ -26,6 +27,8 @@ export function DeleteStageModal({
   onConfirm,
 }: DeleteStageModalProps) {
   const [moveToStageId, setMoveToStageId] = useState<number | null>(null);
+
+  useEscapeKey(isOpen, onClose);
 
   if (!isOpen || !stage) return null;
 

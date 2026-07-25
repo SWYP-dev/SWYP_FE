@@ -5,6 +5,7 @@ import { CloseIcon } from '@/components/ui/icons';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Popover, usePopoverTrigger } from '@/components/ui/popover';
 import { DropdownMenu, type DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { useEscapeKey } from '@/lib/hooks/useEscapeKey';
 import type { KanbanCard, KanbanStage } from '@/types/api';
 
 interface EditDeadlineCardModalProps {
@@ -70,6 +71,11 @@ export function EditDeadlineCardModal({
   const [errors, setErrors] = useState<FormErrors>({});
   const [showDatePicker, setShowDatePicker] = useState(false);
   const stageDropdown = usePopoverTrigger<HTMLButtonElement>();
+
+  useEscapeKey(isOpen, () => {
+    setShowDatePicker(false);
+    onClose();
+  });
 
   if (!isOpen || !card) return null;
 

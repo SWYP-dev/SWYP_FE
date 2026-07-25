@@ -1,6 +1,7 @@
 'use client';
 
 import { CloseIcon } from '@/components/ui/icons';
+import { useEscapeKey } from '@/lib/hooks/useEscapeKey';
 import type { KanbanCard } from '@/types/api';
 
 interface DeleteCardModalProps {
@@ -20,6 +21,8 @@ export function DeleteCardModal({
   onClose,
   onConfirm,
 }: DeleteCardModalProps) {
+  useEscapeKey(isOpen, onClose);
+
   if (!isOpen || !card) return null;
 
   return (

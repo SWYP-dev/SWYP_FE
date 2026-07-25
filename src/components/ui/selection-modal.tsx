@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
+import { useEscapeKey } from '@/lib/hooks/useEscapeKey';
 
 export interface SelectionChildOption {
   id: string;
@@ -84,6 +85,8 @@ export function SelectionModal({
       setFocusedGroupId(initial && initial.length > 0 ? initial[0].groupId : null);
     }
   }
+
+  useEscapeKey(isOpen, onClose);
 
   if (!isOpen || typeof document === 'undefined') return null;
 
