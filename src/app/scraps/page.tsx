@@ -66,8 +66,6 @@ const ScrapsPage: NextPage = () => {
       await deleteScrap(jobPostingId);
       refetch();
       queryClient.invalidateQueries({ queryKey: ['feed'] });
-      setToastType('success');
-      setToastMessage('스크랩을 해제했어요.');
     } catch (err) {
       setRemovedIds((prev) => {
         const next = new Set(prev);

@@ -112,8 +112,6 @@ export default function FeedPage() {
       if (!currentlyScrapped) {
         const res = await postScrap(feedId);
         setJobPostingIdMap((prev) => ({ ...prev, [feedId]: res.jobPostingId }));
-        setToastType('success');
-        setToastMessage('스크랩했어요.');
       } else {
         const jobPostingId = jobPostingIdMap[feedId];
         if (!jobPostingId) {
@@ -128,8 +126,6 @@ export default function FeedPage() {
           return;
         }
         await deleteScrap(jobPostingId);
-        setToastType('success');
-        setToastMessage('스크랩을 해제했어요.');
       }
       queryClient.invalidateQueries({ queryKey: ['feed'] });
       queryClient.invalidateQueries({ queryKey: ['scraps'] });
