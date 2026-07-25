@@ -121,7 +121,7 @@ export function deleteCard(cardId: number): Promise<null> {
 }
 
 // POST /api/v1/kanban/stages
-export function createStage(body: { name: string }): Promise<KanbanStageCreateResponse> {
+export function createStage(body: { name: string; position?: number }): Promise<KanbanStageCreateResponse> {
   return apiFetch<KanbanStageCreateResponse>('/api/v1/kanban/stages', {
     method: 'POST',
     body,
