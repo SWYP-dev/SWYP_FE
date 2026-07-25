@@ -2,7 +2,16 @@
 
 import { useState, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { DndContext, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
+import {
+  DndContext,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  closestCenter,
+  type DragEndEvent,
+  type DragOverEvent,
+} from '@dnd-kit/core';
+import { arrayMove } from '@dnd-kit/sortable';
 import type { KanbanCard, KanbanStage } from '@/types/api';
 import { KanbanColumn } from './KanbanColumn';
 import { AddStageButton } from './AddStageButton';
@@ -117,6 +126,50 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
     setToastAction(null);
   }, []);
 
+  function handleDragOver(event: DragOverEvent) {
+    const { active, over } = event;
+    if (!over) return;
+    if (active.data.current?.type === 'stage') return; // 컬럼 드래그는 dragEnd에서만 처리
+
+    const activeCardId = Number(active.id);
+    const activeStageId = active.data.current?.stageId as number;
+    if (!activeStageId) return;
+
+    const overData = over.data.current as { type?: string; stageId?: number } | undefined;
+    const overStageId =
+      overData?.type === 'card' || overData?.type === 'stage-container'
+        ? (overData.stageId as number)
+        : undefined;
+
+    // 다른 스테이지 위로 드래그 중일 때만 실시간으로 배열을 옮김 (같은 스테이지 내
+    // 재정렬은 onDragEnd에서 arrayMove로 한 번에 확정)
+    if (!overStageId || activeStageId === overStageId) return;
+
+    setStages((prev) => {
+      const fromStage = prev.find((s) => s.id === activeStageId);
+      const card = fromStage?.cards.find((c) => c.id === activeCardId);
+      if (!card) return prev;
+
+      return prev.map((s) => {
+        if (s.id === activeStageId) {
+          return { ...s, cards: s.cards.filter((c) => c.id !== activeCardId) };
+        }
+        if (s.id === overStageId) {
+          if (overData?.type === 'card') {
+            const overCardId = Number(over.id);
+            const idx = s.cards.findIndex((c) => c.id === overCardId);
+            const insertAt = idx === -1 ? s.cards.length : idx;
+            const next = [...s.cards];
+            next.splice(insertAt, 0, card);
+            return { ...s, cards: next };
+          }
+          return { ...s, cards: [...s.cards, card] };
+        }
+        return s;
+      });
+    });
+  }
+
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
     if (!over) return;
@@ -124,7 +177,13 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
     // 스테이지(컬럼) 순서 변경
     if (active.data.current?.type === 'stage') {
       const fromStageId = active.data.current.stageId as number;
-      const toStageId = Number(over.id);
+      const overData = over.data.current as { type?: string; stageId?: number } | undefined;
+      const toStageId =
+        overData?.type === 'stage-container'
+          ? (overData.stageId as number)
+          : overData?.type === 'stage'
+            ? (overData.stageId as number)
+            : Number(over.id);
       if (fromStageId === toStageId) return;
 
       let newPosition = 0;
@@ -161,56 +220,34 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
       return;
     }
 
-    // 카드 이동
+    // 카드 이동/재정렬 — 스테이지 간 이동은 이미 handleDragOver에서 반영됐으므로,
+    // 여기서는 최종적으로 속한 스테이지 내에서 정확한 순서만 확정
     const cardId = Number(active.id);
-    const fromStageId = active.data.current?.stageId as number;
-    const overData = over.data.current as
-      | { type?: string; stageId?: number; cardId?: number }
-      | undefined;
+    const currentStageId = stages.find((s) => s.cards.some((c) => c.id === cardId))?.id;
+    if (!currentStageId) return;
 
-    // 카드 위에 놓았으면 그 카드 위치 기준, 스테이지 빈 영역에 놓았으면 스테이지 자체 id
-    const toStageId = overData?.type === 'card-zone' ? (overData.stageId as number) : Number(over.id);
-    const overCardId = overData?.type === 'card-zone' ? (overData.cardId as number) : null;
+    const overData = over.data.current as { type?: string } | undefined;
+    const stageCards = stages.find((s) => s.id === currentStageId)!.cards;
+    let finalCards = stageCards;
 
-    if (!fromStageId) return;
-    if (overCardId === cardId) return; // 자기 자신 위에 드롭 — 변화 없음
-
-    const fromStage = stages.find((s) => s.id === fromStageId);
-    const draggedCard = fromStage?.cards.find((c) => c.id === cardId);
-    if (!draggedCard) return;
-
-    let newPosition = 1;
-
-    const nextStages = stages.map((s) => {
-      if (s.id === fromStageId && s.id === toStageId) {
-        // 같은 스테이지 내 순서 변경
-        const withoutCard = s.cards.filter((c) => c.id !== cardId);
-        const targetIndex = overCardId ? withoutCard.findIndex((c) => c.id === overCardId) : -1;
-        const insertAt = targetIndex === -1 ? withoutCard.length : targetIndex;
-        const reordered = [...withoutCard];
-        reordered.splice(insertAt, 0, draggedCard);
-        newPosition = insertAt + 1;
-        return { ...s, cards: reordered };
+    if (overData?.type === 'card') {
+      const overCardId = Number(over.id);
+      if (overCardId !== cardId) {
+        const oldIndex = stageCards.findIndex((c) => c.id === cardId);
+        const newIndex = stageCards.findIndex((c) => c.id === overCardId);
+        if (oldIndex !== -1 && newIndex !== -1) {
+          finalCards = arrayMove(stageCards, oldIndex, newIndex);
+          setStages((prev) =>
+            prev.map((s) => (s.id === currentStageId ? { ...s, cards: finalCards } : s))
+          );
+        }
       }
-      if (s.id === fromStageId) {
-        return { ...s, cards: s.cards.filter((c) => c.id !== cardId) };
-      }
-      if (s.id === toStageId) {
-        // 다른 스테이지로 이동 — 놓은 카드의 위치에 끼워넣기 (없으면 맨 끝)
-        const targetIndex = overCardId ? s.cards.findIndex((c) => c.id === overCardId) : -1;
-        const insertAt = targetIndex === -1 ? s.cards.length : targetIndex;
-        const reordered = [...s.cards];
-        reordered.splice(insertAt, 0, draggedCard);
-        newPosition = insertAt + 1;
-        return { ...s, cards: reordered };
-      }
-      return s;
-    });
+    }
 
-    setStages(nextStages);
+    const newPosition = finalCards.findIndex((c) => c.id === cardId) + 1;
 
     moveCardMutation.mutate(
-      { cardId, stageId: toStageId, position: newPosition },
+      { cardId, stageId: currentStageId, position: newPosition },
       {
         onError: () => {
           setStages(initialStages);
@@ -349,7 +386,12 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
     }));
 
   return (
-    <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragOver={handleDragOver}
+      onDragEnd={handleDragEnd}
+    >
       <div className="flex h-full min-h-0 flex-1 flex-col">
         <div className="mb-4 flex items-center gap-2">
           <StageFilterChip

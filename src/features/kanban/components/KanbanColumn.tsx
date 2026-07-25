@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { KanbanStage, KanbanCard as KanbanCardType } from '@/types/api';
 import { KanbanCard } from './KanbanCard';
@@ -36,10 +37,11 @@ export function KanbanColumn({
   onEditCard,
   onDeleteCard,
 }: KanbanColumnProps) {
-  // fix: id를 String으로 통일 — 신규 추가 스테이지 드래그 안 되는 버그 수정 (버그3)
-  const { setNodeRef, isOver } = useDroppable({
-    id: String(stage.id),
-    data: { stageId: stage.id, type: 'stage-zone' },
+  // 카드 리스트 컨테이너 자체도 드롭 대상으로 등록 — 스테이지에 카드가 하나도 없을 때도
+  // 드롭이 가능하도록 함 (SortableContext의 items만으로는 빈 리스트에 드롭 불가)
+  const { setNodeRef: setContainerRef } = useDroppable({
+    id: `stage-container-${stage.id}`,
+    data: { type: 'stage-container', stageId: stage.id },
   });
 
   const {
@@ -104,14 +106,9 @@ export function KanbanColumn({
 
   return (
     // fix: overflow-hidden 제거 — 드래그 시 카드가 컬럼에 잘리는 버그 수정 (버그1)
-    // ⚠️ [QA 반영] 드롭 가능 영역(ref={setNodeRef})을 카드 목록 부분에서 컬럼 전체
-    // (헤더 포함)로 확장 — 헤더 위에 드롭해도 스테이지 순서 변경이 인식되도록 함.
     <div
-      ref={setNodeRef}
       style={stageDragStyle}
-      className={`flex h-full min-w-[296px] flex-1 flex-col items-start rounded-2xl transition-colors ${
-        isOver ? 'bg-fill-primary-light' : 'bg-surface-card'
-      }`}
+      className="flex h-full min-w-[296px] flex-1 flex-col items-start rounded-2xl bg-surface-card transition-colors"
     >
       {/* Header */}
       <div className="flex w-full items-start p-4">
@@ -194,24 +191,32 @@ export function KanbanColumn({
       </div>
 
       {/* Card List */}
-      <div className="w-full flex-1 overflow-y-auto overflow-x-hidden kanban-scroll-y">
-        <div className="flex flex-col gap-3 px-4 pb-4">
-          {stage.cards.map((card) => (
-            <KanbanCard
-              key={card.id}
-              card={card}
-              stageId={stage.id}
-              onCardClick={onCardClick}
-              onEditCard={onEditCard}
-              onDeleteCard={onDeleteCard}
-            />
-          ))}
-          {!isDraft && stage.cards.length === 0 && (
-            <div className="flex w-full items-center justify-center rounded-xl border border-dashed border-line-secondary py-8 text-2 text-label-description">
-              등록된 공고가 없어요
-            </div>
-          )}
-        </div>
+      <div
+        ref={setContainerRef}
+        className="w-full flex-1 overflow-y-auto overflow-x-hidden kanban-scroll-y"
+      >
+        <SortableContext
+          items={stage.cards.map((c) => String(c.id))}
+          strategy={verticalListSortingStrategy}
+        >
+          <div className="flex flex-col gap-3 px-4 pb-4">
+            {stage.cards.map((card) => (
+              <KanbanCard
+                key={card.id}
+                card={card}
+                stageId={stage.id}
+                onCardClick={onCardClick}
+                onEditCard={onEditCard}
+                onDeleteCard={onDeleteCard}
+              />
+            ))}
+            {!isDraft && stage.cards.length === 0 && (
+              <div className="flex w-full items-center justify-center rounded-xl border border-dashed border-line-secondary py-8 text-2 text-label-description">
+                등록된 공고가 없어요
+              </div>
+            )}
+          </div>
+        </SortableContext>
       </div>
     </div>
   );
