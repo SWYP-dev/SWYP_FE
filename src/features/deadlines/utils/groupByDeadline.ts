@@ -37,10 +37,18 @@ function startOfDay(date: Date): Date {
 }
 
 // PRD 4.3.1 "정렬 옵션: 마감일 임박순 자동 정렬" 반영.
+//
+// ⚠️ 기존엔 deadline 문자열을 localeCompare로 그대로 비교했는데, 이 방식은 날짜가
+// "2026-07-15"처럼 항상 0 패딩된 형식일 때만 정확함. 여러 공공데이터 소스(워크넷·
+// 공공기관·인사혁신처 등)를 그대로 수집하는 구조상 "2026-7-5"처럼 0 패딩 없는 값이
+// 섞여 내려올 가능성을 배제할 수 없어(예: &apos; 엔티티 이슈처럼 원본 데이터 품질
+// 이슈가 실제로 있었음), Date 객체 기반 비교로 변경해 이 문제를 근본적으로 방지함.
 export function groupCardsByDeadline(entries: DeadlineCardEntry[]): DeadlineGroupData[] {
   const today = startOfDay(new Date());
 
-  const sorted = [...entries].sort((a, b) => a.card.deadline.localeCompare(b.card.deadline));
+  const sorted = [...entries].sort(
+    (a, b) => new Date(a.card.deadline).getTime() - new Date(b.card.deadline).getTime()
+  );
 
   const groupMap = new Map<string, DeadlineGroupData>();
 
