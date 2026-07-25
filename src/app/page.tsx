@@ -117,9 +117,14 @@ export default function FeedPage() {
       } else {
         const jobPostingId = jobPostingIdMap[feedId];
         if (!jobPostingId) {
-          // 이번 세션에서 스크랩한 적 없는(=jobPostingId 모르는) 공고는 해제 불가.
-          // TODO: 백엔드가 FeedItem에 jobPostingId 내려주면 이 분기 제거 가능.
-          console.warn('jobPostingId를 몰라서 스크랩 해제 요청을 보낼 수 없습니다.', feedId);
+          // ⚠️ FeedItem 응답에 jobPostingId가 없어서(백엔드 확인 필요 — 세영님/동섭님),
+          // 이번 세션에서 직접 스크랩한 적 없는(=이미 서버에서 isScrapped:true로 내려온)
+          // 공고는 해제 API를 호출할 수 없음. 예전엔 여기서 그냥 return해서 아이콘만
+          // 바뀐 채 토스트도 안 뜨고 실제로는 아무 일도 안 일어난 것처럼 보였음 —
+          // 낙관적 업데이트를 롤백하고 사용자에게 원인을 안내하도록 수정.
+          setScrapOverrides((prev) => ({ ...prev, [feedId]: currentlyScrapped }));
+          setToastType('error');
+          setToastMessage('새로고침 후 다시 시도해주세요.');
           return;
         }
         await deleteScrap(jobPostingId);
