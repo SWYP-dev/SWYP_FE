@@ -44,27 +44,27 @@ function mapCardErrorCode(code: string): FormErrors | null {
     case 'K011':
       return { companyName: '회사명을 입력해 주세요.' };
     case 'K012':
-      return { companyName: '회사명에 사용할 수 없는 문자가 포함돼 있어요.' };
+      return { companyName: '올바른 회사명을 입력해 주세요.' };
     case 'K013':
-      return { companyName: '회사명은 2자 이상 입력해 주세요.' };
+      return { companyName: '2자 이상 입력해 주세요.' };
     case 'K014':
-      return { companyName: '회사명은 50자를 초과할 수 없어요.' };
+      return { companyName: '50자를 초과하여 입력할 수 없어요.' };
     case 'K015':
       return { jobTitle: '공고명을 입력해 주세요.' };
     case 'K016':
-      return { jobTitle: '공고명에 사용할 수 없는 문자가 포함돼 있어요.' };
+      return { jobTitle: '올바른 공고명을 입력해 주세요.' };
     case 'K017':
-      return { jobTitle: '공고명은 2자 이상 입력해 주세요.' };
+      return { jobTitle: '2자 이상 입력해 주세요.' };
     case 'K018':
-      return { jobTitle: '공고명은 100자를 초과할 수 없어요.' };
+      return { jobTitle: '100자를 초과하여 입력할 수 없어요.' };
     case 'K019':
       return { originalUrl: '공고 링크를 입력해 주세요.' };
     case 'K020':
-      return { originalUrl: '올바른 URL 형식이 아니에요.' };
+      return { originalUrl: '올바른 공고 링크를 입력해 주세요.' };
     case 'K021':
-      return { originalUrl: '공고 링크는 2048자를 초과할 수 없어요.' };
+      return { originalUrl: '2048자를 초과하여 입력할 수 없어요.' };
     case 'K003':
-      return { originalUrl: '이미 등록된 공고 링크예요.' };
+      return { originalUrl: '이미 등록된 공고예요.' };
     default:
       return null;
   }
@@ -607,7 +607,7 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
               queryClient.invalidateQueries({ queryKey: kanbanKeys.board() });
             }
             setAddCardStageId(null);
-            showToast('success', '지원 내역이 추가되었어요.');
+            showToast('success', '지원 현황이 추가되었어요.');
             return undefined;
           } catch (err) {
             if (err instanceof ApiClientError) {
