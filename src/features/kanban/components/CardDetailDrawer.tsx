@@ -18,8 +18,14 @@ import { AttachedLinkItem } from '@/features/documents/components/AttachedLinkIt
 import { ApiClientError } from '@/lib/api/api-client';
 
 // Figma node 94:13318 기준 — URL 카테고리 드롭다운 옵션
-const URL_CATEGORIES = ['이력서', '포트폴리오', '개인 채널', '기타'] as const;
-type UrlCategory = (typeof URL_CATEGORIES)[number];
+// ⚠️ [백엔드 확인 완료] 서버는 한글이 아닌 enum 값(DocumentLinkCategory)을 받음/내려줌.
+const URL_CATEGORIES = [
+  { value: 'RESUME', label: '이력서' },
+  { value: 'PORTFOLIO', label: '포트폴리오' },
+  { value: 'PERSONAL_CHANNEL', label: '개인 채널' },
+  { value: 'OTHER', label: '기타' },
+] as const;
+type UrlCategoryValue = (typeof URL_CATEGORIES)[number]['value'];
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB (API 명세서 4.4.2 정책)
 
@@ -60,7 +66,7 @@ export function CardDetailDrawer({
 
   // URL 추가 상태
   const [isAddingLink, setIsAddingLink] = useState(false);
-  const [linkCategory, setLinkCategory] = useState<UrlCategory | null>(null);
+  const [linkCategory, setLinkCategory] = useState<UrlCategoryValue | null>(null);
   const [linkUrl, setLinkUrl] = useState('');
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [fileError, setFileError] = useState<string | null>(null);
@@ -117,7 +123,7 @@ export function CardDetailDrawer({
 
   function handleLinkSubmit() {
     if (!linkUrl.trim()) return;
-    const name = linkCategory ?? '기타';
+    const name = linkCategory ?? 'OTHER';
     registerLink.mutate(
       { name, url: linkUrl.trim() },
       {
@@ -298,7 +304,7 @@ export function CardDetailDrawer({
                         className="flex h-full min-w-[108px] items-center justify-between rounded-xl border border-line-secondary bg-base-white px-4 py-3 text-3 font-medium text-label-description"
                       >
                         <span className={linkCategory ? 'text-label-base' : ''}>
-                          {linkCategory ?? '선택'}
+                          {URL_CATEGORIES.find((c) => c.value === linkCategory)?.label ?? '선택'}
                         </span>
                         <ChevronDownIcon />
                       </button>
@@ -306,19 +312,19 @@ export function CardDetailDrawer({
                         <div className="absolute bottom-[calc(100%+4px)] left-0 z-10 w-[108px] overflow-hidden rounded-xl border border-line-secondary bg-base-white p-1 shadow-spread-small">
                           {URL_CATEGORIES.map((cat) => (
                             <button
-                              key={cat}
+                              key={cat.value}
                               type="button"
                               onClick={() => {
-                                setLinkCategory(cat);
+                                setLinkCategory(cat.value);
                                 setShowCategoryDropdown(false);
                               }}
                               className={`flex h-10 w-full items-center px-4 text-3 font-medium text-label-base ${
-                                linkCategory === cat
+                                linkCategory === cat.value
                                   ? 'rounded-lg bg-neutral-100'
                                   : 'hover:bg-neutral-50'
                               }`}
                             >
-                              {cat}
+                              {cat.label}
                             </button>
                           ))}
                         </div>

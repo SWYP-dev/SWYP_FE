@@ -6,22 +6,18 @@ import { DeadlineCard } from './DeadlineCard';
 interface DeadlineGroupProps {
   group: DeadlineGroupData;
   selectedCardId: number | null;
-  availableStages: { id: number; name: string }[];
   onCardClick: (cardId: number) => void;
+  onEditCard: (cardId: number) => void;
   onDeleteCard: (cardId: number) => void;
-  onUpdateDeadline: (cardId: number, deadline: string) => void;
-  onMoveStage: (cardId: number, stageId: number) => void;
 }
 
 // Figma "DeadlineGroup"(node 101:17525 등) 스펙 반영.
 export function DeadlineGroup({
   group,
   selectedCardId,
-  availableStages,
   onCardClick,
+  onEditCard,
   onDeleteCard,
-  onUpdateDeadline,
-  onMoveStage,
 }: DeadlineGroupProps) {
   return (
     <div className="flex w-full flex-col items-start gap-4">
@@ -49,11 +45,9 @@ export function DeadlineGroup({
             entry={entry}
             isUrgent={group.isUrgent}
             isSelected={selectedCardId === entry.card.id}
-            availableStages={availableStages}
             onClick={() => onCardClick(entry.card.id)}
+            onEdit={() => onEditCard(entry.card.id)}
             onDelete={() => onDeleteCard(entry.card.id)}
-            onUpdateDeadline={onUpdateDeadline}
-            onMoveStage={onMoveStage}
           />
         ))}
       </div>

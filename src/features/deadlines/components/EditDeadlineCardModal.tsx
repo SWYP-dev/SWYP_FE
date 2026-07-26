@@ -22,13 +22,7 @@ interface EditDeadlineCardModalProps {
    */
   isOverDrawer?: boolean;
   onClose: () => void;
-  onConfirm: (data: {
-    cardId: number;
-    companyName: string;
-    jobTitle: string;
-    deadline: string;
-    stageId: number;
-  }) => void;
+  onConfirm: (data: { cardId: number; deadline: string; stageId: number }) => void;
 }
 
 interface FormState {
@@ -39,8 +33,6 @@ interface FormState {
 }
 
 interface FormErrors {
-  companyName?: string;
-  jobTitle?: string;
   deadline?: string;
 }
 
@@ -79,14 +71,10 @@ export function EditDeadlineCardModal({
 
   if (!isOpen || !card) return null;
 
-  const isAllFilled = form.companyName.trim() !== '' && form.jobTitle.trim() !== '' && form.deadline !== null;
+  const isAllFilled = form.deadline !== null;
 
   function validate(): boolean {
     const next: FormErrors = {};
-    if (!form.companyName.trim() || form.companyName.trim().length < 2) {
-      next.companyName = '2자 이상 입력해 주세요.';
-    }
-    if (!form.jobTitle.trim()) next.jobTitle = '공고명을 입력해 주세요.';
     if (!form.deadline) next.deadline = '지원 마감일을 입력해 주세요.';
     setErrors(next);
     return Object.keys(next).length === 0;
@@ -97,8 +85,6 @@ export function EditDeadlineCardModal({
     const d = form.deadline!;
     onConfirm({
       cardId: card!.id,
-      companyName: form.companyName.trim(),
-      jobTitle: form.jobTitle.trim(),
       deadline: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`,
       stageId: form.stageId,
     });
@@ -138,45 +124,27 @@ export function EditDeadlineCardModal({
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-1">
               <p className="text-3 font-semibold text-label-base">회사명</p>
-              <p className="font-bold text-status-negative">*</p>
             </div>
             <input
               type="text"
               value={form.companyName}
-              onChange={(e) => {
-                setForm((prev) => ({ ...prev, companyName: e.target.value }));
-                if (errors.companyName) setErrors((prev) => ({ ...prev, companyName: undefined }));
-              }}
-              placeholder="지원할 회사명을 입력해 주세요."
-              className={`w-full rounded-xl border px-4 py-3 text-5 font-medium text-label-base placeholder:text-label-placeholder outline-none ${
-                errors.companyName ? 'border-status-negative' : 'border-line-secondary'
-              }`}
+              disabled
+              readOnly
+              className="w-full cursor-not-allowed rounded-xl border border-line-secondary bg-neutral-100 px-4 py-3 text-5 font-medium text-neutral-400 outline-none"
             />
-            {errors.companyName && (
-              <p className="text-1 font-medium text-status-negative">{errors.companyName}</p>
-            )}
           </div>
 
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-1">
               <p className="text-3 font-semibold text-label-base">공고명</p>
-              <p className="font-bold text-status-negative">*</p>
             </div>
             <input
               type="text"
               value={form.jobTitle}
-              onChange={(e) => {
-                setForm((prev) => ({ ...prev, jobTitle: e.target.value }));
-                if (errors.jobTitle) setErrors((prev) => ({ ...prev, jobTitle: undefined }));
-              }}
-              placeholder="채용 공고의 제목을 입력해 주세요."
-              className={`w-full rounded-xl border px-4 py-3 text-5 font-medium text-label-base placeholder:text-label-placeholder outline-none ${
-                errors.jobTitle ? 'border-status-negative' : 'border-line-secondary'
-              }`}
+              disabled
+              readOnly
+              className="w-full cursor-not-allowed rounded-xl border border-line-secondary bg-neutral-100 px-4 py-3 text-5 font-medium text-neutral-400 outline-none"
             />
-            {errors.jobTitle && (
-              <p className="text-1 font-medium text-status-negative">{errors.jobTitle}</p>
-            )}
           </div>
 
           {/* 지원 마감일 */}
