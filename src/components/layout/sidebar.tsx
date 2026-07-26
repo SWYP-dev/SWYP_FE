@@ -9,9 +9,9 @@ import { ProfileMenu } from '@/features/auth/components/ProfileMenu';
 import { ChwihapWordmark } from '@/features/notification/components/icons';
 import {
   BookmarkNavIcon,
+  BriefcaseNavIcon,
   CalendarNavIcon,
   KanbanNavIcon,
-  SearchNavIcon,
 } from './sidebar-nav-icons';
 
 // Figma Sidebar 컴포넌트(node 36:545) 스펙 반영.
@@ -20,7 +20,7 @@ const NAV_ITEMS: {
   label: string;
   icon: ComponentType<{ className?: string }>;
 }[] = [
-  { href: '/', icon: SearchNavIcon, label: '통합 공고 탐색' },
+  { href: '/', icon: BriefcaseNavIcon, label: '통합 공고 탐색' },
   { href: '/scraps', icon: BookmarkNavIcon, label: '스크랩' },
   { href: '/kanban', icon: KanbanNavIcon, label: '지원 현황' },
   { href: '/deadlines', icon: CalendarNavIcon, label: '지원 마감일' },

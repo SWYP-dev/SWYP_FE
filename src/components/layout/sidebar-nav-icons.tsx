@@ -1,12 +1,11 @@
-// Figma Sidebar nav 아이콘(node 36:545, 통합 공고 탐색 node 31:382) 스펙 반영.
+// Figma Sidebar nav 아이콘(node 36:545) 스펙 반영.
 // stroke + currentColor로 inactive/hover/active 텍스트 색과 함께 변하도록 inline svg 사용.
-// (기존 public/icons/search.svg는 fill 방식이라 다른 nav 아이콘과 어긋났음)
 
 interface SidebarNavIconProps {
   className?: string;
 }
 
-export function SearchNavIcon({ className }: SidebarNavIconProps) {
+export function BriefcaseNavIcon({ className }: SidebarNavIconProps) {
   return (
     <svg
       width="16"
@@ -17,15 +16,11 @@ export function SearchNavIcon({ className }: SidebarNavIconProps) {
       aria-hidden="true"
     >
       <path
-        d="M10.5 18C14.6421 18 18 14.6421 18 10.5C18 6.35786 14.6421 3 10.5 3C6.35786 3 3 6.35786 3 10.5C3 14.6421 6.35786 18 10.5 18Z"
-        stroke="currentColor"
-        strokeWidth="1.5"
-      />
-      <path
-        d="M16 16L20 20"
+        d="M9 7.5H20C20.55 7.5 21 7.95 21 8.5V19.5C21 20.05 20.55 20.5 20 20.5H4C3.45 20.5 3 20.05 3 19.5V8.5C3 7.95 3.45 7.5 4 7.5H9ZM9 7.5V4.5C9 3.95 9.45 3.5 10 3.5H14C14.55 3.5 15 3.95 15 4.5V7.5"
         stroke="currentColor"
         strokeWidth="1.5"
         strokeLinecap="round"
+        strokeLinejoin="round"
       />
     </svg>
   );
