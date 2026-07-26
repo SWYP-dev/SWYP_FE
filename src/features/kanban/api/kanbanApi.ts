@@ -67,11 +67,14 @@ export interface CreateDirectCardRequest {
   deadline: string;
 }
 
+// ⚠️ [QA 반영] 필드 전체를 보내야 했던 기존 방식 때문에, 마감일만 바꾸려 해도
+// 회사명/공고명이 항상 같이 전송돼 "직접 등록한 카드만 수정 가능"(K010) 에러가
+// 발생했음. 부분 업데이트 지원하도록 전부 optional로 변경.
 export interface UpdateCardRequest {
-  companyName: string;
-  title: string;
-  originalUrl: string;
-  deadline: string;
+  companyName?: string;
+  title?: string;
+  originalUrl?: string;
+  deadline?: string;
 }
 
 // ================================

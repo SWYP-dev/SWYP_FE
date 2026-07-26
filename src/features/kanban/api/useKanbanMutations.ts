@@ -31,10 +31,10 @@ export function useUpdateCard() {
       ...body
     }: {
       cardId: number;
-      companyName: string;
-      title: string;
-      originalUrl: string;
-      deadline: string;
+      companyName?: string;
+      title?: string;
+      originalUrl?: string;
+      deadline?: string;
     }) => updateCard(cardId, body),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: kanbanKeys.board() });
