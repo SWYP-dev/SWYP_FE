@@ -123,9 +123,9 @@ export function CardDetailDrawer({
 
   function handleLinkSubmit() {
     if (!linkUrl.trim()) return;
-    const name = linkCategory ?? 'OTHER';
+    const category = linkCategory ?? 'OTHER';
     registerLink.mutate(
-      { name, url: linkUrl.trim() },
+      { category, name: '', url: linkUrl.trim() },
       {
         onSuccess: () => {
           setLinkUrl('');
