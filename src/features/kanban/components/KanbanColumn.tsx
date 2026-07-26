@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { useDraggable, useDroppable } from '@dnd-kit/core';
-import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { useDroppable } from '@dnd-kit/core';
+import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { KanbanCard as KanbanCardType, KanbanStage } from '@/types/api';
 import { KanbanCard } from './KanbanCard';
@@ -44,31 +44,38 @@ export function KanbanColumn({
   onEditCard,
   onDeleteCard,
 }: KanbanColumnProps) {
-  // 컬럼 전체(헤더 포함)를 드롭 대상으로 등록.
-  // - 스테이지(컬럼) 자체를 드래그해서 순서 변경할 때의 타깃
-  // - 카드가 하나도 없는 빈 스테이지에 카드를 드롭할 때의 폴백 타깃
-  // data.stageId를 항상 넣어둬서, over.id를 숫자로 파싱하지 않고 data.stageId만
-  // 읽으면 되도록 통일 (id에 접두어가 붙어도 안전).
-  const { setNodeRef, isOver } = useDroppable({
+  // 카드 이동/재정렬 시 드롭 폴백 타깃(빈 스테이지 등)
+  const { setNodeRef: setDroppableRef, isOver } = useDroppable({
     id: `stage-${stage.id}`,
     data: { type: 'stage-container', stageId: stage.id },
   });
 
+  // ⚠️ [QA 반영] 카드 재정렬과 동일하게 @dnd-kit/sortable로 교체 — 기존
+  // useDraggable 방식은 다른 컬럼이 자리를 안 비켜주고 겹쳐 보이는 문제가 있었음.
   const {
     attributes: stageDragAttributes,
     listeners: stageDragListeners,
-    setNodeRef: setStageDragRef,
+    setNodeRef: setSortableRef,
     transform: stageTransform,
+    transition: stageTransition,
     isDragging: isStageDragging,
-  } = useDraggable({
+  } = useSortable({
     id: `stage-drag-${stage.id}`,
     data: { type: 'stage', stageId: stage.id },
     disabled: isDraft || stage.name === '지원 전',
   });
 
-  const stageDragStyle = stageTransform
-    ? { transform: CSS.Translate.toString(stageTransform), opacity: isStageDragging ? 0.6 : 1 }
-    : undefined;
+  const stageDragStyle = {
+    transform: CSS.Transform.toString(stageTransform),
+    transition: stageTransition,
+    opacity: isStageDragging ? 0.5 : 1,
+  };
+
+  // 드롭 가능 영역과 정렬 가능한 드래그 요소, 두 ref를 한 노드에 같이 적용
+  function setColumnRef(node: HTMLDivElement | null) {
+    setDroppableRef(node);
+    setSortableRef(node);
+  }
 
   const [isEditingName, setIsEditingName] = useState(isDraft);
   const [localDraftName, setLocalDraftName] = useState(isDraft ? '' : stage.name);
@@ -120,7 +127,7 @@ export function KanbanColumn({
 
   return (
     <div
-      ref={setNodeRef}
+      ref={setColumnRef}
       style={stageDragStyle}
       className={`flex h-full min-w-[296px] flex-1 flex-col items-start rounded-2xl transition-colors ${
         isOver ? 'bg-fill-primary-light' : 'bg-surface-card'
@@ -132,11 +139,9 @@ export function KanbanColumn({
           <div className="flex items-center">
             <div className="flex items-center gap-3">
               <div
-                ref={setStageDragRef}
-                style={stageDragStyle}
                 {...stageDragAttributes}
                 {...stageDragListeners}
-                className="flex cursor-grab items-center justify-center text-icon-gray active:cursor-grabbing"
+                className="flex cursor-grab items-center justify-center active:cursor-grabbing"
               >
                 <DragHandleIcon size={20} />
               </div>
