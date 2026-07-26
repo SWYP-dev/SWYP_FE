@@ -17,9 +17,11 @@ export function uploadDocumentFile(
 }
 
 // 4.2 서류 등록 (외부 링크)
+// ⚠️ [백엔드 확인 완료 — 세영님, 2026-07-26] name 의존 로직 제거 배포 완료.
+// category + url만 전송하도록 정리.
 export function registerDocumentLink(
   cardId: number,
-  body: { category: string; name: string; url: string }
+  body: { category: string; url: string }
 ): Promise<DocumentItem> {
   return apiFetch<DocumentItem>(`/api/v1/kanban/cards/${cardId}/documents/link`, {
     method: 'POST',

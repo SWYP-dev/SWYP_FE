@@ -124,11 +124,8 @@ export function CardDetailDrawer({
   function handleLinkSubmit() {
     if (!linkUrl.trim()) return;
     const category = linkCategory ?? 'OTHER';
-    // ⚠️ [백엔드 확인 — 세영님] POST .../documents/link는 name도 필요함. UI에 별도
-    // 입력칸을 추가하지 않고, 선택한 카테고리의 한글 라벨을 name으로 자동 채워서 전송.
-    const name = URL_CATEGORIES.find((c) => c.value === category)?.label ?? '기타';
     registerLink.mutate(
-      { category, name, url: linkUrl.trim() },
+      { category, url: linkUrl.trim() },
       {
         onSuccess: () => {
           setLinkUrl('');
