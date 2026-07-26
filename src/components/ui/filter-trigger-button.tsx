@@ -30,7 +30,7 @@ export const FilterTriggerButton = forwardRef<HTMLButtonElement, FilterTriggerBu
         onClick={onClick}
         aria-expanded={showChevron ? isActive : undefined}
         aria-pressed={!showChevron ? isActive : undefined}
-        className={`inline-flex items-center justify-center gap-[var(--spacing-1)] rounded-[var(--radius-lg)] border py-[var(--spacing-3)] ${
+        className={`inline-flex cursor-pointer items-center justify-center gap-[var(--spacing-1)] rounded-[var(--radius-lg)] border py-[var(--spacing-3)] ${
           showChevron ? 'pl-[12px] pr-[7px]' : 'px-[var(--spacing-4)]'
         } ${
           isActive
