@@ -15,14 +15,11 @@ import { arrayMove } from '@dnd-kit/sortable';
 import type { KanbanCard, KanbanStage } from '@/types/api';
 import { KanbanColumn } from './KanbanColumn';
 import { AddStageButton } from './AddStageButton';
-import { AddStageModal } from './AddStageModal';
 import { Toast } from '@/components/ui/toast';
 import { DeleteStageModal } from './DeleteStageModal';
 import { AddCardModal, type FormErrors } from './AddCardModal';
 import { DeleteCardModal } from './DeleteCardModal';
 import { CardDetailDrawer } from './CardDetailDrawer';
-import { StageFilterChip } from './StageFilterChip';
-import { DeadlineSoonFilterButton } from '@/features/feed/components/DeadlineSoonFilterButton';
 import {
   useCreateDirectCard,
   useUpdateCard,
@@ -105,8 +102,6 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
   const [editingCard, setEditingCard] = useState<KanbanCard | null>(null);
   const [deletingCard, setDeletingCard] = useState<KanbanCard | null>(null);
   const [viewingCardId, setViewingCardId] = useState<number | null>(null);
-  const [selectedStageIds, setSelectedStageIds] = useState<number[]>([]);
-  const [isDeadlineSoonOnly, setIsDeadlineSoonOnly] = useState(false);
 
   // fix: initialStages 변경 시 stages 동기화 — 컬럼 너비 변형 버그 수정 (버그2)
   // useEffect에서 setState를 호출하면 리렌더링이 한 번 더 발생해 깜빡임(컬럼 너비
@@ -419,20 +414,16 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
     );
   }
 
-  function isDeadlineSoon(deadline: string): boolean {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const diff = Math.ceil((new Date(deadline).getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-    return diff >= 0 && diff <= 7;
-  }
+  // ⚠️ [QA 반영] 스테이지/마감임박 필터 UI 제거 — PRD 4.2에 칸반 보드용 필터 명세 없음.
+  const sortedStages = [...stages].sort((a, b) => a.position - b.position);
 
-  const visibleStages = [...stages]
-    .sort((a, b) => a.position - b.position)
-    .filter((stage) => selectedStageIds.length === 0 || selectedStageIds.includes(stage.id))
-    .map((stage) => ({
-      ...stage,
-      cards: isDeadlineSoonOnly ? stage.cards.filter((c) => isDeadlineSoon(c.deadline)) : stage.cards,
-    }));
+  const draftStage: KanbanStage = {
+    id: -1,
+    name: '',
+    position: stages.length + 1,
+    isDefault: false,
+    cards: [],
+  };
 
   return (
     <DndContext
@@ -442,20 +433,8 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
       onDragEnd={handleDragEnd}
     >
       <div className="flex h-full min-h-0 flex-1 flex-col">
-        <div className="mb-4 flex items-center gap-2">
-          <StageFilterChip
-            stages={stages}
-            appliedStageIds={selectedStageIds}
-            onApply={setSelectedStageIds}
-          />
-          <DeadlineSoonFilterButton
-            isActive={isDeadlineSoonOnly}
-            onToggle={setIsDeadlineSoonOnly}
-          />
-        </div>
-
         <div className="flex h-full w-full flex-1 items-stretch gap-5 overflow-x-auto pb-2 kanban-scroll-x">
-          {visibleStages.map((stage) => (
+          {sortedStages.map((stage) => (
             <KanbanColumn
               key={stage.id}
               stage={stage}
@@ -493,6 +472,17 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
               onDeleteCard={(card) => setDeletingCard(card)}
             />
           ))}
+          {isAddingStage && (
+            <KanbanColumn
+              key="draft-stage"
+              stage={draftStage}
+              isDraft
+              draftName={draftName}
+              onDraftNameChange={setDraftName}
+              onConfirmDraft={handleConfirmDraft}
+              onCancelDraft={clearDraft}
+            />
+          )}
         </div>
 
         <AddStageButton onClick={handleAddStageClick} />
@@ -538,14 +528,6 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
             }
           );
         }}
-      />
-
-      <AddStageModal
-        isOpen={isAddingStage}
-        value={draftName}
-        onChange={setDraftName}
-        onClose={() => clearDraft()}
-        onConfirm={handleConfirmDraft}
       />
 
       <AddCardModal
