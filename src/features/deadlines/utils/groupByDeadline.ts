@@ -69,8 +69,7 @@ export function groupCardsByDeadline(entries: DeadlineCardEntry[]): DeadlineGrou
         label = `${yearPrefix}${target.getMonth() + 1}월 ${target.getDate()}일 (${WEEKDAYS[target.getDay()]})`;
       }
 
-      const ddayLabel =
-        diffDays === 0 ? 'D-Day' : diffDays < 0 ? `D+${Math.abs(diffDays)}` : `D-${diffDays}`;
+      const ddayLabel = diffDays === 0 ? 'D-Day' : `D-${Math.abs(diffDays)}`;
 
       groupMap.set(dateKey, {
         key: dateKey,
