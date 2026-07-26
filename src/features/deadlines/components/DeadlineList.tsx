@@ -43,20 +43,6 @@ export function DeadlineList() {
     if (entry) setDeletingCard(entry.card);
   }
 
-  // 지원 마감일 인라인 수정 — Drawer에서만 사용 (회사명/공고명은 전송하지 않아 K010 회피)
-  async function handleUpdateDeadline(cardId: number, deadline: string) {
-    try {
-      await updateCardMutation.mutateAsync({ cardId, deadline });
-      queryClient.invalidateQueries({ queryKey: kanbanKeys.board() });
-      queryClient.invalidateQueries({ queryKey: kanbanKeys.cardDetail(cardId) });
-      setToastType('success');
-      setToastMessage('수정 사항이 저장되었어요.');
-    } catch {
-      setToastType('error');
-      setToastMessage('지원 마감일 수정에 실패했어요.');
-    }
-  }
-
   // ⚠️ 회사명/공고명은 폼에서 아예 안 보내서(비활성 필드), K010 걱정 없이
   // 지원 마감일 + 전형 단계만 독립적으로 업데이트
   async function handleConfirmEditCard(formData: { cardId: number; deadline: string; stageId: number }) {
@@ -139,7 +125,7 @@ export function DeadlineList() {
         isOpen={viewingCardId !== null}
         cardId={viewingCardId}
         onClose={() => setViewingCardId(null)}
-        onUpdateDeadline={handleUpdateDeadline}
+        onEditCard={() => {}}
         onDeleteCard={(card) => setDeletingCard(card)}
       />
 
