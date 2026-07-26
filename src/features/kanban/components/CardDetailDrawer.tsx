@@ -125,7 +125,7 @@ export function CardDetailDrawer({
     if (!linkUrl.trim()) return;
     const category = linkCategory ?? 'OTHER';
     registerLink.mutate(
-      { category, name: '', url: linkUrl.trim() },
+      { category, url: linkUrl.trim() },
       {
         onSuccess: () => {
           setLinkUrl('');
@@ -294,9 +294,7 @@ export function CardDetailDrawer({
 
               {isAddingLink ? (
                 <div className="flex flex-col gap-2">
-                  {/* 카테고리 선택 + URL 입력 행 */}
                   <div className="flex items-stretch gap-2">
-                    {/* 카테고리 드롭다운 */}
                     <div className="relative shrink-0">
                       <button
                         type="button"
@@ -319,9 +317,7 @@ export function CardDetailDrawer({
                                 setShowCategoryDropdown(false);
                               }}
                               className={`flex h-10 w-full items-center px-4 text-3 font-medium text-label-base ${
-                                linkCategory === cat.value
-                                  ? 'rounded-lg bg-neutral-100'
-                                  : 'hover:bg-neutral-50'
+                                linkCategory === cat.value ? 'rounded-lg bg-neutral-100' : 'hover:bg-neutral-50'
                               }`}
                             >
                               {cat.label}
@@ -330,7 +326,6 @@ export function CardDetailDrawer({
                         </div>
                       )}
                     </div>
-                    {/* URL 입력 */}
                     <input
                       value={linkUrl}
                       onChange={(e) => setLinkUrl(e.target.value)}

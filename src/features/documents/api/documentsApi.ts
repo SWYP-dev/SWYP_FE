@@ -19,7 +19,7 @@ export function uploadDocumentFile(
 // 4.2 서류 등록 (외부 링크)
 export function registerDocumentLink(
   cardId: number,
-  body: { category: string; name: string; url: string }
+  body: { category: string; url: string }
 ): Promise<DocumentItem> {
   return apiFetch<DocumentItem>(`/api/v1/kanban/cards/${cardId}/documents/link`, {
     method: 'POST',

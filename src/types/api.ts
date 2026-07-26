@@ -167,8 +167,7 @@ export type DocumentItem =
   | {
       id: number;
       type: 'LINK';
-      category: string; // ⚠️ [백엔드 확인] name과 별개의 독립 필드 (RESUME/PORTFOLIO/PERSONAL_CHANNEL/OTHER)
-      name: string;
+      category: string; // RESUME/PORTFOLIO/PERSONAL_CHANNEL/OTHER
       url: string;
       registeredAt: string;
     }
