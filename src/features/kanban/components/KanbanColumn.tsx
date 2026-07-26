@@ -8,6 +8,13 @@ import type { KanbanCard as KanbanCardType, KanbanStage } from '@/types/api';
 import { KanbanCard } from './KanbanCard';
 import { DragHandleIcon, EditIcon, PlusSmallIcon, TrashIcon } from '@/components/ui/icons';
 
+// ⚠️ 백엔드는 현재 "지원 전"만 isDefault:true로 내려주고(이동·이름변경 제한),
+// "면접"/"최종 결과"는 서버 차원 제한이 없어 이름 변경/삭제가 실제로 가능한 상태임.
+// 기획 확정(2026-07-26)에 따라 3개 기본 스테이지 모두 FE에서 이름 변경·삭제를
+// 비활성화 처리함. 완전한 보호를 위해선 백엔드도 이 두 스테이지에 동일한 제약을
+// 걸어야 함 — 별도 확인 요청 필요.
+const DEFAULT_STAGE_NAMES = ['지원 전', '면접', '최종 결과'];
+
 interface KanbanColumnProps {
   stage: KanbanStage;
   isDraft?: boolean;
@@ -56,7 +63,7 @@ export function KanbanColumn({
   } = useDraggable({
     id: `stage-drag-${stage.id}`,
     data: { type: 'stage', stageId: stage.id },
-    disabled: isDraft,
+    disabled: isDraft || stage.name === '지원 전',
   });
 
   const stageDragStyle = stageTransform
@@ -66,6 +73,8 @@ export function KanbanColumn({
   const [isEditingName, setIsEditingName] = useState(isDraft);
   const [localDraftName, setLocalDraftName] = useState(isDraft ? '' : stage.name);
   const [hasError, setHasError] = useState(false);
+
+  const isLocked = stage.isDefault || DEFAULT_STAGE_NAMES.includes(stage.name);
 
   const draftName = isDraft ? (draftNameProp ?? '') : localDraftName;
 
@@ -176,21 +185,31 @@ export function KanbanColumn({
               <button
                 type="button"
                 aria-label="스테이지 이름 수정"
+                disabled={isLocked}
                 onClick={() => {
+                  if (isLocked) return;
                   setLocalDraftName(stage.name);
                   setIsEditingName(true);
                 }}
-                className="flex size-5 items-center justify-center text-icon-gray"
+                className={`flex size-5 items-center justify-center ${
+                  isLocked ? 'cursor-not-allowed opacity-30' : 'text-icon-gray'
+                }`}
               >
                 <EditIcon size={20} />
               </button>
             )}
-            {!isDraft && !stage.isDefault && (
+            {!isDraft && (
               <button
                 type="button"
                 aria-label="스테이지 삭제"
-                onClick={() => onDeleteStage?.(stage.id)}
-                className="flex size-5 items-center justify-center text-icon-gray"
+                disabled={isLocked}
+                onClick={() => {
+                  if (isLocked) return;
+                  onDeleteStage?.(stage.id);
+                }}
+                className={`flex size-5 items-center justify-center ${
+                  isLocked ? 'cursor-not-allowed opacity-30' : 'text-icon-gray'
+                }`}
               >
                 <TrashIcon size={20} />
               </button>
