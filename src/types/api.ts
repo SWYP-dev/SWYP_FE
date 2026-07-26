@@ -216,9 +216,14 @@ export interface InAppNotificationItem {
   createdAt: string;
 }
 
+// ⚠️ [빌드 에러 반영] API 명세서 5.4(v1.11)엔 nextCursor/hasNext가 실제로 내려오는데
+// 타입 정의에서 누락되어 있었음. NotificationModal.tsx의 "더보기" 버튼 노출 조건
+// (data?.hasNext)에서 타입 에러 발생 원인.
 export interface InAppNotificationInbox {
   unreadCount: number;
   items: InAppNotificationItem[];
+  nextCursor: string | null;
+  hasNext: boolean;
 }
 
 // ===================================
