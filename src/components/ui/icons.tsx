@@ -1,11 +1,37 @@
 import Image from 'next/image';
 
+// ⚠️ [QA 반영] 원본 svg(public/icons/location.svg, briefcase.svg)가 stroke="#212123"로
+// 하드코딩돼 있어 next/image로는 색을 override 할 수 없었음 → 인라인 svg로 전환해
+// neutral-500 토큰(--color-neutral-500) 적용.
 export function PinIcon() {
-  return <Image src="/icons/location.svg" alt="" width={16} height={16} />;
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M17.1265 4.91741C15.7669 3.52964 13.9228 2.75 12 2.75C10.0772 2.75 8.23311 3.52964 6.87348 4.91741C5.51384 6.30518 4.75 8.1874 4.75 10.15C4.75 16.1625 12 21.25 12 21.25C12 21.25 19.25 16.1625 19.25 10.15C19.25 8.1874 18.4862 6.30518 17.1265 4.91741Z"
+        stroke="var(--color-neutral-500)"
+        strokeWidth="1.5"
+      />
+      <path
+        d="M14.7188 10.15C14.7188 10.886 14.4323 11.5918 13.9224 12.1122C13.4126 12.6326 12.7211 12.925 12 12.925C11.2789 12.925 10.5874 12.6326 10.0776 12.1122C9.56769 11.5918 9.28125 10.886 9.28125 10.15C9.28125 9.41402 9.56769 8.70819 10.0776 8.18778C10.5874 7.66737 11.2789 7.375 12 7.375C12.7211 7.375 13.4126 7.66737 13.9224 8.18778C14.4323 8.70819 14.7188 9.41402 14.7188 10.15Z"
+        stroke="var(--color-neutral-500)"
+        strokeWidth="1.5"
+      />
+    </svg>
+  );
 }
 
 export function BriefcaseIcon() {
-  return <Image src="/icons/briefcase.svg" alt="" width={16} height={16} />;
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M9 7.5H20C20.55 7.5 21 7.95 21 8.5V19.5C21 20.05 20.55 20.5 20 20.5H4C3.45 20.5 3 20.05 3 19.5V8.5C3 7.95 3.45 7.5 4 7.5H9ZM9 7.5V4.5C9 3.95 9.45 3.5 10 3.5H14C14.55 3.5 15 3.95 15 4.5V7.5"
+        stroke="var(--color-neutral-500)"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
 }
 
 export function CalendarIcon() {
