@@ -79,6 +79,7 @@ export function CardDetailDrawer({
   }
   if (!isOpen && isMemoSynced) {
     setIsMemoSynced(false);
+    setIsMemoFocused(false);
     setIsAddingLink(false);
     setLinkCategory(null);
     setLinkUrl('');
