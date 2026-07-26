@@ -1,21 +1,29 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, type ComponentType } from 'react';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { LoginModal } from '@/features/auth/components/LoginModal';
 import { ProfileMenu } from '@/features/auth/components/ProfileMenu';
 import { ChwihapWordmark } from '@/features/notification/components/icons';
+import {
+  BookmarkNavIcon,
+  CalendarNavIcon,
+  KanbanNavIcon,
+  SearchNavIcon,
+} from './sidebar-nav-icons';
 
 // Figma Sidebar 컴포넌트(node 36:545) 스펙 반영.
-// TODO: 실제 라우팅 경로(/scraps, /kanban, /deadlines)는 페이지 생성 시 확정 필요.
-const NAV_ITEMS = [
-  { href: '/', icon: '/icons/search.svg', label: '통합 공고 탐색' },
-  { href: '/scraps', icon: '/icons/bookmark.svg', label: '스크랩' },
-  { href: '/kanban', icon: '/icons/kanban.svg', label: '지원 현황' },
-  { href: '/deadlines', icon: '/icons/calendar.svg', label: '지원 마감일' },
+const NAV_ITEMS: {
+  href: string;
+  label: string;
+  icon: ComponentType<{ className?: string }>;
+}[] = [
+  { href: '/', icon: SearchNavIcon, label: '통합 공고 탐색' },
+  { href: '/scraps', icon: BookmarkNavIcon, label: '스크랩' },
+  { href: '/kanban', icon: KanbanNavIcon, label: '지원 현황' },
+  { href: '/deadlines', icon: CalendarNavIcon, label: '지원 마감일' },
 ];
 
 // [2026-07-22] 로그인 기능 연동: userName/userEmail/avatarUrl props를 제거하고
@@ -57,20 +65,18 @@ export function Sidebar() {
         <nav className="flex w-full flex-col items-start gap-2 px-6">
           {NAV_ITEMS.map((item) => {
             const isActive = pathname === item.href;
+            const Icon = item.icon;
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                // ⚠️ [QA 반영] hover 상태 UI 없었음 — 앱 전역 hover 톤(neutral-100)에 맞춰 임시 반영.
-                // TODO(진영님 확인 필요): Figma에 sidebar nav item 전용 hover 스펙이 있는지 확인 후
-                // 색상 확정되면 교체.
-                className={`flex h-9 w-full items-center gap-3 rounded-xl px-5 py-4 transition-colors ${
+                className={`flex h-9 w-full items-center gap-3 rounded-xl border px-5 py-4 transition-colors ${
                   isActive
-                    ? 'border border-line-secondary bg-neutral-100 text-label-base'
-                    : 'text-label-body hover:bg-neutral-100 hover:text-label-base'
+                    ? 'border-line-secondary bg-neutral-100 text-label-base'
+                    : 'border-transparent text-label-body hover:border-line-secondary hover:bg-neutral-100 hover:text-label-base'
                 }`}
               >
-                <Image src={item.icon} alt="" width={16} height={16} className="shrink-0" />
+                <Icon className="shrink-0" />
                 <span className="flex-1 truncate text-3 font-medium">{item.label}</span>
               </Link>
             );
