@@ -264,6 +264,12 @@ export interface ScrapRemoveResponse {
 export interface ScrapQueryParams {
   page?: number; // 0부터 시작, 기본 0
   size?: number; // 기본 20, 최대 50
+  // ⚠️ [백엔드 반영 완료 — 2026-07-26] 2.5 API에 필터 파라미터 추가 지원됨.
+  // FeedQueryParams와 동일한 형식(콤마 구분 다중 선택).
+  jobCategory?: string;
+  region?: string;
+  career?: string;
+  deadlineSoon?: boolean;
 }
 
 // 3.2 칸반 카드 등록

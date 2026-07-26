@@ -9,9 +9,16 @@ import { Header } from '@/components/layout/header';
 import { Pagination } from '@/components/ui/pagination';
 import { Toast } from '@/components/ui/toast';
 import type { SelectionValue } from '@/components/ui/selection-modal';
-import { CareerFilterChip, type CareerTagId } from '@/features/feed/components/CareerFilterChip';
-import { RegionFilterButton } from '@/features/feed/components/RegionFilterButton';
-import { JobCategoryFilterButton } from '@/features/feed/components/JobCategoryFilterButton';
+import {
+  JobCategoryFilterButton,
+  buildJobCategoryParam,
+} from '@/features/feed/components/JobCategoryFilterButton';
+import { RegionFilterButton, buildRegionParam } from '@/features/feed/components/RegionFilterButton';
+import {
+  CareerFilterChip,
+  buildCareerParam,
+  type CareerTagId,
+} from '@/features/feed/components/CareerFilterChip';
 import { DeadlineSoonFilterButton } from '@/features/feed/components/DeadlineSoonFilterButton';
 import { ScrapCard } from '@/features/scraps/components/ScrapCard';
 import { useScrapsQuery } from '@/features/scraps/api/useScrapsQuery';
@@ -41,8 +48,8 @@ const ScrapsPage: NextPage = () => {
   const queryClient = useQueryClient();
   const [currentPage, setCurrentPage] = useState(0);
 
-  // ⚠️ 보류: API 명세서 2.5는 page/size만 지원. 아래 필터/정렬 UI는 통합 공고 피드와 동일하게
-  // 배치만 해두고 파라미터에는 아직 연결하지 않음 (확장 여부 세영님·동섭님 확인 대기).
+  // ⚠️ [백엔드 반영 완료] API 명세서 2.5에 필터 파라미터가 추가돼서, 통합 공고 피드와
+  // 동일한 헬퍼(buildJobCategoryParam 등)로 실제 쿼리에 연결함.
   const [careerTags, setCareerTags] = useState<CareerTagId[]>([]);
   const [regionValue, setRegionValue] = useState<SelectionValue | null>(null);
   const [jobCategoryValue, setJobCategoryValue] = useState<SelectionValue | null>(null);
@@ -51,6 +58,10 @@ const ScrapsPage: NextPage = () => {
   const { data, isLoading, isError, refetch } = useScrapsQuery({
     page: currentPage,
     size: 20,
+    jobCategory: buildJobCategoryParam(jobCategoryValue),
+    region: buildRegionParam(regionValue),
+    career: buildCareerParam(careerTags),
+    deadlineSoon: isDeadlineSoon || undefined,
   });
 
   // 스크랩 해제 낙관적 업데이트: "삭제된 id" 집합만 들고 있다가 필터링해서 렌더링
