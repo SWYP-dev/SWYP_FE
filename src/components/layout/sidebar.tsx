@@ -91,7 +91,7 @@ export function Sidebar() {
           <button
             type="button"
             onClick={() => setIsLoginModalOpen(true)}
-            className="flex items-center justify-center rounded-lg border border-line-secondary bg-base-white px-3 py-2"
+            className="flex items-center justify-center rounded-lg border border-line-secondary bg-base-white px-[12px] py-[8px]"
           >
             <span className="text-3 font-medium leading-[1.5] text-label-primary">
               회원가입/로그인
