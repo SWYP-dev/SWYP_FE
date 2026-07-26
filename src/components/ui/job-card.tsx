@@ -114,7 +114,7 @@ export function JobCard({
           {originalUrl ? (
             <a href={originalUrl} target="_blank" rel="noreferrer" className="block w-full">
               <Button variant="outline" size="sm" className="w-full">
-                원본 공고로 이동
+                원본 공고 이동
               </Button>
             </a>
           ) : (
@@ -123,7 +123,7 @@ export function JobCard({
             </Button>
           )}
           <Button variant="outline" size="sm" className="w-full" onClick={onAddToKanban}>
-            내 지원 현황에 추가
+            지원 현황 추가
           </Button>
         </div>
       </div>
