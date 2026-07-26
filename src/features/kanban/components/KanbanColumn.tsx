@@ -120,43 +120,45 @@ export function KanbanColumn({
       {/* Header */}
       <div className="flex w-full items-start p-4">
         <div className="flex min-h-7 flex-1 items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div
-              ref={setStageDragRef}
-              style={stageDragStyle}
-              {...stageDragAttributes}
-              {...stageDragListeners}
-              className="flex cursor-grab items-center justify-center active:cursor-grabbing"
-            >
-              <DragHandleIcon size={20} />
-            </div>
-            {isEditingName ? (
-              <div className="flex flex-col gap-1">
-                <input
-                  autoFocus
-                  value={draftName}
-                  onChange={(e) => updateDraftName(e.target.value)}
-                  onBlur={commit}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') commit();
-                    if (e.key === 'Escape') cancel();
-                  }}
-                  placeholder={isDraft ? '전형 단계를 입력하세요.' : '텍스트를 입력해 주세요.'}
-                  className={`w-[168px] border-b-2 bg-transparent pb-1 text-5 font-medium text-label-base placeholder:text-label-placeholder outline-none ${
-                    hasError ? 'border-status-negative' : 'border-line-secondary'
-                  }`}
-                />
-                {hasError && (
-                  <p className="text-1 font-medium text-status-negative">
-                    전형 이름을 입력해주세요.
-                  </p>
-                )}
+          <div className="flex items-center">
+            <div className="flex items-center gap-3">
+              <div
+                ref={setStageDragRef}
+                style={stageDragStyle}
+                {...stageDragAttributes}
+                {...stageDragListeners}
+                className="flex cursor-grab items-center justify-center active:cursor-grabbing"
+              >
+                <DragHandleIcon size={20} />
               </div>
-            ) : (
-              <p className="whitespace-nowrap text-6 font-semibold text-label-base">{stage.name}</p>
-            )}
+              {isEditingName ? (
+                <div className="flex flex-col gap-1">
+                  <input
+                    autoFocus
+                    value={draftName}
+                    onChange={(e) => updateDraftName(e.target.value)}
+                    onBlur={commit}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') commit();
+                      if (e.key === 'Escape') cancel();
+                    }}
+                    placeholder={isDraft ? '전형 단계를 입력하세요.' : '텍스트를 입력해 주세요.'}
+                    className={`w-[168px] border-b-2 bg-transparent pb-1 text-5 font-medium text-label-base placeholder:text-label-placeholder outline-none ${
+                      hasError ? 'border-status-negative' : 'border-line-secondary'
+                    }`}
+                  />
+                  {hasError && (
+                    <p className="text-1 font-medium text-status-negative">
+                      전형 이름을 입력해주세요.
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <p className="whitespace-nowrap text-6 font-semibold text-label-base">{stage.name}</p>
+              )}
+            </div>
             {!isDraft && (
-              <p className="whitespace-nowrap text-5 font-medium text-label-body">
+              <p className="ml-4 whitespace-nowrap text-5 font-medium text-label-body">
                 {stage.cards.length}
               </p>
             )}
@@ -170,7 +172,7 @@ export function KanbanColumn({
             >
               <PlusSmallIcon size={20} />
             </button>
-            {!isDraft && !stage.isDefault && (
+            {!isDraft && (
               <button
                 type="button"
                 aria-label="스테이지 이름 수정"
@@ -214,11 +216,6 @@ export function KanbanColumn({
                 onDeleteCard={onDeleteCard}
               />
             ))}
-            {!isDraft && stage.cards.length === 0 && (
-              <div className="flex w-full items-center justify-center rounded-xl border border-dashed border-line-secondary py-8 text-2 text-label-description">
-                등록된 공고가 없어요
-              </div>
-            )}
           </div>
         </SortableContext>
       </div>
