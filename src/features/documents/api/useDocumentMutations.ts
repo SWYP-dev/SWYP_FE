@@ -23,8 +23,7 @@ export function useUploadDocumentFile(cardId: number) {
 export function useRegisterDocumentLink(cardId: number) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (body: { category: string; name: string; url: string }) =>
-      registerDocumentLink(cardId, body),
+    mutationFn: (body: { category: string; url: string }) => registerDocumentLink(cardId, body),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: kanbanKeys.cardDetail(cardId) });
     },
