@@ -48,9 +48,26 @@ export function CalendarIcon() {
   );
 }
 
-// name="drag-handle" — KanbanColumn 헤더 버튼그룹에서 사용.
+// name="drag-handle" — KanbanColumn 헤더 드래그 그립. 2열×3행 세로 배치.
+// Image(#212123 고정) 대신 currentColor → 부모 text-icon-gray와 동일 톤.
 export function DragHandleIcon({ size = 16 }: { size?: number }) {
-  return <Image src="/icons/drag-handle.svg" alt="" width={size} height={size} />;
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+    >
+      <circle cx="9.5" cy="7" r="1.15" fill="currentColor" />
+      <circle cx="14.5" cy="7" r="1.15" fill="currentColor" />
+      <circle cx="9.5" cy="12" r="1.15" fill="currentColor" />
+      <circle cx="14.5" cy="12" r="1.15" fill="currentColor" />
+      <circle cx="9.5" cy="17" r="1.15" fill="currentColor" />
+      <circle cx="14.5" cy="17" r="1.15" fill="currentColor" />
+    </svg>
+  );
 }
 
 // name="Edit" — KanbanColumn 헤더 버튼그룹에서 사용.

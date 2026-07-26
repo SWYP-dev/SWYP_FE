@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { CloseIcon } from '@/components/ui/icons';
 import { DatePicker } from '@/components/ui/date-picker';
+import { Button } from '@/components/ui/button';
 import { useEscapeKey } from '@/lib/hooks/useEscapeKey';
 import type { KanbanCard } from '@/types/api';
 
@@ -198,7 +199,7 @@ export function AddCardModal({
         onClick={handleClose}
         aria-hidden="true"
       />
-      <div className="relative flex w-[394px] flex-col gap-6 overflow-visible rounded-[20px] bg-base-white py-6 shadow-spread-small">
+      <div className="relative flex w-[394px] flex-col gap-7 overflow-visible rounded-[20px] bg-base-white py-7 shadow-spread-small">
         <div className="flex items-center justify-between px-8">
           <p className="text-7 font-semibold text-label-base">
             {mode === 'add' ? '지원 내역 추가' : '지원 내역 수정'}
@@ -208,10 +209,10 @@ export function AddCardModal({
           </button>
         </div>
 
-        <div className="flex flex-col gap-5 px-8">
+        <div className="flex flex-col gap-6 px-8">
           {FIELDS.map(({ key, label, placeholder, type }) => (
-            <div key={key} className="flex flex-col gap-2">
-              <div className="flex items-center gap-1">
+            <div key={key} className="flex flex-col gap-3">
+              <div className="flex items-center gap-2">
                 <p className="text-3 font-semibold text-label-base">{label}</p>
                 <p className="font-bold text-status-negative">*</p>
               </div>
@@ -220,7 +221,7 @@ export function AddCardModal({
                 value={form[key]}
                 onChange={(e) => updateField(key, e.target.value)}
                 placeholder={placeholder}
-                className={`w-full rounded-xl border px-4 py-3 text-5 font-medium text-label-base placeholder:text-label-placeholder outline-none ${
+                className={`w-full rounded-xl border px-5 py-4 text-5 font-medium text-label-base placeholder:text-label-placeholder outline-none ${
                   errors[key] ? 'border-status-negative' : 'border-line-secondary'
                 }`}
               />
@@ -228,8 +229,8 @@ export function AddCardModal({
             </div>
           ))}
 
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-1">
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-2">
               <p className="text-3 font-semibold text-label-base">지원 마감일</p>
               <p className="font-bold text-status-negative">*</p>
             </div>
@@ -237,8 +238,8 @@ export function AddCardModal({
               <button
                 type="button"
                 onClick={() => setShowDatePicker((v) => !v)}
-                className={`flex w-full items-center justify-between rounded-xl border px-4 py-3 text-5 font-medium outline-none ${
-                  errors.deadline ? 'border-status-negative' : 'border-line-secondary'
+                className={`flex w-full items-center justify-between rounded-xl border-2 px-5 py-4 text-5 font-medium outline-none ${
+                  errors.deadline ? 'border-status-negative' : 'border-line-primary'
                 } ${deadlineText ? 'text-label-base' : 'text-label-placeholder'}`}
               >
                 <span>{deadlineText || '지원 마감일을 선택해주세요.'}</span>
@@ -263,18 +264,9 @@ export function AddCardModal({
         </div>
 
         <div className="px-8">
-          <button
-            type="button"
-            onClick={handleConfirm}
-            disabled={!canSubmit}
-            className={`flex w-full items-center justify-center rounded-xl py-3 text-5 font-semibold text-base-white transition-colors ${
-              canSubmit
-                ? 'bg-fill-primary hover:bg-action-primary-hover'
-                : 'bg-action-primary-disabled cursor-not-allowed'
-            }`}
-          >
+          <Button variant="primary" size="lg" onClick={handleConfirm} disabled={!canSubmit} className="w-full">
             확인
-          </button>
+          </Button>
         </div>
       </div>
     </div>
