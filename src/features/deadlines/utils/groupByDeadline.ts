@@ -69,7 +69,11 @@ export function groupCardsByDeadline(entries: DeadlineCardEntry[]): DeadlineGrou
         label = `${yearPrefix}${target.getMonth() + 1}월 ${target.getDate()}일 (${WEEKDAYS[target.getDay()]})`;
       }
 
-      const ddayLabel = diffDays === 0 ? 'D-Day' : `D-${Math.abs(diffDays)}`;
+      // ⚠️ [재발 방지] #112에서 이 로직이 diffDays < 0 구분 없이 Math.abs()로 덮어써지면서,
+      // 마감 지난 날짜도 "D-23"처럼(마치 23일 남은 것처럼) 표시되는 회귀가 있었음.
+      // 마감 지난 경우엔 "D+N"으로 구분해서 표시해야 함.
+      const ddayLabel =
+        diffDays === 0 ? 'D-Day' : diffDays < 0 ? `D+${Math.abs(diffDays)}` : `D-${diffDays}`;
 
       groupMap.set(dateKey, {
         key: dateKey,
