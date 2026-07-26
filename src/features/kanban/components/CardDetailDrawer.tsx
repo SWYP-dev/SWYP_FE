@@ -124,11 +124,8 @@ export function CardDetailDrawer({
   function handleLinkSubmit() {
     if (!linkUrl.trim()) return;
     const category = linkCategory ?? 'OTHER';
-    // ⚠️ [백엔드 확인 — 세영님] POST .../documents/link는 name도 필요함. UI에 별도
-    // 입력칸을 추가하지 않고, 선택한 카테고리의 한글 라벨을 name으로 자동 채워서 전송.
-    const name = URL_CATEGORIES.find((c) => c.value === category)?.label ?? '기타';
     registerLink.mutate(
-      { category, name, url: linkUrl.trim() },
+      { category, url: linkUrl.trim() },
       {
         onSuccess: () => {
           setLinkUrl('');
@@ -248,7 +245,7 @@ export function CardDetailDrawer({
                   onBlur={handleMemoBlur}
                   placeholder="메모할 내용을 입력해주세요."
                   maxLength={1000}
-                  className="h-[156px] w-full resize-none rounded-xl border-2 border-line-secondary bg-neutral-100 p-4 text-4 leading-[1.6] text-label-base placeholder:text-label-placeholder outline-none focus:border-line-primary"
+                  className="h-[156px] w-full resize-none rounded-xl border-2 border-line-secondary bg-base-white p-4 text-4 leading-[1.6] text-label-base placeholder:text-label-placeholder outline-none focus:border-line-primary"
                 />
                 <p className="text-right text-1 text-label-description">
                   <span className="text-label-body">{memoDraft.length}</span>

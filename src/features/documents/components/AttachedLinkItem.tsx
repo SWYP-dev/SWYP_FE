@@ -21,8 +21,8 @@ export function AttachedLinkItem({ document, onDelete }: AttachedLinkItemProps) 
   const label = CATEGORY_LABELS[document.category] ?? document.category;
 
   return (
-    <div className="flex w-full min-w-0 items-start gap-2">
-      <div className="flex w-[108px] shrink-0 items-center rounded-xl border border-line-secondary bg-neutral-100 py-2 pl-4 pr-[11px]">
+    <div className="flex w-full min-w-0 items-stretch gap-2">
+      <div className="flex w-[108px] shrink-0 items-center rounded-xl border border-line-secondary bg-neutral-100 py-3 pl-4 pr-[11px]">
         <span className="flex-1 text-3 font-medium text-label-description">{label}</span>
       </div>
       <div className="flex min-w-0 flex-1 items-center gap-2 rounded-xl border border-line-secondary bg-neutral-100 px-4 py-3">
