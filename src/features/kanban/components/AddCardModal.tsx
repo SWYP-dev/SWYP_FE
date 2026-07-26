@@ -239,7 +239,11 @@ export function AddCardModal({
                 type="button"
                 onClick={() => setShowDatePicker((v) => !v)}
                 className={`flex w-full items-center justify-between rounded-xl border-2 px-5 py-4 text-5 font-medium outline-none ${
-                  errors.deadline ? 'border-status-negative' : 'border-line-primary'
+                  errors.deadline
+                    ? 'border-status-negative'
+                    : showDatePicker
+                      ? 'border-line-primary'
+                      : 'border-line-secondary'
                 } ${deadlineText ? 'text-label-base' : 'text-label-placeholder'}`}
               >
                 <span>{deadlineText || '지원 마감일을 선택해주세요.'}</span>
