@@ -33,7 +33,14 @@ export function NotificationModal() {
     <div className="flex w-[475px] flex-col items-start gap-4 overflow-hidden rounded-[20px] bg-base-white py-6 shadow-spread-small">
       <div className="flex w-full items-center justify-between px-8">
         <p className="text-5 font-semibold text-label-base">알림</p>
-        <button type="button" onClick={handleMarkAllRead} className="text-1 font-medium text-label-body">
+        <button
+          type="button"
+          onClick={handleMarkAllRead}
+          disabled={items.length === 0}
+          className={`text-1 font-medium ${
+            items.length === 0 ? 'cursor-not-allowed text-neutral-300' : 'text-label-body'
+          }`}
+        >
           모두 삭제
         </button>
       </div>
