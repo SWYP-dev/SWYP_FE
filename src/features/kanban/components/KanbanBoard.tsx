@@ -11,7 +11,7 @@ import {
   type DragEndEvent,
   type DragOverEvent,
 } from '@dnd-kit/core';
-import { arrayMove } from '@dnd-kit/sortable';
+import { SortableContext, horizontalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import type { KanbanCard, KanbanStage } from '@/types/api';
 import { KanbanColumn } from './KanbanColumn';
 import { AddStageButton } from './AddStageButton';
@@ -190,13 +190,10 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
     // 스테이지(컬럼) 순서 변경 — over.data.stageId를 사용 (over.id 파싱하지 않음)
     if (active.data.current?.type === 'stage') {
       const fromStageId = active.data.current.stageId as number;
-      const overData = over.data.current as { stageId?: number } | undefined;
+      const overData = over.data.current as { stageId?: number; type?: string } | undefined;
       const toStageId = overData?.stageId;
       if (!toStageId || fromStageId === toStageId) return;
 
-      // ⚠️ [K024 반영] "지원 전"만 1번 위치 고정 대상 — isDefault 전체가 아니라
-      // 이름으로 정확히 짚어야 함 (면접/최종 결과도 isDefault:true라 isDefault로
-      // 체크하면 이 둘 사이의 정상적인 순서 변경까지 같이 막혀버림).
       const fromStage = stages.find((s) => s.id === fromStageId);
       const toStage = stages.find((s) => s.id === toStageId);
       if (fromStage?.name === '지원 전' || toStage?.name === '지원 전') return;
@@ -211,11 +208,8 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
         const toIndex = reorderable.findIndex((s) => s.id === toStageId);
         if (fromIndex === -1 || toIndex === -1) return prev;
 
-        const reordered = [...reorderable];
-        const [moved] = reordered.splice(fromIndex, 1);
-        reordered.splice(toIndex, 0, moved);
-
-        // 고정 스테이지를 맨 앞에 유지한 채로 나머지를 이어붙여 최종 순서 확정
+        // arrayMove로 통일 — 카드 재정렬과 동일한 방식
+        const reordered = arrayMove(reorderable, fromIndex, toIndex);
         const finalOrder = [...lockedStages, ...reordered];
         newPosition = finalOrder.findIndex((s) => s.id === fromStageId) + 1;
 
@@ -445,44 +439,49 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
     >
       <div className="flex h-full min-h-0 flex-1 flex-col">
         <div className="flex h-full w-full flex-1 items-stretch gap-5 overflow-x-auto pb-2 kanban-scroll-x">
-          {sortedStages.map((stage) => (
-            <KanbanColumn
-              key={stage.id}
-              stage={stage}
-              onRenameStage={(stageId, newName, position) => {
-                updateStageMutation.mutate(
-                  { stageId, name: newName, position },
-                  {
-                    onSuccess: () => {
-                      setStages((prev) =>
-                        prev.map((s) => (s.id === stageId ? { ...s, name: newName } : s))
-                      );
-                      showToast('success', '전형 단계 이름이 수정되었어요.');
-                    },
-                    onError: (err) => {
-                      if (
-                        err instanceof ApiClientError &&
-                        err.code === 'DEFAULT_STAGE_NAME_CHANGE_NOT_ALLOWED'
-                      ) {
-                        showToast('error', '기본 전형 단계는 이름을 변경할 수 없어요.');
-                        return;
-                      }
-                      const mapped = err instanceof ApiClientError ? mapStageNameErrorCode(err.code) : null;
-                      showToast('error', mapped ?? '전형 단계 수정에 실패했어요.');
-                    },
-                  }
-                );
-              }}
-              onDeleteStage={(stageId) => {
-                const target = stages.find((s) => s.id === stageId);
-                if (target) setDeletingStage(target);
-              }}
-              onAddCard={(stageId) => setAddCardStageId(stageId)}
-              onCardClick={(cardId) => setViewingCardId(cardId)}
-              onEditCard={(card) => setEditingCard(card)}
-              onDeleteCard={(card) => setDeletingCard(card)}
-            />
-          ))}
+          <SortableContext
+            items={sortedStages.map((s) => `stage-drag-${s.id}`)}
+            strategy={horizontalListSortingStrategy}
+          >
+            {sortedStages.map((stage) => (
+              <KanbanColumn
+                key={stage.id}
+                stage={stage}
+                onRenameStage={(stageId, newName, position) => {
+                  updateStageMutation.mutate(
+                    { stageId, name: newName, position },
+                    {
+                      onSuccess: () => {
+                        setStages((prev) =>
+                          prev.map((s) => (s.id === stageId ? { ...s, name: newName } : s))
+                        );
+                        showToast('success', '전형 단계 이름이 수정되었어요.');
+                      },
+                      onError: (err) => {
+                        if (
+                          err instanceof ApiClientError &&
+                          err.code === 'DEFAULT_STAGE_NAME_CHANGE_NOT_ALLOWED'
+                        ) {
+                          showToast('error', '기본 전형 단계는 이름을 변경할 수 없어요.');
+                          return;
+                        }
+                        const mapped = err instanceof ApiClientError ? mapStageNameErrorCode(err.code) : null;
+                        showToast('error', mapped ?? '전형 단계 수정에 실패했어요.');
+                      },
+                    }
+                  );
+                }}
+                onDeleteStage={(stageId) => {
+                  const target = stages.find((s) => s.id === stageId);
+                  if (target) setDeletingStage(target);
+                }}
+                onAddCard={(stageId) => setAddCardStageId(stageId)}
+                onCardClick={(cardId) => setViewingCardId(cardId)}
+                onEditCard={(card) => setEditingCard(card)}
+                onDeleteCard={(card) => setDeletingCard(card)}
+              />
+            ))}
+          </SortableContext>
           {isAddingStage && (
             <KanbanColumn
               key="draft-stage"
