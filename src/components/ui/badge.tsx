@@ -78,19 +78,9 @@ export function DeadlineBadge({ deadline }: DeadlineBadgeProps) {
     return <Badge className="bg-base-white text-neutral-500">마감</Badge>;
   }
 
-  // ⚠️ [QA 반영] D-1·D-Day만 서비스 컬러(빨간색)로 강조돼야 하는데, 기존엔 D-7 이내
-  // 전체가 강조 대상이었음. groupByDeadline.ts의 isUrgent 기준(diffDays <= 1)과
-  // 동일하게 맞춤.
+  // ⚠️ [QA 반영] 커스텀 red 컬러 대신 Badge에 이미 정의된 default/primary 타입을 그대로 사용.
   const isUrgent = diffDays <= 1;
   const label = diffDays === 0 ? '오늘 마감' : `D-${diffDays}`;
 
-  return (
-    <Badge
-      className={
-        isUrgent ? 'bg-fill-negative-light text-status-negative' : 'bg-base-white text-neutral-700'
-      }
-    >
-      {label}
-    </Badge>
-  );
+  return <Badge type={isUrgent ? 'primary' : 'default'}>{label}</Badge>;
 }

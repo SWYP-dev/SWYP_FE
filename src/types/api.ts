@@ -53,7 +53,10 @@ export interface FeedQueryParams {
 
 // 2.1 공고 피드 조회 - 목록 아이템
 export interface FeedItem {
-  id: number; // feed id (job_feed.id) — 피드 탐색 중에만 쓰는 임시성 ID, 스크랩 이후엔 jobPostingId를 써야 함
+  id: number; // feed id (job_feed.id) — 피드 탐색 중에만 쓰는 임시성 ID
+  // ⚠️ [백엔드 반영 완료 — 김동섭, 2026-07-26] 스크랩 시 생성되는 job_postings 사본 ID.
+  // 아직 스크랩 안 한 공고는 null, 이미 스크랩된 공고(isScrapped: true)는 값이 내려옴.
+  jobPostingId: number | null;
   platform: Platform;
   companyName: string;
   region: string; // 백엔드 확인(2026-07-19) 후 추가된 필드
@@ -213,9 +216,14 @@ export interface InAppNotificationItem {
   createdAt: string;
 }
 
+// ⚠️ [빌드 에러 반영] API 명세서 5.4(v1.11)엔 nextCursor/hasNext가 실제로 내려오는데
+// 타입 정의에서 누락되어 있었음. NotificationModal.tsx의 "더보기" 버튼 노출 조건
+// (data?.hasNext)에서 타입 에러 발생 원인.
 export interface InAppNotificationInbox {
   unreadCount: number;
   items: InAppNotificationItem[];
+  nextCursor: string | null;
+  hasNext: boolean;
 }
 
 // ===================================

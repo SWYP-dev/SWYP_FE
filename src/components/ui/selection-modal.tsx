@@ -70,7 +70,10 @@ export function SelectionModal({
   emptyStateLines,
   defaultValue,
 }: SelectionModalProps) {
-  const [draft, setDraft] = useState<SelectionValue | null>(value);
+  // ⚠️ [QA #8 반영] 최초 마운트 시점부터 defaultValue(지역 필터="전국")가 draft에 반영되도록
+  // lazy initializer로 변경. 기존엔 열림 전환 effect에만 의존해 초기 렌더 타이밍에 따라
+  // "선택 안 된" 상태로 보이는 경우가 있었음.
+  const [draft, setDraft] = useState<SelectionValue | null>(() => value ?? defaultValue ?? null);
   const [focusedGroupId, setFocusedGroupId] = useState<string | null>(
     value && value.length > 0 ? value[0].groupId : (defaultValue?.[0]?.groupId ?? null)
   );
@@ -243,7 +246,13 @@ export function SelectionModal({
             </div>
 
             {/* 우측: 하위 항목(다중 선택 체크박스) — 하위 항목이 없는 그룹도 "OO 전체" 한 줄로 표시 */}
-            <div className="flex w-[868px] flex-col items-start overflow-y-auto pt-10">
+            {/* ⚠️ [QA #6 반영] 부모가 items-start라 mx-auto가 동작하지 않아 좌측 정렬돼 보이던 문제.
+                빈 상태일 때만 컨테이너를 items-center + justify-center로 전환해 완전히 중앙 정렬. */}
+            <div
+              className={`flex w-[868px] overflow-y-auto ${
+                focusedGroup ? 'flex-col items-start pt-10' : 'h-full items-center justify-center'
+              }`}
+            >
               {focusedGroup ? (
                 <div className="flex flex-wrap content-start items-start">
                   <ChildRow
@@ -262,7 +271,7 @@ export function SelectionModal({
                   ))}
                 </div>
               ) : (
-                <p className="mx-auto max-w-[420px] whitespace-pre-line text-center text-[length:var(--text-5)] leading-[1.5] text-[var(--color-neutral-700)]">
+                <p className="max-w-[420px] whitespace-pre-line text-center text-[length:var(--text-5)] leading-[1.5] text-[var(--color-neutral-700)]">
                   {emptyStateLines.join('\n')}
                 </p>
               )}
