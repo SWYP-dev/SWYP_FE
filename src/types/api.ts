@@ -53,7 +53,10 @@ export interface FeedQueryParams {
 
 // 2.1 공고 피드 조회 - 목록 아이템
 export interface FeedItem {
-  id: number; // feed id (job_feed.id) — 피드 탐색 중에만 쓰는 임시성 ID, 스크랩 이후엔 jobPostingId를 써야 함
+  id: number; // feed id (job_feed.id) — 피드 탐색 중에만 쓰는 임시성 ID
+  // ⚠️ [백엔드 반영 완료 — 김동섭, 2026-07-26] 스크랩 시 생성되는 job_postings 사본 ID.
+  // 아직 스크랩 안 한 공고는 null, 이미 스크랩된 공고(isScrapped: true)는 값이 내려옴.
+  jobPostingId: number | null;
   platform: Platform;
   companyName: string;
   region: string; // 백엔드 확인(2026-07-19) 후 추가된 필드

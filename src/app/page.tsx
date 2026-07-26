@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { Header } from '@/components/layout/header';
@@ -84,10 +84,9 @@ export default function FeedPage() {
   const [careerTags, setCareerTags] = useState<CareerTagId[]>([]);
 
   // 스크랩 상태 로컬 오버라이드.
-  // ⚠️ FeedItem 응답에 jobPostingId가 없어서, 이번 세션에서 직접 스크랩한 것만
-  // jobPostingId를 기억해 해제가 가능함. 서버에서 이미 isScrapped:true로 온 공고는
-  // jobPostingId를 모르기 때문에 해제 버튼이 동작하지 않음 (TODO: 백엔드에
-  // FeedItem에도 jobPostingId 포함 요청 필요).
+  // ⚠️ [백엔드 반영 완료] FeedItem 응답에 jobPostingId가 추가돼서, 더 이상 "이번
+  // 세션에서 직접 스크랩한 것만" 기억하는 방식에 의존하지 않아도 됨. 피드 데이터가
+  // 로드/갱신될 때마다 서버가 내려준 jobPostingId로 맵을 채워둠.
   const [scrapOverrides, setScrapOverrides] = useState<Record<number, boolean>>({});
   const [jobPostingIdMap, setJobPostingIdMap] = useState<Record<number, number>>({});
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -104,6 +103,17 @@ export default function FeedPage() {
     career: buildCareerParam(careerTags),
   });
 
+  useEffect(() => {
+    if (!data) return;
+    setJobPostingIdMap((prev) => {
+      const next = { ...prev };
+      data.items.forEach((item) => {
+        if (item.jobPostingId != null) next[item.id] = item.jobPostingId;
+      });
+      return next;
+    });
+  }, [data]);
+
   async function handleToggleScrap(feedId: number, currentlyScrapped: boolean) {
     // 낙관적 업데이트: 서버 응답 기다리지 않고 먼저 화면 반영
     setScrapOverrides((prev) => ({ ...prev, [feedId]: !currentlyScrapped }));
@@ -115,11 +125,8 @@ export default function FeedPage() {
       } else {
         const jobPostingId = jobPostingIdMap[feedId];
         if (!jobPostingId) {
-          // ⚠️ FeedItem 응답에 jobPostingId가 없어서(백엔드 확인 필요 — 세영님/동섭님),
-          // 이번 세션에서 직접 스크랩한 적 없는(=이미 서버에서 isScrapped:true로 내려온)
-          // 공고는 해제 API를 호출할 수 없음. 예전엔 여기서 그냥 return해서 아이콘만
-          // 바뀐 채 토스트도 안 뜨고 실제로는 아무 일도 안 일어난 것처럼 보였음 —
-          // 낙관적 업데이트를 롤백하고 사용자에게 원인을 안내하도록 수정.
+          // ⚠️ 이제 FeedItem에 jobPostingId가 내려오므로 이 분기는 사실상 발생하지
+          // 않아야 정상 — 혹시 모를 예외(네트워크 지연 등) 대비용 안전장치로 유지.
           setScrapOverrides((prev) => ({ ...prev, [feedId]: currentlyScrapped }));
           setToastType('error');
           setToastMessage('새로고침 후 다시 시도해주세요.');
