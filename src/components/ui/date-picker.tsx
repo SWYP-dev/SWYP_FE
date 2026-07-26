@@ -75,7 +75,7 @@ export function DatePicker({ value, onChange, className = '' }: DatePickerProps)
 
   return (
     <div
-      className={`flex w-[375px] flex-col gap-3 items-center justify-center overflow-hidden rounded-2xl border border-line-secondary bg-base-white p-6 ${className}`}
+      className={`flex w-[330px] flex-col gap-3 items-center justify-center overflow-hidden rounded-2xl border border-line-secondary bg-base-white p-6 ${className}`}
     >
       {/* Header */}
       <div className="flex w-full items-center justify-center bg-base-white px-4 py-2">
