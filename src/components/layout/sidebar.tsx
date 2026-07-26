@@ -61,10 +61,13 @@ export function Sidebar() {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex h-9 w-full items-center gap-3 rounded-xl px-5 py-4 ${
+                // ⚠️ [QA 반영] hover 상태 UI 없었음 — 앱 전역 hover 톤(neutral-100)에 맞춰 임시 반영.
+                // TODO(진영님 확인 필요): Figma에 sidebar nav item 전용 hover 스펙이 있는지 확인 후
+                // 색상 확정되면 교체.
+                className={`flex h-9 w-full items-center gap-3 rounded-xl px-5 py-4 transition-colors ${
                   isActive
                     ? 'border border-line-secondary bg-neutral-100 text-label-base'
-                    : 'text-label-body'
+                    : 'text-label-body hover:bg-neutral-100 hover:text-label-base'
                 }`}
               >
                 <Image src={item.icon} alt="" width={16} height={16} className="shrink-0" />
