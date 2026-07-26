@@ -3,25 +3,19 @@
 import { useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { kanbanKeys, useKanbanBoard } from '@/features/kanban/api/useKanbanQuery';
-import {
-  useUpdateCard,
-  useMoveCard,
-  useDeleteCard,
-} from '@/features/kanban/api/useKanbanMutations';
+import { useUpdateCard, useMoveCard, useDeleteCard } from '@/features/kanban/api/useKanbanMutations';
 import { DeleteCardModal } from '@/features/kanban/components/DeleteCardModal';
 import { CardDetailDrawer } from '@/features/kanban/components/CardDetailDrawer';
 import { Toast } from '@/components/ui/toast';
-import { ApiClientError } from '@/lib/api/api-client';
 import type { KanbanCard } from '@/types/api';
 import { flattenKanbanCards, groupCardsByDeadline } from '../utils/groupByDeadline';
 import { DeadlineGroup } from './DeadlineGroup';
-import { EditDeadlineCardModal } from './EditDeadlineCardModal';
 
 // Figma "지원 마감일 메인"(node 101:17608) 스펙 반영.
-// 전용 목록 조회 API가 없어(⚠️ 세영님·동섭님 확인 필요) GET /api/v1/kanban(3.1) 응답을
-// 프론트에서 평탄화 + 마감일순 그룹핑한다. 삭제/상세조회는 기존 칸반 로직
-// (DeleteCardModal · CardDetailDrawer · useDeleteCard) 그대로 재사용하고, 수정은 이 페이지
-// 전용 EditDeadlineCardModal(공고 링크 대신 전형 단계 선택 필드) 사용 — Figma node 101:17631.
+//
+// ⚠️ [QA 반영] 기존 EditDeadlineCardModal(전체 필드 입력 모달) 제거.
+// 회사명·공고명은 두 유형(직접 등록/피드 등록) 모두 수정 불가로 확정되어, 지원
+// 마감일(인라인 편집)과 전형 단계(카테고리 뱃지 드롭다운)만 각각 독립적으로 수정.
 export function DeadlineList() {
   const queryClient = useQueryClient();
   const { data, isLoading, isError } = useKanbanBoard();
@@ -30,21 +24,19 @@ export function DeadlineList() {
   const deleteCardMutation = useDeleteCard();
 
   const [viewingCardId, setViewingCardId] = useState<number | null>(null);
-  const [editingCard, setEditingCard] = useState<KanbanCard | null>(null);
   const [deletingCard, setDeletingCard] = useState<KanbanCard | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
 
   const entries = useMemo(() => flattenKanbanCards(data?.stages ?? []), [data]);
   const groups = useMemo(() => groupCardsByDeadline(entries), [entries]);
+  const availableStages = useMemo(
+    () => (data?.stages ?? []).map((s) => ({ id: s.id, name: s.name })),
+    [data]
+  );
 
   function findEntry(cardId: number) {
     return entries.find((e) => e.card.id === cardId);
-  }
-
-  function handleEditCard(cardId: number) {
-    const entry = findEntry(cardId);
-    if (entry) setEditingCard(entry.card);
   }
 
   function handleDeleteCard(cardId: number) {
@@ -52,45 +44,29 @@ export function DeadlineList() {
     if (entry) setDeletingCard(entry.card);
   }
 
-  // 전형 단계는 원래 소속 단계에서 변경됐을 때만 별도로 이동 API(moveCard)를 호출한다.
-  async function handleConfirmEditCard(formData: {
-    cardId: number;
-    companyName: string;
-    jobTitle: string;
-    deadline: string;
-    stageId: number;
-  }) {
-    const entry = findEntry(formData.cardId);
-    if (!entry) return;
-
+  // 지원 마감일 인라인 수정 — 회사명/공고명/공고링크는 전송하지 않아 K010 회피
+  async function handleUpdateDeadline(cardId: number, deadline: string) {
     try {
-      await updateCardMutation.mutateAsync({
-        cardId: formData.cardId,
-        companyName: formData.companyName,
-        title: formData.jobTitle,
-        originalUrl: entry.card.originalUrl, // 이 모달에는 공고 링크 필드가 없어 기존 값 유지
-        deadline: formData.deadline,
-      });
-
-      if (formData.stageId !== entry.stageId) {
-        await moveCardMutation.mutateAsync({
-          cardId: formData.cardId,
-          stageId: formData.stageId,
-          position: 1,
-        });
-      }
-
+      await updateCardMutation.mutateAsync({ cardId, deadline });
       queryClient.invalidateQueries({ queryKey: kanbanKeys.board() });
-      setEditingCard(null);
       setToastType('success');
       setToastMessage('수정 사항이 저장되었어요.');
-    } catch (err) {
+    } catch {
       setToastType('error');
-      if (err instanceof ApiClientError && err.code === 'K010') {
-        setToastMessage('직접 등록한 공고만 수정할 수 있어요.');
-      } else {
-        setToastMessage('지원 내역 수정에 실패했어요.');
-      }
+      setToastMessage('지원 마감일 수정에 실패했어요.');
+    }
+  }
+
+  // 전형 단계 변경 — 기존 이동 API(moveCard) 재사용, 직접 등록 여부와 무관하게 항상 허용
+  async function handleMoveStage(cardId: number, stageId: number) {
+    try {
+      await moveCardMutation.mutateAsync({ cardId, stageId, position: 1 });
+      queryClient.invalidateQueries({ queryKey: kanbanKeys.board() });
+      setToastType('success');
+      setToastMessage('전형 단계가 변경되었어요.');
+    } catch {
+      setToastType('error');
+      setToastMessage('전형 단계 변경에 실패했어요.');
     }
   }
 
@@ -125,10 +101,6 @@ export function DeadlineList() {
     );
   }
 
-  const editingStageId = editingCard
-    ? (entries.find((e) => e.card.id === editingCard.id)?.stageId ?? 0)
-    : 0;
-
   return (
     <>
       <div className="flex w-full flex-col gap-10 rounded-[20px] bg-base-white p-7">
@@ -142,9 +114,11 @@ export function DeadlineList() {
             key={group.key}
             group={group}
             selectedCardId={viewingCardId}
+            availableStages={availableStages}
             onCardClick={(cardId) => setViewingCardId(cardId)}
-            onEditCard={handleEditCard}
             onDeleteCard={handleDeleteCard}
+            onUpdateDeadline={handleUpdateDeadline}
+            onMoveStage={handleMoveStage}
           />
         ))}
       </div>
@@ -153,19 +127,8 @@ export function DeadlineList() {
         isOpen={viewingCardId !== null}
         cardId={viewingCardId}
         onClose={() => setViewingCardId(null)}
-        onEditCard={(card) => setEditingCard(card)}
+        onEditCard={() => {}}
         onDeleteCard={(card) => setDeletingCard(card)}
-      />
-
-      <EditDeadlineCardModal
-        key={`edit-${editingCard?.id}`}
-        isOpen={editingCard !== null}
-        card={editingCard ?? undefined}
-        currentStageId={editingStageId}
-        stages={data?.stages ?? []}
-        isOverDrawer={viewingCardId !== null}
-        onClose={() => setEditingCard(null)}
-        onConfirm={handleConfirmEditCard}
       />
 
       <DeleteCardModal
