@@ -63,7 +63,7 @@ export function KanbanColumn({
   } = useDraggable({
     id: `stage-drag-${stage.id}`,
     data: { type: 'stage', stageId: stage.id },
-    disabled: isDraft,
+    disabled: isDraft || stage.name === '지원 전',
   });
 
   const stageDragStyle = stageTransform
@@ -192,7 +192,7 @@ export function KanbanColumn({
                   setIsEditingName(true);
                 }}
                 className={`flex size-5 items-center justify-center ${
-                  isLocked ? 'cursor-not-allowed text-neutral-300' : 'text-icon-gray'
+                  isLocked ? 'cursor-not-allowed opacity-30' : 'text-icon-gray'
                 }`}
               >
                 <EditIcon size={20} />
@@ -208,7 +208,7 @@ export function KanbanColumn({
                   onDeleteStage?.(stage.id);
                 }}
                 className={`flex size-5 items-center justify-center ${
-                  isLocked ? 'cursor-not-allowed text-neutral-300' : 'text-icon-gray'
+                  isLocked ? 'cursor-not-allowed opacity-30' : 'text-icon-gray'
                 }`}
               >
                 <TrashIcon size={20} />

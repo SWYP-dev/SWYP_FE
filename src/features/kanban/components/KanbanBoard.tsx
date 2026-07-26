@@ -194,17 +194,18 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
       const toStageId = overData?.stageId;
       if (!toStageId || fromStageId === toStageId) return;
 
-      // ⚠️ [K024 반영] "지원 전"은 항상 1번 위치 고정 — 드래그 대상도, 드롭 타깃도 될 수 없음
+      // ⚠️ [K024 반영] "지원 전"만 1번 위치 고정 대상 — isDefault 전체가 아니라
+      // 이름으로 정확히 짚어야 함 (면접/최종 결과도 isDefault:true라 isDefault로
+      // 체크하면 이 둘 사이의 정상적인 순서 변경까지 같이 막혀버림).
       const fromStage = stages.find((s) => s.id === fromStageId);
       const toStage = stages.find((s) => s.id === toStageId);
-      if (fromStage?.isDefault || toStage?.isDefault) return;
+      if (fromStage?.name === '지원 전' || toStage?.name === '지원 전') return;
 
       let newPosition = 0;
       setStages((prev) => {
         const sorted = [...prev].sort((a, b) => a.position - b.position);
-        // 고정 스테이지("지원 전")는 재정렬 대상에서 제외하고, 나머지끼리만 순서를 바꿈
-        const lockedStages = sorted.filter((s) => s.isDefault);
-        const reorderable = sorted.filter((s) => !s.isDefault);
+        const lockedStages = sorted.filter((s) => s.name === '지원 전');
+        const reorderable = sorted.filter((s) => s.name !== '지원 전');
 
         const fromIndex = reorderable.findIndex((s) => s.id === fromStageId);
         const toIndex = reorderable.findIndex((s) => s.id === toStageId);
