@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { CloseIcon } from '@/components/ui/icons';
 import { DatePicker } from '@/components/ui/date-picker';
+import { Button } from '@/components/ui/button';
 import { useEscapeKey } from '@/lib/hooks/useEscapeKey';
 import type { KanbanCard } from '@/types/api';
 

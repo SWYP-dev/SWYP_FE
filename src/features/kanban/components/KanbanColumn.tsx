@@ -127,7 +127,7 @@ export function KanbanColumn({
                 style={stageDragStyle}
                 {...stageDragAttributes}
                 {...stageDragListeners}
-                className="flex cursor-grab items-center justify-center active:cursor-grabbing"
+                className="flex cursor-grab items-center justify-center text-icon-gray active:cursor-grabbing"
               >
                 <DragHandleIcon size={20} />
               </div>
