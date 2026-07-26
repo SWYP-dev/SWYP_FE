@@ -123,9 +123,12 @@ export function CardDetailDrawer({
 
   function handleLinkSubmit() {
     if (!linkUrl.trim()) return;
-    const name = linkCategory ?? 'OTHER';
+    const category = linkCategory ?? 'OTHER';
+    // ⚠️ [백엔드 확인 — 세영님] POST .../documents/link는 name도 필요함. UI에 별도
+    // 입력칸을 추가하지 않고, 선택한 카테고리의 한글 라벨을 name으로 자동 채워서 전송.
+    const name = URL_CATEGORIES.find((c) => c.value === category)?.label ?? '기타';
     registerLink.mutate(
-      { name, url: linkUrl.trim() },
+      { category, name, url: linkUrl.trim() },
       {
         onSuccess: () => {
           setLinkUrl('');
@@ -294,9 +297,7 @@ export function CardDetailDrawer({
 
               {isAddingLink ? (
                 <div className="flex flex-col gap-2">
-                  {/* 카테고리 선택 + URL 입력 행 */}
                   <div className="flex items-stretch gap-2">
-                    {/* 카테고리 드롭다운 */}
                     <div className="relative shrink-0">
                       <button
                         type="button"
@@ -319,9 +320,7 @@ export function CardDetailDrawer({
                                 setShowCategoryDropdown(false);
                               }}
                               className={`flex h-10 w-full items-center px-4 text-3 font-medium text-label-base ${
-                                linkCategory === cat.value
-                                  ? 'rounded-lg bg-neutral-100'
-                                  : 'hover:bg-neutral-50'
+                                linkCategory === cat.value ? 'rounded-lg bg-neutral-100' : 'hover:bg-neutral-50'
                               }`}
                             >
                               {cat.label}
@@ -330,7 +329,6 @@ export function CardDetailDrawer({
                         </div>
                       )}
                     </div>
-                    {/* URL 입력 */}
                     <input
                       value={linkUrl}
                       onChange={(e) => setLinkUrl(e.target.value)}

@@ -167,6 +167,7 @@ export type DocumentItem =
   | {
       id: number;
       type: 'LINK';
+      category: string; // RESUME/PORTFOLIO/PERSONAL_CHANNEL/OTHER
       name: string;
       url: string;
       registeredAt: string;
