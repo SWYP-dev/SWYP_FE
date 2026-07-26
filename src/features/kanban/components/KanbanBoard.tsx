@@ -194,31 +194,41 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
       const toStageId = overData?.stageId;
       if (!toStageId || fromStageId === toStageId) return;
 
+      // ⚠️ [K024 반영] "지원 전"은 항상 1번 위치 고정 — 드래그 대상도, 드롭 타깃도 될 수 없음
+      const fromStage = stages.find((s) => s.id === fromStageId);
+      const toStage = stages.find((s) => s.id === toStageId);
+      if (fromStage?.isDefault || toStage?.isDefault) return;
+
       let newPosition = 0;
       setStages((prev) => {
         const sorted = [...prev].sort((a, b) => a.position - b.position);
-        const fromIndex = sorted.findIndex((s) => s.id === fromStageId);
-        const toIndex = sorted.findIndex((s) => s.id === toStageId);
+        // 고정 스테이지("지원 전")는 재정렬 대상에서 제외하고, 나머지끼리만 순서를 바꿈
+        const lockedStages = sorted.filter((s) => s.isDefault);
+        const reorderable = sorted.filter((s) => !s.isDefault);
+
+        const fromIndex = reorderable.findIndex((s) => s.id === fromStageId);
+        const toIndex = reorderable.findIndex((s) => s.id === toStageId);
         if (fromIndex === -1 || toIndex === -1) return prev;
 
-        const reordered = [...sorted];
+        const reordered = [...reorderable];
         const [moved] = reordered.splice(fromIndex, 1);
         reordered.splice(toIndex, 0, moved);
 
-        newPosition = toIndex + 1;
-        return reordered.map((s, idx) => ({ ...s, position: idx + 1 }));
+        // 고정 스테이지를 맨 앞에 유지한 채로 나머지를 이어붙여 최종 순서 확정
+        const finalOrder = [...lockedStages, ...reordered];
+        newPosition = finalOrder.findIndex((s) => s.id === fromStageId) + 1;
+
+        return finalOrder.map((s, idx) => ({ ...s, position: idx + 1 }));
       });
 
-      // 세영님 확인(2026-07-25): PATCH /kanban/stages/{id}는 name, position 각각 생략 가능.
-      // 한쪽만 보내면 다른 쪽은 기존 값 그대로 유지됨 — 순서만 바꿀 땐 position만 보내면 됨.
       updateStageMutation.mutate(
         { stageId: fromStageId, position: newPosition },
         {
           onError: (err) => {
             setStages(initialStages);
             setToastType('error');
-            if (err instanceof ApiClientError && err.code === 'K023') {
-              setToastMessage('기본 전형 단계는 이름을 변경할 수 없어요.');
+            if (err instanceof ApiClientError && err.code === 'K024') {
+              setToastMessage('지원 전 단계는 항상 첫 번째 위치에 고정돼요.');
             } else {
               setToastMessage('전형 단계 순서 변경에 실패했어요.');
             }
