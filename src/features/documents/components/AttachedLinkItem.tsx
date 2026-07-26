@@ -8,11 +8,22 @@ interface AttachedLinkItemProps {
   onDelete: () => void;
 }
 
+// ⚠️ [백엔드 확인 완료] document.name은 이제 한글이 아닌 enum 값
+// (RESUME/PORTFOLIO/PERSONAL_CHANNEL/OTHER)으로 내려옴 — 화면 표시용 한글로 변환.
+const CATEGORY_LABELS: Record<string, string> = {
+  RESUME: '이력서',
+  PORTFOLIO: '포트폴리오',
+  PERSONAL_CHANNEL: '개인 채널',
+  OTHER: '기타',
+};
+
 export function AttachedLinkItem({ document, onDelete }: AttachedLinkItemProps) {
+  const label = CATEGORY_LABELS[document.name] ?? document.name;
+
   return (
     <div className="flex w-full min-w-0 items-start gap-2">
       <div className="flex w-[108px] shrink-0 items-center rounded-xl border border-line-secondary bg-neutral-100 py-2 pl-4 pr-[11px]">
-        <span className="flex-1 text-3 font-medium text-label-description">{document.name}</span>
+        <span className="flex-1 text-3 font-medium text-label-description">{label}</span>
       </div>
       <div className="flex min-w-0 flex-1 items-center gap-2 rounded-xl border border-line-secondary bg-neutral-100 px-4 py-3">
         <a
