@@ -224,7 +224,7 @@ export default function FeedPage() {
           </div>
         </div>
 
-        <div className="flex-1 flex flex-col px-11 py-5 bg-surface-card">
+        <div className="flex-1 flex flex-col px-12 py-7 bg-surface-card">
           <div className="flex flex-1 flex-col gap-6">
             <div className="flex flex-1 flex-col gap-8">
               <div className="flex flex-1 flex-col items-center gap-3 rounded-[20px] border border-line-secondary bg-base-white p-3">
