@@ -227,7 +227,7 @@ export default function FeedPage() {
         <div className="flex-1 flex flex-col px-12 py-7 bg-surface-card">
           <div className="flex flex-1 flex-col gap-6">
             <div className="flex flex-1 flex-col gap-8">
-              <div className="flex flex-1 flex-col items-center gap-3 rounded-[20px] border border-line-secondary bg-base-white p-3">
+              <div className="flex flex-1 flex-col items-center gap-3 rounded-[20px] bg-base-white p-3">
                 {isLoading && <p className="py-11 text-label-description">불러오는 중...</p>}
                 {isError && (
                   <p className="py-11 text-status-negative">
