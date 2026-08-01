@@ -81,8 +81,17 @@ export function TrashIcon({ size = 16 }: { size?: number }) {
 }
 
 // name="close" — Drawer, Modal 등 닫기 버튼에서 공통 사용.
-export function CloseIcon({ size = 16 }: { size?: number }) {
-  return <Image src="/icons/close.svg" alt="" width={size} height={size} />;
+// Figma 스펙 24x24. 원본 svg(public/icons/close.svg)가 fill="#212123" 하드코딩돼 있어
+// next/image로는 색 override가 불가능했음 → 인라인 svg 전환 + currentColor 적용.
+export function CloseIcon({ size = 24 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M4.86362 4.86358C5.2151 4.51211 5.78494 4.51211 6.13641 4.86358L12 10.7272L17.8636 4.86358C18.2151 4.51211 18.7849 4.51211 19.1364 4.86358C19.4878 5.21505 19.4878 5.7849 19.1364 6.13637L13.2728 12L19.1364 17.8636C19.4878 18.2151 19.4878 18.7849 19.1364 19.1364C18.7849 19.4879 18.2151 19.4879 17.8636 19.1364L12 13.2728L6.13641 19.1364C5.78494 19.4879 5.2151 19.4879 4.86362 19.1364C4.51215 18.7849 4.51215 18.2151 4.86362 17.8636L10.7272 12L4.86362 6.13637C4.51215 5.7849 4.51215 5.21505 4.86362 4.86358Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
 }
 
 // name="plus" — KanbanColumn "지원 내역 추가" 버튼에서 사용.
