@@ -87,8 +87,8 @@ export function JobCard({
           <p className="text-1 font-medium text-label-description">{jobCategory}</p>
         </div>
 
-        {/* Caption: 고정 너비 — 텍스트 길이에 따른 정렬 흔들림 방지 */}
-        <div className="flex h-full w-[168px] shrink-0 flex-col justify-center gap-1">
+        {/* Caption: 텍스트 길이에 맞춰 폭 결정(w-fit) */}
+        <div className="flex h-full w-fit shrink-0 flex-col items-start justify-center gap-1">
           <div className="flex items-center gap-[6px]">
             <PinIcon />
             <span className="truncate text-3 font-medium leading-[1.6] text-label-description">
