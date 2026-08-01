@@ -109,20 +109,26 @@ export function JobCard({
           </div>
         </div>
 
-        {/* Buttons: 고정 너비 */}
-        <div className="flex h-full w-[140px] shrink-0 flex-col justify-center gap-[10px]">
+        {/* Buttons: 텍스트 너비 + 좌우 padding(12px)에 맞춰 자동으로 폭이 결정됨(w-fit) —
+            두 버튼 중 더 넓은 쪽 기준으로 items-stretch가 폭을 맞춰줌 */}
+        <div className="flex h-full w-fit shrink-0 flex-col items-stretch justify-center gap-[10px]">
           {originalUrl ? (
             <a href={originalUrl} target="_blank" rel="noreferrer" className="block w-full">
-              <Button variant="outline" size="sm" className="w-full">
+              <Button variant="outline" size="sm" className="w-full whitespace-nowrap">
                 원본 공고 이동
               </Button>
             </a>
           ) : (
-            <Button variant="outline" size="sm" className="w-full" disabled>
+            <Button variant="outline" size="sm" className="w-full whitespace-nowrap" disabled>
               원본 링크 없음
             </Button>
           )}
-          <Button variant="outline" size="sm" className="w-full" onClick={onAddToKanban}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full whitespace-nowrap"
+            onClick={onAddToKanban}
+          >
             지원 현황 추가
           </Button>
         </div>
