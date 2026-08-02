@@ -50,7 +50,7 @@ export function Modal({
 }: ModalProps) {
   return (
     <div
-      className={`flex w-[566px] flex-col items-start gap-6 overflow-hidden rounded-[20px] bg-base-white py-7 shadow-spread-small ${className}`}
+      className={`flex min-w-[492px] flex-col items-start gap-6 overflow-hidden rounded-[20px] bg-base-white py-7 shadow-spread-small ${className}`}
     >
       {hasModalHeader && (
         <div className="flex w-full items-center justify-between px-8">

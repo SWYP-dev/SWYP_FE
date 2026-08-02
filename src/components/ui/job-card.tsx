@@ -44,7 +44,7 @@ export function JobCard({
 
   return (
     // Card: gap-[20px](spacing/6) — Thumbnail ~ 안쪽 Wrapper 사이 간격
-    <div className="flex w-full items-center gap-6 rounded-xl p-3 hover:bg-neutral-100">
+    <div className="flex w-full items-center gap-6 rounded-xl p-4 hover:bg-neutral-100">
       {/* Thumbnail */}
       <div className="relative size-[100px] shrink-0 overflow-hidden rounded-lg bg-neutral-100 p-[6px]">
         {showImage ? (
@@ -87,8 +87,8 @@ export function JobCard({
           <p className="text-1 font-medium text-label-description">{jobCategory}</p>
         </div>
 
-        {/* Caption: 고정 너비 — 텍스트 길이에 따른 정렬 흔들림 방지 */}
-        <div className="flex h-full w-[168px] shrink-0 flex-col justify-center gap-1">
+        {/* Caption: 텍스트 길이에 맞춰 폭 결정(w-fit) */}
+        <div className="flex h-full w-fit shrink-0 flex-col items-start justify-center gap-1">
           <div className="flex items-center gap-[6px]">
             <PinIcon />
             <span className="truncate text-3 font-medium leading-[1.6] text-label-description">
@@ -109,20 +109,26 @@ export function JobCard({
           </div>
         </div>
 
-        {/* Buttons: 고정 너비 */}
-        <div className="flex h-full w-[140px] shrink-0 flex-col justify-center gap-[10px]">
+        {/* Buttons: 텍스트 너비 + 좌우 padding(12px)에 맞춰 자동으로 폭이 결정됨(w-fit) —
+            두 버튼 중 더 넓은 쪽 기준으로 items-stretch가 폭을 맞춰줌 */}
+        <div className="flex h-full w-fit shrink-0 flex-col items-stretch justify-center gap-[10px]">
           {originalUrl ? (
             <a href={originalUrl} target="_blank" rel="noreferrer" className="block w-full">
-              <Button variant="outline" size="sm" className="w-full">
+              <Button variant="outline" size="sm" className="w-full whitespace-nowrap">
                 원본 공고 이동
               </Button>
             </a>
           ) : (
-            <Button variant="outline" size="sm" className="w-full" disabled>
+            <Button variant="outline" size="sm" className="w-full whitespace-nowrap" disabled>
               원본 링크 없음
             </Button>
           )}
-          <Button variant="outline" size="sm" className="w-full" onClick={onAddToKanban}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full whitespace-nowrap"
+            onClick={onAddToKanban}
+          >
             지원 현황 추가
           </Button>
         </div>
