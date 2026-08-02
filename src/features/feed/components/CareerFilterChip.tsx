@@ -93,7 +93,7 @@ export function CareerFilterChip({ appliedTags, onApply }: CareerFilterChipProps
                 onPrimaryClick={handleApply}
                 onSecondaryClick={handleReset}
               >
-                <div className="flex flex-wrap items-center gap-2 py-4">
+                <div className="flex flex-wrap items-center gap-3 py-5">
                   <TagButton label="전체" isActive={draft.length === 0} onClick={() => setDraft([])} />
                   {CAREER_TAG_OPTIONS.map((tag) => (
                     <TagButton
@@ -126,7 +126,7 @@ function TagButton({
     <button
       type="button"
       onClick={onClick}
-      className={`flex items-center justify-center rounded-lg border bg-base-white px-4 py-2 ${
+      className={`flex items-center justify-center rounded-lg border bg-base-white px-4 py-3 ${
         isActive ? 'border-line-primary text-label-primary' : 'border-line-secondary text-label-body'
       }`}
     >

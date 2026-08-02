@@ -26,7 +26,9 @@ const VARIANT_CLASS: Record<ButtonVariant, string> = {
 const SIZE_CLASS: Record<ButtonSize, string> = {
   sm: 'px-4 py-3 text-3 rounded-[10px]',
   md: 'px-4 py-3 text-3 rounded-lg',
-  lg: 'px-[28px] py-4 text-5 rounded-xl',
+  // h-10(48px, border-box): border 유무(secondary만 1px border)로 인해 버튼 높이가
+  // 48px/50px로 어긋나던 문제 방지 — 명시적 높이를 줘서 border까지 포함해 항상 48px 고정.
+  lg: 'h-10 px-[28px] py-4 text-5 rounded-xl',
 };
 
 export function Button({
