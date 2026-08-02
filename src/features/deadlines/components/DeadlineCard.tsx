@@ -46,7 +46,7 @@ export function DeadlineCard({ entry, isUrgent, isSelected, onClick, onEdit, onD
           }`}
         />
 
-        <div className="flex flex-1 flex-col gap-2 py-1">
+        <div className="flex flex-1 flex-col gap-3 py-1">
           <div className="flex flex-col gap-1">
             <div className="flex flex-col">
               <p className="text-3 font-medium text-label-body">{card.companyName}</p>
