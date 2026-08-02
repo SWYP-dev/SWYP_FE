@@ -134,7 +134,7 @@ export function KanbanColumn({
       }`}
     >
       {/* Header */}
-      <div className="flex w-full items-start p-4">
+      <div className="flex w-full items-start p-5">
         <div className="flex min-h-7 flex-1 items-center justify-between">
           <div className="flex items-center">
             <div className="flex items-center gap-3">
@@ -229,7 +229,7 @@ export function KanbanColumn({
           items={stage.cards.map((c) => String(c.id))}
           strategy={verticalListSortingStrategy}
         >
-          <div className="flex flex-col gap-3 px-4 pb-4">
+          <div className="flex flex-col gap-3 px-5 pb-5">
             {stage.cards.map((card) => (
               <KanbanCard
                 key={card.id}
