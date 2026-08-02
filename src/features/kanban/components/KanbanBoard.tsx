@@ -438,7 +438,7 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
       onDragEnd={handleDragEnd}
     >
       <div className="flex h-full min-h-0 flex-1 flex-col">
-        <div className="flex h-full w-full flex-1 items-stretch gap-5 overflow-x-auto pb-2 kanban-scroll-x">
+        <div className="flex h-full w-full flex-1 items-stretch gap-6 overflow-x-auto pb-2 kanban-scroll-x">
           <SortableContext
             items={sortedStages.map((s) => `stage-drag-${s.id}`)}
             strategy={horizontalListSortingStrategy}

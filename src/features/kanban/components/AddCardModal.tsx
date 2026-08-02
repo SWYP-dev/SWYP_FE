@@ -202,7 +202,7 @@ export function AddCardModal({
       <div className="relative flex w-[394px] flex-col gap-7 overflow-visible rounded-[20px] bg-base-white py-7 shadow-spread-small">
         <div className="flex items-center justify-between px-8">
           <p className="text-7 font-semibold text-label-base">
-            {mode === 'add' ? '지원 내역 추가' : '지원 내역 수정'}
+            {mode === 'add' ? '지원 현황 추가' : '지원 내역 수정'}
           </p>
           <button type="button" onClick={handleClose} aria-label="닫기" className="text-label-base">
             <CloseIcon size={24} />
@@ -214,14 +214,14 @@ export function AddCardModal({
             <div key={key} className="flex flex-col gap-3">
               <div className="flex items-center gap-2">
                 <p className="text-3 font-semibold text-label-base">{label}</p>
-                <p className="font-bold text-status-negative">*</p>
+                <p className="text-3 font-bold text-status-negative">*</p>
               </div>
               <input
                 type={type ?? 'text'}
                 value={form[key]}
                 onChange={(e) => updateField(key, e.target.value)}
                 placeholder={placeholder}
-                className={`w-full rounded-xl border px-5 py-4 text-5 font-medium text-label-base placeholder:text-label-placeholder outline-none ${
+                className={`h-10 w-full rounded-xl border px-5 text-5 font-medium text-label-base placeholder:text-label-placeholder outline-none ${
                   errors[key] ? 'border-status-negative' : 'border-line-secondary'
                 }`}
               />
@@ -232,18 +232,18 @@ export function AddCardModal({
           <div className="flex flex-col gap-3">
             <div className="flex items-center gap-2">
               <p className="text-3 font-semibold text-label-base">지원 마감일</p>
-              <p className="font-bold text-status-negative">*</p>
+              <p className="text-3 font-bold text-status-negative">*</p>
             </div>
             <div className="relative">
               <button
                 type="button"
                 onClick={() => setShowDatePicker((v) => !v)}
-                className={`flex w-full items-center justify-between rounded-xl border-2 px-5 py-4 text-5 font-medium outline-none ${
+                className={`flex w-full items-center justify-between rounded-xl px-5 py-4 text-5 font-medium outline-none ring-1 ring-inset ${
                   errors.deadline
-                    ? 'border-status-negative'
+                    ? 'ring-status-negative'
                     : showDatePicker
-                      ? 'border-line-primary'
-                      : 'border-line-secondary'
+                      ? 'ring-line-primary'
+                      : 'ring-line-secondary'
                 } ${deadlineText ? 'text-label-base' : 'text-label-placeholder'}`}
               >
                 <span>{deadlineText || '지원 마감일을 선택해주세요.'}</span>

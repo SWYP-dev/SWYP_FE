@@ -22,7 +22,7 @@ export default function KanbanPage() {
           <Header showSearch={false} />
         </div>
 
-        <div className="flex min-h-0 flex-1 flex-col px-[80px] py-6">
+        <div className="flex min-h-0 flex-1 flex-col px-[80px] py-7">
           {isLoading && (
             <div className="flex h-full items-center justify-center text-3 text-label-description">
               불러오는 중...

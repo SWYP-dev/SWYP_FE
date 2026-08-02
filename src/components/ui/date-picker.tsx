@@ -75,11 +75,11 @@ export function DatePicker({ value, onChange, className = '' }: DatePickerProps)
 
   return (
     <div
-      className={`flex w-[330px] flex-col gap-3 items-center justify-center overflow-hidden rounded-2xl border border-line-secondary bg-base-white p-6 ${className}`}
+      className={`flex w-[330px] flex-col gap-4 items-center justify-center overflow-hidden rounded-2xl border border-line-secondary bg-base-white p-6 shadow-spread-small ${className}`}
     >
       {/* Header */}
-      <div className="flex w-full items-center justify-center bg-base-white px-4 py-2">
-        <div className="flex items-center justify-center gap-3">
+      <div className="flex w-full items-center justify-center bg-base-white px-5 py-3">
+        <div className="flex items-center justify-center gap-4">
           <button
             type="button"
             aria-label="이전 달"
@@ -101,13 +101,13 @@ export function DatePicker({ value, onChange, className = '' }: DatePickerProps)
       </div>
 
       {/* Body */}
-      <div className="flex w-full flex-col gap-3">
+      <div className="flex w-full flex-col gap-4">
         {/* 요일 헤더 */}
         <div className="flex w-full items-center justify-between text-5 font-medium">
           {DAY_NAMES.map((name, i) => (
             <p
               key={name}
-              className={`w-9 text-center ${i === 0 ? 'text-status-negative' : 'text-label-body'}`}
+              className={`w-[36px] text-center ${i === 0 ? 'text-status-negative' : 'text-label-body'}`}
             >
               {name}
             </p>
@@ -120,7 +120,7 @@ export function DatePicker({ value, onChange, className = '' }: DatePickerProps)
             <div key={rowIdx} className="flex w-full items-center justify-between">
               {row.map((day, colIdx) => {
                 if (!day) {
-                  return <div key={colIdx} className="size-9" />;
+                  return <div key={colIdx} className="size-[36px]" />;
                 }
                 const type = getDayType(day, colIdx);
                 return (
@@ -128,7 +128,7 @@ export function DatePicker({ value, onChange, className = '' }: DatePickerProps)
                     key={colIdx}
                     type="button"
                     onClick={() => onChange(new Date(viewYear, viewMonth, day))}
-                    className={`flex size-9 flex-col items-center justify-center rounded-max text-5 ${
+                    className={`flex size-[36px] flex-col items-center justify-center rounded-max text-5 ${
                       type === 'selected'
                         ? 'bg-fill-primary font-semibold text-base-white'
                         : type === 'today'
