@@ -103,7 +103,7 @@ export function DeadlineList() {
 
   return (
     <>
-      <div className="flex w-full flex-col gap-10 rounded-[20px] bg-base-white p-7">
+      <div className="flex w-full flex-col gap-9 rounded-[20px] bg-base-white p-[28px]">
         {groups.length === 0 && (
           <div className="flex w-full items-center justify-center py-20 text-3 text-label-description">
             지원 현황에 등록된 공고가 없어요.
