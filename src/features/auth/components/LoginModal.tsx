@@ -54,7 +54,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
           <button
             type="button"
             onClick={handleKakaoLogin}
-            className="flex w-[380px] items-center justify-center gap-2 rounded-lg bg-[#fee404] px-[12px] py-[12px]"
+            className="flex w-[380px] items-center justify-center gap-3 rounded-lg bg-[#fee404] px-[12px] py-[12px]"
           >
             <KakaoIcon />
             <span className="text-3 font-semibold leading-[1.5] text-label-base">

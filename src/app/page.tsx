@@ -224,10 +224,10 @@ export default function FeedPage() {
           </div>
         </div>
 
-        <div className="flex-1 flex flex-col px-11 py-5 bg-surface-card">
+        <div className="flex-1 flex flex-col px-12 py-7 bg-surface-card">
           <div className="flex flex-1 flex-col gap-6">
             <div className="flex flex-1 flex-col gap-8">
-              <div className="flex flex-1 flex-col items-center gap-3 rounded-[20px] border border-line-secondary bg-base-white p-3">
+              <div className="flex flex-1 flex-col items-center gap-3 rounded-[20px] bg-base-white p-3">
                 {isLoading && <p className="py-11 text-label-description">불러오는 중...</p>}
                 {isError && (
                   <p className="py-11 text-status-negative">
@@ -236,14 +236,14 @@ export default function FeedPage() {
                 )}
                 {!isLoading && !isError && (data?.items.length ?? 0) === 0 && isSearching && (
                   <EmptyJobPosting
-                    iconSrc="/icons/empty-search-result.svg"
+                    iconSrc="/icons/empty-filter.svg"
                     title={`'${keyword}'에 대한 채용 공고가 없어요`}
                     description="다른 검색어(기업명, 직무명, 공고명)로 다시 검색해 보세요."
                   />
                 )}
                 {!isLoading && !isError && (data?.items.length ?? 0) === 0 && !isSearching && (
                   <EmptyJobPosting
-                    iconSrc="/icons/empty-search.svg"
+                    iconSrc="/icons/empty-filter.svg"
                     title="조건에 맞는 채용 공고가 없어요"
                     description="필터를 조정하거나 초기화해 보세요."
                     actionLabel="필터 초기화"

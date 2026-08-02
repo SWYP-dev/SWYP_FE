@@ -25,7 +25,7 @@ export function DeleteStageModal({ isOpen, stage, onClose, onConfirm }: DeleteSt
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-base-dimmed" onClick={onClose} aria-hidden="true" />
 
-      <div className="relative flex w-[394px] flex-col gap-4 overflow-hidden rounded-[20px] bg-base-white py-6 shadow-spread-small">
+      <div className="relative flex w-[394px] flex-col gap-5 overflow-hidden rounded-[20px] bg-base-white py-7 shadow-spread-small">
         <div className="flex items-center justify-between px-8">
           <p className="text-7 font-semibold text-label-base">전형 단계 삭제</p>
           <button type="button" onClick={onClose} aria-label="닫기" className="text-label-base">
@@ -46,12 +46,15 @@ export function DeleteStageModal({ isOpen, stage, onClose, onConfirm }: DeleteSt
           )}
         </div>
 
-        <div className="flex items-center gap-3 px-8">
+        {/* h-10(48px, border-box): border(1px)가 padding/line-height 위에 그대로
+            더해져 48px가 아닌 49~50px로 어긋나던 문제 방지 — 명시적 높이를 줘서
+            border까지 포함해 항상 48px 고정. */}
+        <div className="flex items-center gap-4 px-8">
           {hasCards ? (
             <button
               type="button"
               onClick={onClose}
-              className="flex flex-1 items-center justify-center rounded-xl bg-fill-primary py-3 text-5 font-semibold text-base-white"
+              className="flex h-10 flex-1 items-center justify-center rounded-xl border border-transparent bg-fill-primary text-5 font-semibold text-base-white"
             >
               확인
             </button>
@@ -60,14 +63,14 @@ export function DeleteStageModal({ isOpen, stage, onClose, onConfirm }: DeleteSt
               <button
                 type="button"
                 onClick={onClose}
-                className="flex flex-1 items-center justify-center rounded-xl border border-line-secondary py-3 text-5 font-medium text-label-base hover:bg-action-secondary-hover"
+                className="flex h-10 flex-1 items-center justify-center rounded-xl border border-line-secondary text-5 font-medium text-label-base hover:bg-action-secondary-hover"
               >
                 취소
               </button>
               <button
                 type="button"
                 onClick={() => onConfirm(stage.id)}
-                className="flex flex-1 items-center justify-center rounded-xl bg-status-negative py-3 text-5 font-semibold text-base-white"
+                className="flex h-10 flex-1 items-center justify-center rounded-xl border border-transparent bg-status-negative text-5 font-semibold text-base-white"
               >
                 삭제
               </button>
