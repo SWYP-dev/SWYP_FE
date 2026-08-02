@@ -17,9 +17,9 @@ interface FilterTriggerButtonProps {
  * 아니라 텍스트 + 화살표 아이콘 유무로 구분해서 씀 (직군·직무/지역/경력 = 아이콘 있음,
  * 마감일 임박 = 아이콘 없음).
  *
- * isActive 스타일(fill/primary-light 배경 + line/primary 테두리 + label/primary 텍스트)은
- * Figma에 트리거 버튼 자체의 active variant가 없어서, 같은 프레임 안의 플랫폼 필터
- * "전체" 버튼(선택 상태)에 이미 쓰이고 있는 패턴을 그대로 가져온 것.
+ * isActive 스타일: 배경은 흰색 그대로 유지하고 line/primary 테두리 + label/primary
+ * 텍스트만 적용 (실제 Figma 스펙 스크린샷 기준 — 이전엔 fill/primary-light 배경을
+ * 함께 썼었는데, 스펙 확인 결과 배경 채움 없이 테두리/텍스트 색상만 바뀌는 게 맞음).
  */
 export const FilterTriggerButton = forwardRef<HTMLButtonElement, FilterTriggerButtonProps>(
   function FilterTriggerButton({ children, onClick, showChevron = true, isActive = false }, ref) {
@@ -34,7 +34,7 @@ export const FilterTriggerButton = forwardRef<HTMLButtonElement, FilterTriggerBu
           showChevron ? 'pl-[12px] pr-[7px]' : 'px-[var(--spacing-4)]'
         } ${
           isActive
-            ? 'border-[var(--color-line-primary)] bg-[var(--color-fill-primary-light)] text-[var(--color-label-primary)]'
+            ? 'border-[var(--color-line-primary)] bg-[var(--color-neutral-0)] text-[var(--color-label-primary)]'
             : 'border-[var(--color-line-secondary)] bg-[var(--color-neutral-0)] text-[var(--color-label-base)]'
         }`}
       >
