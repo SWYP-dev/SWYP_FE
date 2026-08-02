@@ -67,10 +67,10 @@ export function DeadlineCard({ entry, isUrgent, isSelected, onClick, onEdit, onD
       </div>
 
       <div className="flex shrink-0 items-start gap-[6px]" onClick={(e) => e.stopPropagation()}>
-        <button type="button" onClick={onEdit} aria-label="수정" className="text-label-base">
+        <button type="button" onClick={onEdit} aria-label="수정" className="text-icon-gray">
           <EditIcon size={16} />
         </button>
-        <button type="button" onClick={onDelete} aria-label="삭제" className="text-label-base">
+        <button type="button" onClick={onDelete} aria-label="삭제" className="text-icon-gray">
           <TrashIcon size={16} />
         </button>
       </div>
