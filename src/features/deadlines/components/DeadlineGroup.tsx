@@ -20,7 +20,7 @@ export function DeadlineGroup({
   onDeleteCard,
 }: DeadlineGroupProps) {
   return (
-    <div className="flex w-full flex-col items-start gap-4">
+    <div className="flex w-full flex-col items-start gap-5">
       <div
         className={`flex items-end gap-[6px] whitespace-nowrap ${
           group.isUrgent ? 'text-label-primary' : ''
@@ -38,7 +38,7 @@ export function DeadlineGroup({
         </p>
       </div>
 
-      <div className="flex w-full flex-col items-start gap-3">
+      <div className="flex w-full flex-col items-start gap-4">
         {group.cards.map((entry) => (
           <DeadlineCard
             key={entry.card.id}

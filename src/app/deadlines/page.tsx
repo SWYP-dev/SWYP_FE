@@ -15,7 +15,7 @@ export default function DeadlinesPage() {
           <DeadlineHeader />
         </div>
 
-        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto bg-neutral-50 px-[80px] py-6">
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto bg-neutral-50 px-[80px] py-7">
           <DeadlineList />
         </div>
       </main>

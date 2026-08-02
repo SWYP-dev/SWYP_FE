@@ -70,14 +70,38 @@ export function DragHandleIcon({ size = 16 }: { size?: number }) {
   );
 }
 
-// name="Edit" — KanbanColumn 헤더 버튼그룹에서 사용.
+// name="Edit" — KanbanColumn 헤더 버튼그룹, DeadlineCard 등에서 사용.
+// 원본 svg(public/icons/edit.svg)가 stroke="#212123"(Icon/Default) 하드코딩돼 있어
+// next/image로는 색 override가 불가능했음 → 인라인 svg 전환 + currentColor 적용
+// (부모의 text-icon-gray 등으로 Icon/gray 색상 지정 가능).
 export function EditIcon({ size = 16 }: { size?: number }) {
-  return <Image src="/icons/edit.svg" alt="" width={size} height={size} />;
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M11.5673 4.61541H5.48718C5.02645 4.61541 4.58459 4.79843 4.25881 5.12422C3.93302 5.45 3.75 5.89186 3.75 6.35259V18.5128C3.75 18.9736 3.93302 19.4154 4.25881 19.7412C4.58459 20.067 5.02645 20.25 5.48718 20.25H17.6474C18.1082 20.25 18.55 20.067 18.8758 19.7412C19.2016 19.4154 19.3846 18.9736 19.3846 18.5128V12.4327M17.1045 4.28967C17.4501 3.94413 17.9187 3.75 18.4074 3.75C18.8961 3.75 19.3648 3.94413 19.7103 4.28967C20.0558 4.63522 20.25 5.10388 20.25 5.59256C20.25 6.08123 20.0558 6.54989 19.7103 6.89544L11.8817 14.7249C11.6755 14.931 11.4207 15.0818 11.1408 15.1635L8.64534 15.8932C8.5706 15.915 8.49138 15.9163 8.41596 15.8969C8.34054 15.8776 8.2717 15.8384 8.21665 15.7833C8.1616 15.7283 8.12236 15.6594 8.10303 15.584C8.08371 15.5086 8.08502 15.4294 8.10682 15.3546L8.83643 12.8592C8.91854 12.5795 9.06968 12.325 9.27594 12.1191L17.1045 4.28967Z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
 }
 
-// name="trash" — KanbanColumn 헤더 버튼그룹에서 사용.
+// name="trash" — KanbanColumn 헤더 버튼그룹, DeadlineCard 등에서 사용.
+// edit.svg와 동일한 이유로 인라인 svg + currentColor 전환.
 export function TrashIcon({ size = 16 }: { size?: number }) {
-  return <Image src="/icons/trash.svg" alt="" width={size} height={size} />;
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M10.1667 11.125V16.375M13.8333 11.125V16.375M18.4167 6.75V19C18.4167 19.4641 18.2235 19.9092 17.8797 20.2374C17.5359 20.5656 17.0696 20.75 16.5833 20.75H7.41667C6.93044 20.75 6.46412 20.5656 6.1203 20.2374C5.77649 19.9092 5.58333 19.4641 5.58333 19V6.75M3.75 6.75H20.25M8.33333 6.75V5C8.33333 4.53587 8.52649 4.09075 8.8703 3.76256C9.21412 3.43437 9.68044 3.25 10.1667 3.25H13.8333C14.3196 3.25 14.7859 3.43437 15.1297 3.76256C15.4735 4.09075 15.6667 4.53587 15.6667 5V6.75"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
 }
 
 // name="close" — Drawer, Modal 등 닫기 버튼에서 공통 사용.
