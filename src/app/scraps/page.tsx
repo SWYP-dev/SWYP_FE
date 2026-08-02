@@ -137,9 +137,9 @@ const ScrapsPage: NextPage = () => {
           </div>
         </div>
 
-        <div className="flex-1 flex flex-col px-11 py-5 bg-surface-card">
+        <div className="flex-1 flex flex-col px-12 py-7 bg-surface-card">
           <div className="flex flex-col gap-8">
-            <div className="flex flex-col items-center gap-3 p-3 bg-base-white border border-line-secondary rounded-[20px]">
+            <div className="flex flex-col items-center gap-3 p-3 bg-base-white rounded-[20px]">
               {isLoading && <p className="py-10 text-label-description">불러오는 중...</p>}
               {isError && (
                 <p className="py-10 text-status-negative">스크랩 목록을 불러오지 못했어요.</p>
