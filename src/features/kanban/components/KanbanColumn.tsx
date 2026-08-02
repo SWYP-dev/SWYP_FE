@@ -146,7 +146,7 @@ export function KanbanColumn({
                 <DragHandleIcon size={20} />
               </div>
               {isEditingName ? (
-                <div className="flex flex-col gap-1">
+                <div className="flex flex-col gap-3">
                   <input
                     autoFocus
                     value={draftName}
@@ -157,7 +157,7 @@ export function KanbanColumn({
                       if (e.key === 'Escape') cancel();
                     }}
                     placeholder={isDraft ? '전형 단계를 입력하세요.' : '텍스트를 입력해 주세요.'}
-                    className={`w-[168px] border-b-2 bg-transparent pb-1 text-5 font-medium text-label-base placeholder:text-label-placeholder outline-none ${
+                    className={`w-[168px] border-b-2 bg-transparent pb-2 text-5 font-medium text-label-base placeholder:text-label-placeholder outline-none ${
                       hasError ? 'border-status-negative' : 'border-line-secondary'
                     }`}
                   />
@@ -181,44 +181,43 @@ export function KanbanColumn({
             <button
               type="button"
               aria-label="지원 내역 추가"
+              disabled={isDraft}
               onClick={() => onAddCard?.(stage.id)}
-              className="flex size-5 items-center justify-center text-icon-gray"
+              className={`flex size-5 items-center justify-center ${
+                isDraft ? 'cursor-not-allowed opacity-30' : 'text-icon-gray'
+              }`}
             >
               <PlusSmallIcon size={20} />
             </button>
-            {!isDraft && (
-              <button
-                type="button"
-                aria-label="스테이지 이름 수정"
-                disabled={isLocked}
-                onClick={() => {
-                  if (isLocked) return;
-                  setLocalDraftName(stage.name);
-                  setIsEditingName(true);
-                }}
-                className={`flex size-5 items-center justify-center ${
-                  isLocked ? 'cursor-not-allowed opacity-30' : 'text-icon-gray'
-                }`}
-              >
-                <EditIcon size={20} />
-              </button>
-            )}
-            {!isDraft && (
-              <button
-                type="button"
-                aria-label="스테이지 삭제"
-                disabled={isLocked}
-                onClick={() => {
-                  if (isLocked) return;
-                  onDeleteStage?.(stage.id);
-                }}
-                className={`flex size-5 items-center justify-center ${
-                  isLocked ? 'cursor-not-allowed opacity-30' : 'text-icon-gray'
-                }`}
-              >
-                <TrashIcon size={20} />
-              </button>
-            )}
+            <button
+              type="button"
+              aria-label="스테이지 이름 수정"
+              disabled={isDraft || isLocked}
+              onClick={() => {
+                if (isDraft || isLocked) return;
+                setLocalDraftName(stage.name);
+                setIsEditingName(true);
+              }}
+              className={`flex size-5 items-center justify-center ${
+                isDraft || isLocked ? 'cursor-not-allowed opacity-30' : 'text-icon-gray'
+              }`}
+            >
+              <EditIcon size={20} />
+            </button>
+            <button
+              type="button"
+              aria-label="스테이지 삭제"
+              disabled={isDraft || isLocked}
+              onClick={() => {
+                if (isDraft || isLocked) return;
+                onDeleteStage?.(stage.id);
+              }}
+              className={`flex size-5 items-center justify-center ${
+                isDraft || isLocked ? 'cursor-not-allowed opacity-30' : 'text-icon-gray'
+              }`}
+            >
+              <TrashIcon size={20} />
+            </button>
           </div>
         </div>
       </div>

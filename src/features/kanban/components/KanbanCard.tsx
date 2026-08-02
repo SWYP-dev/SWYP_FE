@@ -76,7 +76,7 @@ export function KanbanCard({
     >
       <div className="flex w-full items-start rounded-xl bg-base-white px-6 pb-4 pt-5 transition-shadow hover:shadow-normal-medium">
         <div className="flex min-w-0 flex-1 flex-col gap-[2px]">
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-2">
             <div className="flex items-start justify-between gap-2">
               <div className="flex min-w-0 flex-1 flex-col">
                 <p className="text-3 font-medium text-label-body">{card.companyName}</p>
