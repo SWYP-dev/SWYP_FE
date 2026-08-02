@@ -18,19 +18,19 @@ export function EmptyJobPosting({
   onAction,
 }: EmptyJobPostingProps) {
   return (
-    <div className="flex h-full w-full min-h-[420px] flex-1 flex-col items-center justify-center gap-4">
+    <div className="flex h-full w-full min-h-[420px] flex-1 flex-col items-center justify-center gap-5">
       <Image src={iconSrc} alt="" width={40} height={40} />
-      <div className="flex flex-col items-center gap-1 text-center">
+      <div className="flex flex-col items-center gap-2 text-center">
         <p className="text-9 font-semibold leading-[1.4] text-label-base">{title}</p>
-        <p className="text-6 font-medium leading-[1.6] text-label-body">{description}</p>
+        <p className="text-5 font-medium leading-[1.6] text-label-body">{description}</p>
       </div>
       {actionLabel && onAction && (
         <button
           type="button"
           onClick={onAction}
-          className="flex items-center justify-center rounded-lg border border-line-secondary bg-base-white px-3 py-2"
+          className="flex items-center justify-center rounded-lg border border-line-secondary bg-base-white px-4 py-3"
         >
-          <span className="text-6 font-medium text-label-base">{actionLabel}</span>
+          <span className="text-5 font-medium text-label-base">{actionLabel}</span>
         </button>
       )}
     </div>
