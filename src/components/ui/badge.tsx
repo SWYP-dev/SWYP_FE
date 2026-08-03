@@ -68,12 +68,12 @@ export function PlatformBadge({ platform }: PlatformBadgeProps) {
 // 마감일 뱃지 (PRD 4.1.3 "마감 임박(7일 이내)" 기준)
 // ===================================
 interface DeadlineBadgeProps {
-  deadline: string | null; // "2026-07-15" 형식. null 의미는 백엔드 확인 요청 중 — 확인 전까지 그대로 "null" 노출.
+  deadline: string | null; // "2026-07-15" 형식. null이면 상시채용 공고(원본 공고 확인 완료).
 }
 
 export function DeadlineBadge({ deadline }: DeadlineBadgeProps) {
   if (deadline === null) {
-    return <Badge className="bg-base-white text-neutral-500">null</Badge>;
+    return <Badge className="bg-base-white text-neutral-500">상시채용</Badge>;
   }
 
   const diffDays = getDeadlineDiffDays(deadline);
