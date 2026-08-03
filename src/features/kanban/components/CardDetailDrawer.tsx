@@ -52,6 +52,21 @@ function validateLinkUrl(value: string): string | undefined {
   return undefined;
 }
 
+const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
+
+// 지원 마감일 표시 포맷 — 올해(현재 연도)면 "dd(요일)", 그 외 연도면 "yyyy. mm. dd(요일)"
+function formatDrawerDeadline(deadlineIso: string): string {
+  const date = new Date(deadlineIso);
+  const weekday = WEEKDAYS[date.getDay()];
+  const day = String(date.getDate()).padStart(2, '0');
+  if (date.getFullYear() === new Date().getFullYear()) {
+    return `${day}(${weekday})`;
+  }
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  return `${year}. ${month}. ${day}(${weekday})`;
+}
+
 // career 값 → 표시 텍스트 변환
 function formatCareer(career: string | null): string {
   if (!career) return '-';
@@ -249,7 +264,9 @@ export function CardDetailDrawer({
               </div>
               <div className="flex flex-1 flex-col gap-[2px]">
                 <p className="text-label-description">지원 마감일</p>
-                <p className="font-semibold text-label-body">{detail.deadline}</p>
+                <p className="font-semibold text-label-body">
+                  {formatDrawerDeadline(detail.deadline)}
+                </p>
               </div>
             </div>
 
