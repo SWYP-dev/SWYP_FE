@@ -364,7 +364,7 @@ export function CardDetailDrawer({
                         <ChevronDownIcon />
                       </button>
                       {showCategoryDropdown && (
-                        <div className="absolute bottom-[calc(100%+4px)] left-0 z-10 flex w-[108px] flex-col gap-1 overflow-hidden rounded-xl border border-line-secondary bg-base-white p-1 shadow-spread-small">
+                        <div className="absolute bottom-[calc(100%+4px)] left-0 z-10 flex w-[108px] flex-col gap-1 overflow-hidden rounded-xl border border-line-secondary bg-base-white p-2">
                           {URL_CATEGORIES.map((cat) => (
                             <button
                               key={cat.value}
