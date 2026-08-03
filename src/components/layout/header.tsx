@@ -21,7 +21,7 @@ export function Header({ onSearch, showSearch = true }: HeaderProps) {
   };
 
   return (
-    <header className="flex w-full items-center justify-end gap-6 border-b border-line-secondary bg-base-white px-12 py-6">
+    <header className="flex w-full min-h-12 items-center justify-end gap-6 border-b border-line-secondary bg-base-white px-12 py-6">
       {showSearch && (
         <form
           onSubmit={handleSubmit}
