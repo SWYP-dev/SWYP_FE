@@ -302,10 +302,12 @@ export function CardDetailDrawer({
                     !isMemoFocused && memoDraft.trim() ? 'bg-neutral-100' : 'bg-base-white'
                   }`}
                 />
-                <p className="text-right text-1 text-label-description">
-                  <span className="text-label-body">{memoDraft.length}</span>
-                  <span className="text-label-caption"> / 1000</span>
-                </p>
+                {memoDraft.length > 0 && (
+                  <p className="text-right text-1 text-label-description">
+                    <span className="text-label-body">{memoDraft.length}</span>
+                    <span className="text-label-caption"> / 1000</span>
+                  </p>
+                )}
               </div>
             </div>
 
