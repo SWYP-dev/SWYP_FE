@@ -52,9 +52,9 @@ export function NotificationBell() {
         type="button"
         onClick={handleClick}
         aria-label="알림"
-        className="relative flex size-6 items-center justify-center"
+        className="relative flex size-7 items-center justify-center"
       >
-        {hasUnread && <span className="absolute right-[1px] top-0 size-1 rounded-max bg-status-negative" />}
+        {hasUnread && <span className="absolute left-6 top-0 size-2 rounded-max bg-status-negative" />}
         <BellIcon />
       </button>
 

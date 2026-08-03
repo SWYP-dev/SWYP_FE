@@ -28,20 +28,25 @@ export function AttachedFileItem({ document, onDownload, onDelete }: AttachedFil
   const displayName = buildVersionedFileName(document.name, document.version);
 
   return (
-    <div className="flex w-full min-w-0 items-center gap-1 rounded-xl bg-neutral-100 py-3 pl-1 pr-5">
+    <div className="flex w-full min-w-0 items-center gap-1 rounded-xl bg-neutral-100 py-4 pl-2 pr-6">
       <button
         type="button"
         onClick={onDownload}
-        className="flex min-w-0 flex-1 flex-col items-center justify-center pl-4 text-center"
+        className="flex min-w-0 flex-1 flex-col items-start justify-center pl-4 text-left"
       >
         <p className="w-full min-w-0 truncate text-[13px] font-medium text-label-base">
           {displayName}
         </p>
-        <p className="w-full text-[11px] font-medium text-label-description">
+        <p className="w-full text-left text-[11px] font-medium text-label-description">
           {formatFileSize(document.size)}
         </p>
       </button>
-      <button type="button" onClick={onDelete} aria-label="서류 삭제" className="shrink-0">
+      <button
+        type="button"
+        onClick={onDelete}
+        aria-label="서류 삭제"
+        className="shrink-0 text-icon-gray"
+      >
         <TrashIcon size={18} />
       </button>
     </div>
