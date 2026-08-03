@@ -22,7 +22,7 @@ import { useFeedQuery } from '@/features/feed/api/useFeedQuery';
 import { postScrap, deleteScrap } from '@/features/feed/api/scrap';
 import { registerKanbanCard, registerKanbanCardDirect } from '@/features/kanban/api/registerCard';
 import { kanbanKeys } from '@/features/kanban/api/useKanbanQuery';
-import { ApiClientError } from '@/lib/api/api-client';
+import { ApiClientError, AuthRequiredError } from '@/lib/api/api-client';
 import { formatCareer } from '@/features/feed/utils/formatCareer';
 import type { FeedQueryParams } from '@/types/api';
 
@@ -139,6 +139,9 @@ export default function FeedPage() {
     } catch (err) {
       // 실패 시 롤백
       setScrapOverrides((prev) => ({ ...prev, [feedId]: currentlyScrapped }));
+      // ⚠️ [QA 반영] 비로그인 상태면 apiFetch가 이미 전역 로그인 모달을 띄웠으므로
+      // 에러 토스트는 띄우지 않음 (로그인 모달만 노출).
+      if (err instanceof AuthRequiredError) return;
       console.error('스크랩 처리 실패', err);
       setToastType('error');
       setToastMessage(currentlyScrapped ? '스크랩 해제에 실패했어요.' : '스크랩에 실패했어요.');
@@ -159,6 +162,9 @@ export default function FeedPage() {
       setToastType('success');
       setToastMessage('지원 현황에 추가되었어요.');
     } catch (err) {
+      // ⚠️ [QA 반영] 비로그인 상태면 apiFetch가 이미 전역 로그인 모달을 띄웠으므로
+      // 에러 토스트는 띄우지 않음 (로그인 모달만 노출).
+      if (err instanceof AuthRequiredError) return;
       setToastType('error');
       if (
         err instanceof ApiClientError &&

@@ -19,6 +19,17 @@ export class ApiClientError extends Error {
   }
 }
 
+// ⚠️ [QA 반영] 비로그인/세션 만료 상태에서 401을 받으면 전역 로그인 모달을 띄우는데,
+// 기존엔 일반 Error를 던져서 호출부의 catch가 이걸 "일반 실패"로 오인해 에러 토스트까지
+// 함께 띄우는 문제가 있었음. 로그인 모달만 나오고 토스트는 뜨지 않도록, 호출부에서
+// `err instanceof AuthRequiredError`로 구분해 토스트를 건너뛸 수 있게 별도 타입으로 분리.
+export class AuthRequiredError extends Error {
+  constructor() {
+    super('인증이 만료되었습니다. 다시 로그인해주세요.');
+    this.name = 'AuthRequiredError';
+  }
+}
+
 // 1.2 Access Token 재발급 API를 직접 호출 (apiFetch를 쓰면 무한루프가 되니 fetch를 그대로 씀)
 async function refreshAccessToken(): Promise<string> {
   const refreshToken = getRefreshToken();
@@ -85,7 +96,7 @@ export async function apiFetch<T>(
       // 전역 로그인 모달을 띄워서, 사용자가 현재 페이지에 머문 채로 로그인을
       // 유도받도록 변경.
       openLoginModalOutsideReact();
-      throw new Error('인증이 만료되었습니다. 다시 로그인해주세요.');
+      throw new AuthRequiredError();
     }
   }
 
