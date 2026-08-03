@@ -4,16 +4,19 @@ import { useState, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   DndContext,
+  DragOverlay,
   PointerSensor,
   useSensor,
   useSensors,
   closestCenter,
   type DragEndEvent,
   type DragOverEvent,
+  type DragStartEvent,
 } from '@dnd-kit/core';
 import { SortableContext, horizontalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import type { KanbanCard, KanbanStage } from '@/types/api';
 import { KanbanColumn } from './KanbanColumn';
+import { KanbanCardContent } from './KanbanCard';
 import { AddStageButton } from './AddStageButton';
 import { Toast } from '@/components/ui/toast';
 import { DeleteStageModal } from './DeleteStageModal';
@@ -102,6 +105,10 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
   const [editingCard, setEditingCard] = useState<KanbanCard | null>(null);
   const [deletingCard, setDeletingCard] = useState<KanbanCard | null>(null);
   const [viewingCardId, setViewingCardId] = useState<number | null>(null);
+  // 드래그 중인 카드를 DragOverlay로 별도 렌더링하기 위한 상태 (overflow-y-auto 컬럼
+  // 밖으로 나가도 잘리지 않게 하려는 목적 — KanbanCard.tsx 상단 주석 참고)
+  const [activeDragCard, setActiveDragCard] = useState<KanbanCard | null>(null);
+  const [activeDragWidth, setActiveDragWidth] = useState<number | null>(null);
 
   // fix: initialStages 변경 시 stages 동기화 — 컬럼 너비 변형 버그 수정 (버그2)
   // useEffect에서 setState를 호출하면 리렌더링이 한 번 더 발생해 깜빡임(컬럼 너비
@@ -137,6 +144,13 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
     setToastMessage(null);
     setToastAction(null);
   }, []);
+
+  function handleDragStart(event: DragStartEvent) {
+    const { active } = event;
+    if (active.data.current?.type !== 'card') return;
+    setActiveDragCard(active.data.current.card as KanbanCard);
+    setActiveDragWidth(active.rect.current.initial?.width ?? null);
+  }
 
   function handleDragOver(event: DragOverEvent) {
     const { active, over } = event;
@@ -178,6 +192,9 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
   }
 
   function handleDragEnd(event: DragEndEvent) {
+    setActiveDragCard(null);
+    setActiveDragWidth(null);
+
     const { active, over } = event;
     if (!over) {
       // ⚠️ [QA 반영] 유효하지 않은 위치에 드롭하면 handleDragOver가 이미 낙관적으로
@@ -428,8 +445,13 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
     <DndContext
       sensors={sensors}
       collisionDetection={closestCenter}
+      onDragStart={handleDragStart}
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
+      onDragCancel={() => {
+        setActiveDragCard(null);
+        setActiveDragWidth(null);
+      }}
     >
       <div className="flex h-full min-h-0 flex-1 flex-col">
         <div className="flex h-full w-full flex-1 items-stretch gap-6 overflow-x-auto pb-2 kanban-scroll-x">
@@ -491,6 +513,14 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
 
         <AddStageButton onClick={handleAddStageClick} />
       </div>
+
+      <DragOverlay>
+        {activeDragCard && (
+          <div style={activeDragWidth ? { width: activeDragWidth } : undefined} className="cursor-grabbing">
+            <KanbanCardContent card={activeDragCard} />
+          </div>
+        )}
+      </DragOverlay>
 
       <Toast
         message={toastMessage ?? ''}
