@@ -59,7 +59,7 @@ export function Sidebar() {
           aria-label="통합 공고 탐색으로 이동"
           className="flex h-[80px] w-full flex-col items-start justify-center gap-3 px-6 py-3"
         >
-          <ChwihapWordmark className="h-6 w-auto" />
+          <ChwihapWordmark className="h-6 w-[110px]" />
         </Link>
 
         <nav className="flex w-full flex-col items-start gap-2 px-6">
