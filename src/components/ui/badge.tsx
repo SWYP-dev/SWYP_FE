@@ -68,10 +68,15 @@ export function PlatformBadge({ platform }: PlatformBadgeProps) {
 // 마감일 뱃지 (PRD 4.1.3 "마감 임박(7일 이내)" 기준)
 // ===================================
 interface DeadlineBadgeProps {
-  deadline: string; // "2026-07-15" 형식
+  deadline: string | null; // "2026-07-15" 형식, null이면 마감일 미표기(상시채용 등)
 }
 
+// 마감일 미표기 공고 뱃지 문구 — 진영님(디자인) 확인 전 임시로 "상시채용" 사용.
 export function DeadlineBadge({ deadline }: DeadlineBadgeProps) {
+  if (deadline === null) {
+    return <Badge className="bg-base-white text-neutral-500">상시채용</Badge>;
+  }
+
   const diffDays = getDeadlineDiffDays(deadline);
 
   if (diffDays < 0) {

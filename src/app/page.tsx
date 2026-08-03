@@ -68,7 +68,8 @@ function formatJobCategory(raw: string | null | undefined): string {
   return `${labels.slice(0, 3).join(', ')} 외 ${labels.length - 3}건`;
 }
 
-function formatDeadline(deadline: string): string {
+function formatDeadline(deadline: string | null): string {
+  if (deadline === null) return '상시채용';
   const date = new Date(deadline);
   return `~${date.getMonth() + 1}.${date.getDate()} (${'일월화수목금토'[date.getDay()]})`;
 }
