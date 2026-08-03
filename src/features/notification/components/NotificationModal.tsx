@@ -1,24 +1,23 @@
 'use client';
 
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { NotificationItem } from './NotificationItem';
-import { useNotificationInbox } from '../api/useNotificationQuery';
+import { useNotificationInboxInfinite } from '../api/useNotificationQuery';
 import { useMarkNotificationsRead } from '../api/useNotificationMutations';
 
 // Figma "지원 마감일 알림 확인 후(알림 모달 등장)"(node 101:17610) 스펙 반영.
 // ⚠️ "모두 삭제" 버튼: API 명세서 5장에 인앱 알림 삭제 API가 없어(조회 5.4 / 읽음처리 5.5만
 // 존재) 사용자 확인(2026-07-23)에 따라 실제 동작은 "모두 읽음 처리"로 구현. 문구는 Figma
 // 그대로 "모두 삭제"를 두되, 기획 쪽에 문구 수정 여부 확인 필요 — TODO 남김.
-// ⚠️ "더보기": 5.4는 커서 페이지네이션이 없어(최신 N건만 반환) size를 늘려 재조회하는 방식으로
-// 구현. 대량 이력이 필요하면 5.3(발송 이력) 연동을 별도로 검토해야 함.
+// "더보기": v1.11 정정에 따라 5.3과 동일한 cursor/nextCursor/hasNext 커서 페이지네이션 —
+// 클릭 시 직전 응답의 nextCursor로 다음 페이지만 이어서 조회(재조회 아님).
 export function NotificationModal() {
   const router = useRouter();
-  const [size, setSize] = useState(10);
-  const { data, isLoading } = useNotificationInbox(size);
+  const { data, isLoading, hasNextPage, fetchNextPage, isFetchingNextPage } =
+    useNotificationInboxInfinite();
   const markReadMutation = useMarkNotificationsRead();
 
-  const items = data?.items ?? [];
+  const items = data?.pages.flatMap((page) => page.items) ?? [];
 
   function handleDismiss(id: number) {
     markReadMutation.mutate([id]);
@@ -75,11 +74,12 @@ export function NotificationModal() {
           ))}
         </div>
 
-        {data?.hasNext && (
+        {hasNextPage && (
           <div className="flex w-full flex-col items-center pt-4">
             <button
               type="button"
-              onClick={() => setSize((prev) => prev + 10)}
+              onClick={() => fetchNextPage()}
+              disabled={isFetchingNextPage}
               className="flex items-center justify-center gap-[2px] rounded-lg border border-line-secondary bg-base-white py-2 pl-3 pr-[7px] text-3 font-medium text-label-base"
             >
               더보기
