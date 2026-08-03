@@ -10,6 +10,8 @@ export function getDeadlineDiffDays(deadline: string): number {
   return Math.ceil((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 }
 
-export function isDeadlinePassed(deadline: string): boolean {
+export function isDeadlinePassed(deadline: string | null): boolean {
+  // deadline이 null이면 상시채용 등 마감일 미표기 공고 — 마감 처리하지 않음.
+  if (deadline === null) return false;
   return getDeadlineDiffDays(deadline) < 0;
 }

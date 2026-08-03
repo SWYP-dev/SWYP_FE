@@ -10,7 +10,7 @@ import { ScrapBookmarkIcon } from './scrap-bookmark-icon';
 
 interface JobCardProps {
   thumbnailUrl: string;
-  deadlineIso: string;
+  deadlineIso: string | null;
   deadlineText: string;
   company: string;
   title: string;

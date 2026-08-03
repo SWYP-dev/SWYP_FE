@@ -56,34 +56,43 @@ function hasNoLetterOrDigit(value: string): boolean {
   return !/[\p{L}\p{N}]/u.test(value);
 }
 
+// ⚠️ [QA 반영] 완성된 한글 음절(가~힣)이 아닌 낱자음/낱모음(ㄱ~ㅎ, ㅏ~ㅣ)만으로
+// 이루어진 입력은 hasNoLetterOrDigit로 걸러지지 않음(Unicode상 "글자"로 분류되어
+// \p{L}에 매칭됨) — 별도로 감지해 더 구체적인 안내 메시지를 보여주기 위한 검사.
+function isOnlyHangulJamo(value: string): boolean {
+  return /^[ㄱ-ㅎㅏ-ㅣ\s]+$/.test(value);
+}
+
 // API 명세서 3.10/3.11 필드 검증 규칙(K011~K021)과 동일한 기준으로 클라이언트 사전 검증.
 // 서버 왕복 없이도 대부분의 케이스를 즉시 안내하기 위함.
 function validateField(key: keyof FormState, form: FormState): string | undefined {
   if (key === 'companyName') {
     const trimmed = form.companyName.trim();
     if (!trimmed) return '회사명을 입력해 주세요.';
+    if (isOnlyHangulJamo(trimmed)) return '올바른 단어 형태로 입력해 주세요.';
     if (trimmed.length < 2) return '2자 이상 입력해 주세요.';
     if (trimmed.length > 50) return '50자를 초과하여 입력할 수 없어요.';
-    if (hasNoLetterOrDigit(trimmed)) return '올바른 회사명을 입력해 주세요.';
+    if (hasNoLetterOrDigit(trimmed)) return '특수문자나 이모지는 입력할 수 없어요.';
   }
   if (key === 'jobTitle') {
     const trimmed = form.jobTitle.trim();
     if (!trimmed) return '공고명을 입력해 주세요.';
+    if (isOnlyHangulJamo(trimmed)) return '올바른 단어 형태로 입력해 주세요.';
     if (trimmed.length < 2) return '2자 이상 입력해 주세요.';
     if (trimmed.length > 100) return '100자를 초과하여 입력할 수 없어요.';
-    if (hasNoLetterOrDigit(trimmed)) return '올바른 공고명을 입력해 주세요.';
+    if (hasNoLetterOrDigit(trimmed)) return '특수문자나 이모지는 입력할 수 없어요.';
   }
   if (key === 'originalUrl') {
     const trimmed = form.originalUrl.trim();
     if (!trimmed) return '공고 링크를 입력해 주세요.';
     // 최소한의 도메인 형태(점 포함) 검증 — "abcde" 같은 비URL 텍스트 차단
     if (!trimmed.includes('.') || trimmed.includes(' ')) {
-      return '올바른 공고 링크를 입력해 주세요.';
+      return '올바른 URL 형식(https://...)으로 입력해 주세요.';
     }
     try {
       new URL(normalizeUrl(trimmed));
     } catch {
-      return '올바른 공고 링크를 입력해 주세요.';
+      return '올바른 URL 형식(https://...)으로 입력해 주세요.';
     }
     if (trimmed.length > 2048) return '2048자를 초과하여 입력할 수 없어요.';
   }

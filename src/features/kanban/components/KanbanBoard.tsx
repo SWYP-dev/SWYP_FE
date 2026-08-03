@@ -4,16 +4,19 @@ import { useState, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   DndContext,
+  DragOverlay,
   PointerSensor,
   useSensor,
   useSensors,
   closestCenter,
   type DragEndEvent,
   type DragOverEvent,
+  type DragStartEvent,
 } from '@dnd-kit/core';
 import { SortableContext, horizontalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import type { KanbanCard, KanbanStage } from '@/types/api';
 import { KanbanColumn } from './KanbanColumn';
+import { KanbanCardContent } from './KanbanCard';
 import { AddStageButton } from './AddStageButton';
 import { Toast } from '@/components/ui/toast';
 import { DeleteStageModal } from './DeleteStageModal';
@@ -41,7 +44,7 @@ function mapCardErrorCode(code: string): FormErrors | null {
     case 'K011':
       return { companyName: '회사명을 입력해 주세요.' };
     case 'K012':
-      return { companyName: '올바른 회사명을 입력해 주세요.' };
+      return { companyName: '특수문자나 이모지는 입력할 수 없어요.' };
     case 'K013':
       return { companyName: '2자 이상 입력해 주세요.' };
     case 'K014':
@@ -49,7 +52,7 @@ function mapCardErrorCode(code: string): FormErrors | null {
     case 'K015':
       return { jobTitle: '공고명을 입력해 주세요.' };
     case 'K016':
-      return { jobTitle: '올바른 공고명을 입력해 주세요.' };
+      return { jobTitle: '특수문자나 이모지는 입력할 수 없어요.' };
     case 'K017':
       return { jobTitle: '2자 이상 입력해 주세요.' };
     case 'K018':
@@ -57,7 +60,7 @@ function mapCardErrorCode(code: string): FormErrors | null {
     case 'K019':
       return { originalUrl: '공고 링크를 입력해 주세요.' };
     case 'K020':
-      return { originalUrl: '올바른 공고 링크를 입력해 주세요.' };
+      return { originalUrl: '웹페이지를 찾을 수 없어요. URL 주소를 다시 확인해 주세요.' };
     case 'K021':
       return { originalUrl: '2048자를 초과하여 입력할 수 없어요.' };
     case 'K003':
@@ -74,7 +77,7 @@ function mapStageNameErrorCode(code: string): string | null {
     case 'K006':
       return '이미 존재하는 전형 단계 이름이에요.';
     case 'K007':
-      return '올바른 전형 단계 이름을 입력해 주세요.';
+      return '특수문자나 이모지는 입력할 수 없어요.';
     case 'K008':
       return '2자 이상 입력해 주세요.';
     case 'K009':
@@ -102,6 +105,10 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
   const [editingCard, setEditingCard] = useState<KanbanCard | null>(null);
   const [deletingCard, setDeletingCard] = useState<KanbanCard | null>(null);
   const [viewingCardId, setViewingCardId] = useState<number | null>(null);
+  // 드래그 중인 카드를 DragOverlay로 별도 렌더링하기 위한 상태 (overflow-y-auto 컬럼
+  // 밖으로 나가도 잘리지 않게 하려는 목적 — KanbanCard.tsx 상단 주석 참고)
+  const [activeDragCard, setActiveDragCard] = useState<KanbanCard | null>(null);
+  const [activeDragWidth, setActiveDragWidth] = useState<number | null>(null);
 
   // fix: initialStages 변경 시 stages 동기화 — 컬럼 너비 변형 버그 수정 (버그2)
   // useEffect에서 setState를 호출하면 리렌더링이 한 번 더 발생해 깜빡임(컬럼 너비
@@ -137,6 +144,13 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
     setToastMessage(null);
     setToastAction(null);
   }, []);
+
+  function handleDragStart(event: DragStartEvent) {
+    const { active } = event;
+    if (active.data.current?.type !== 'card') return;
+    setActiveDragCard(active.data.current.card as KanbanCard);
+    setActiveDragWidth(active.rect.current.initial?.width ?? null);
+  }
 
   function handleDragOver(event: DragOverEvent) {
     const { active, over } = event;
@@ -178,6 +192,9 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
   }
 
   function handleDragEnd(event: DragEndEvent) {
+    setActiveDragCard(null);
+    setActiveDragWidth(null);
+
     const { active, over } = event;
     if (!over) {
       // ⚠️ [QA 반영] 유효하지 않은 위치에 드롭하면 handleDragOver가 이미 낙관적으로
@@ -378,45 +395,39 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
     });
   }
 
-  function handleUndoDeleteStage(name: string, cards: KanbanCard[], position: number) {
-    createStageMutation.mutate(
-      { name, position },
-      {
-        onSuccess: (res) => {
-          const restoredStage: KanbanStage = {
-            id: res.id,
-            name: res.name,
-            position: res.position,
-            isDefault: false,
-            cards: [],
-          };
-          setStages((prev) => [...prev, restoredStage]);
+  // ⚠️ [QA 반영] 기존엔 여기서 setStages(prev => [...prev, restoredStage])로 직접
+  // 낙관적 추가를 했는데, createStage 훅 자체에도 이미 onSuccess에 invalidateQueries가
+  // 걸려있어 재조회가 먼저 끝나 버리면 "재조회로 이미 반영된 스테이지" 위에 이 낙관적
+  // 추가분이 또 쌓여 전형이 중복으로 보이는 버그가 있었음. 로컬 상태를 직접 조작하지
+  // 않고 최종 상태 재조회(invalidateQueries)만 믿도록 변경.
+  //
+  // ⚠️ [QA 반영] 생성 직후 위치 보정을 위해 updateStage를 곧바로(fire-and-forget으로)
+  // 이어 호출했더니, 생성 API 자체의 자동 재조회와 겹치면서 방금 만든 스테이지가
+  // 일시적으로 "찾을 수 없음"(404 C003)으로 보이는 레이스가 있었음(새로고침하면
+  // 정상화됨 — 데이터 손상이 아니라 클라이언트 캐시 타이밍 문제). 각 단계를 await로
+  // 완전히 순차 진행해 동시에 여러 요청이 겹치지 않도록 함.
+  async function handleUndoDeleteStage(name: string, cards: KanbanCard[], position: number) {
+    try {
+      const res = await createStageMutation.mutateAsync({ name, position });
 
-          cards.forEach((card, idx) => {
-            moveCardMutation.mutate(
-              { cardId: card.id, stageId: res.id, position: idx + 1 },
-              {
-                onSuccess: () => {
-                  setStages((prev) =>
-                    prev.map((s) =>
-                      s.id === res.id && !s.cards.some((c) => c.id === card.id)
-                        ? { ...s, cards: [...s.cards, card] }
-                        : s
-                    )
-                  );
-                },
-              }
-            );
-          });
-
-          // ⚠️ [QA 반영] 되돌리기 성공 토스트 제거 — 디자인 명세에 없고, 삭제 취소라는
-          // 결과가 화면에 이미 바로 반영되므로 추가 안내가 불필요함.
-          // 위치가 다른 스테이지들에 영향(재정렬) 줄 수 있어 최종 상태 재조회.
-          queryClient.invalidateQueries({ queryKey: kanbanKeys.board() });
-        },
-        onError: () => showToast('error', '되돌리기에 실패했어요.'),
+      // 스테이지 생성(POST) API에 원래 position을 함께 보내도 실제 응답이 요청한
+      // position을 반영하지 않는 경우가 있어(명세 vs 실제 동작 불일치 가능성),
+      // 응답 position이 요청과 다르면 스테이지 순서 변경(PATCH) API로 한 번 더
+      // 명시적으로 원래 위치로 이동시켜 "삭제 전 위치로 복구"를 보장.
+      if (res.position !== position) {
+        await updateStageMutation.mutateAsync({ stageId: res.id, position });
       }
-    );
+
+      if (cards.length > 0) {
+        for (let idx = 0; idx < cards.length; idx++) {
+          await moveCardMutation.mutateAsync({ cardId: cards[idx].id, stageId: res.id, position: idx + 1 });
+        }
+      }
+    } catch {
+      showToast('error', '되돌리기에 실패했어요.');
+      return;
+    }
+    queryClient.invalidateQueries({ queryKey: kanbanKeys.board() });
   }
 
   // ⚠️ [QA 반영] 스테이지/마감임박 필터 UI 제거 — PRD 4.2에 칸반 보드용 필터 명세 없음.
@@ -434,8 +445,13 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
     <DndContext
       sensors={sensors}
       collisionDetection={closestCenter}
+      onDragStart={handleDragStart}
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
+      onDragCancel={() => {
+        setActiveDragCard(null);
+        setActiveDragWidth(null);
+      }}
     >
       <div className="flex h-full min-h-0 flex-1 flex-col">
         <div className="flex h-full w-full flex-1 items-stretch gap-6 overflow-x-auto pb-2 kanban-scroll-x">
@@ -497,6 +513,14 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
 
         <AddStageButton onClick={handleAddStageClick} />
       </div>
+
+      <DragOverlay>
+        {activeDragCard && (
+          <div style={activeDragWidth ? { width: activeDragWidth } : undefined} className="cursor-grabbing">
+            <KanbanCardContent card={activeDragCard} />
+          </div>
+        )}
+      </DragOverlay>
 
       <Toast
         message={toastMessage ?? ''}

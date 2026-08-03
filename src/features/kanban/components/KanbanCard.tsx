@@ -47,6 +47,81 @@ function ExternalLinkIcon() {
   );
 }
 
+// ⚠️ [QA 반영] 카드를 컬럼 스크롤 영역(overflow-y-auto) 안에서 CSS transform으로만
+// 옮기면, 마우스가 그 영역의 시각적 경계를 벗어나는 순간부터 transform이 overflow에
+// 잘려 보이지 않아 "특정 y값 아래부터 카드가 고정된 것처럼" 보이는 문제가 있었음.
+// 실제 드래그 중 보여지는 카드는 DndContext 최상단(KanbanBoard)의 DragOverlay로
+// 따로 렌더링해 overflow 제약을 받지 않도록 하고, 이 시각적 마크업만 두 곳에서
+// 공유하기 위해 별도 컴포넌트로 분리.
+export function KanbanCardContent({
+  card,
+  onEditCard,
+  onDeleteCard,
+}: {
+  card: KanbanCardType;
+  onEditCard?: (card: KanbanCardType) => void;
+  onDeleteCard?: (card: KanbanCardType) => void;
+}) {
+  return (
+    <div className="flex w-full items-start rounded-xl bg-base-white px-6 pb-4 pt-5 transition-shadow hover:shadow-normal-medium">
+      <div className="flex min-w-0 flex-1 flex-col gap-[2px]">
+        <div className="flex flex-col gap-2">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex min-w-0 flex-1 flex-col">
+              <p className="text-3 font-medium text-label-body">{card.companyName}</p>
+              <p className="line-clamp-2 w-full text-5 font-semibold text-label-base">
+                {card.jobTitle}
+              </p>
+            </div>
+            <div
+              className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                type="button"
+                onClick={() => onEditCard?.(card)}
+                aria-label="지원 내역 수정"
+                className="flex size-5 items-center justify-center text-icon-gray"
+              >
+                <EditIcon size={16} />
+              </button>
+              <button
+                type="button"
+                onClick={() => onDeleteCard?.(card)}
+                aria-label="지원 내역 삭제"
+                className="flex size-5 items-center justify-center text-icon-gray"
+              >
+                <TrashIcon size={16} />
+              </button>
+            </div>
+          </div>
+          <div className="flex items-center gap-1">
+            <CalendarSmallIcon />
+            <span className="flex-1 text-1 font-medium text-label-description">
+              {formatDeadlineText(card.deadline)}
+            </span>
+            {card.deadlineChanged && (
+              <span className="rounded px-1 py-[1px] text-0 font-medium bg-fill-negative-light text-status-negative">
+                마감일 변경
+              </span>
+            )}
+          </div>
+        </div>
+        <a
+          href={card.originalUrl}
+          target="_blank"
+          rel="noreferrer"
+          onClick={handleOriginalLinkClick}
+          className="flex w-fit items-center gap-2 py-2 text-1 font-medium text-label-primary"
+        >
+          원본 공고 이동
+          <ExternalLinkIcon />
+        </a>
+      </div>
+    </div>
+  );
+}
+
 export function KanbanCard({
   card,
   stageId,
@@ -62,7 +137,9 @@ export function KanbanCard({
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1,
+    // ⚠️ 드래그 중인 실제 카드는 DragOverlay가 보여주므로, 원래 자리의 카드는 완전히
+    // 숨겨서(0) 두 개가 겹쳐 보이지 않게 함.
+    opacity: isDragging ? 0 : 1,
   };
 
   return (
@@ -72,64 +149,9 @@ export function KanbanCard({
       {...listeners}
       {...attributes}
       onClick={() => onCardClick?.(card.id)}
-      className={`group flex w-full cursor-grab flex-col items-start justify-center active:cursor-grabbing ${isDragging ? 'z-50' : ''}`}
+      className="group flex w-full cursor-grab flex-col items-start justify-center active:cursor-grabbing"
     >
-      <div className="flex w-full items-start rounded-xl bg-base-white px-6 pb-4 pt-5 transition-shadow hover:shadow-normal-medium">
-        <div className="flex min-w-0 flex-1 flex-col gap-[2px]">
-          <div className="flex flex-col gap-2">
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex min-w-0 flex-1 flex-col">
-                <p className="text-3 font-medium text-label-body">{card.companyName}</p>
-                <p className="line-clamp-2 w-full text-5 font-semibold text-label-base">
-                  {card.jobTitle}
-                </p>
-              </div>
-              <div
-                className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <button
-                  type="button"
-                  onClick={() => onEditCard?.(card)}
-                  aria-label="지원 내역 수정"
-                  className="flex size-5 items-center justify-center text-icon-gray"
-                >
-                  <EditIcon size={16} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onDeleteCard?.(card)}
-                  aria-label="지원 내역 삭제"
-                  className="flex size-5 items-center justify-center text-icon-gray"
-                >
-                  <TrashIcon size={16} />
-                </button>
-              </div>
-            </div>
-            <div className="flex items-center gap-1">
-              <CalendarSmallIcon />
-              <span className="flex-1 text-1 font-medium text-label-description">
-                {formatDeadlineText(card.deadline)}
-              </span>
-              {card.deadlineChanged && (
-                <span className="rounded px-1 py-[1px] text-0 font-medium bg-fill-negative-light text-status-negative">
-                  마감일 변경
-                </span>
-              )}
-            </div>
-          </div>
-          <a
-            href={card.originalUrl}
-            target="_blank"
-            rel="noreferrer"
-            onClick={handleOriginalLinkClick}
-            className="flex w-fit items-center gap-2 py-2 text-1 font-medium text-label-primary"
-          >
-            원본 공고 이동
-            <ExternalLinkIcon />
-          </a>
-        </div>
-      </div>
+      <KanbanCardContent card={card} onEditCard={onEditCard} onDeleteCard={onDeleteCard} />
     </div>
   );
 }

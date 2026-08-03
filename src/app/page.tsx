@@ -22,7 +22,9 @@ import { useFeedQuery } from '@/features/feed/api/useFeedQuery';
 import { postScrap, deleteScrap } from '@/features/feed/api/scrap';
 import { registerKanbanCard, registerKanbanCardDirect } from '@/features/kanban/api/registerCard';
 import { kanbanKeys } from '@/features/kanban/api/useKanbanQuery';
-import { ApiClientError } from '@/lib/api/api-client';
+import { ApiClientError, AuthRequiredError } from '@/lib/api/api-client';
+import { useAuthStore } from '@/features/auth/store/authStore';
+import { openLoginModalOutsideReact } from '@/features/auth/store/loginModalStore';
 import { formatCareer } from '@/features/feed/utils/formatCareer';
 import type { FeedQueryParams } from '@/types/api';
 
@@ -66,7 +68,9 @@ function formatJobCategory(raw: string | null | undefined): string {
   return `${labels.slice(0, 3).join(', ')} 외 ${labels.length - 3}건`;
 }
 
-function formatDeadline(deadline: string): string {
+function formatDeadline(deadline: string | null): string {
+  // null이면 상시채용 공고(원본 공고 확인 완료).
+  if (deadline === null) return '상시채용';
   const date = new Date(deadline);
   return `~${date.getMonth() + 1}.${date.getDate()} (${'일월화수목금토'[date.getDay()]})`;
 }
@@ -115,6 +119,14 @@ export default function FeedPage() {
   }, [data]);
 
   async function handleToggleScrap(feedId: number, currentlyScrapped: boolean) {
+    // ⚠️ [QA 반영] 비로그인 상태면 아이콘을 낙관적으로 채우지 않고 로그인 모달만 띄움.
+    // (기존엔 낙관적 업데이트 후 401 응답을 받고서야 롤백해서, 잠깐 아이콘이 채워졌다가
+    // 되돌아가는 것처럼 보였음)
+    if (!useAuthStore.getState().isAuthenticated) {
+      openLoginModalOutsideReact();
+      return;
+    }
+
     // 낙관적 업데이트: 서버 응답 기다리지 않고 먼저 화면 반영
     setScrapOverrides((prev) => ({ ...prev, [feedId]: !currentlyScrapped }));
 
@@ -139,6 +151,9 @@ export default function FeedPage() {
     } catch (err) {
       // 실패 시 롤백
       setScrapOverrides((prev) => ({ ...prev, [feedId]: currentlyScrapped }));
+      // ⚠️ [QA 반영] 비로그인 상태면 apiFetch가 이미 전역 로그인 모달을 띄웠으므로
+      // 에러 토스트는 띄우지 않음 (로그인 모달만 노출).
+      if (err instanceof AuthRequiredError) return;
       console.error('스크랩 처리 실패', err);
       setToastType('error');
       setToastMessage(currentlyScrapped ? '스크랩 해제에 실패했어요.' : '스크랩에 실패했어요.');
@@ -159,6 +174,9 @@ export default function FeedPage() {
       setToastType('success');
       setToastMessage('지원 현황에 추가되었어요.');
     } catch (err) {
+      // ⚠️ [QA 반영] 비로그인 상태면 apiFetch가 이미 전역 로그인 모달을 띄웠으므로
+      // 에러 토스트는 띄우지 않음 (로그인 모달만 노출).
+      if (err instanceof AuthRequiredError) return;
       setToastType('error');
       if (
         err instanceof ApiClientError &&
