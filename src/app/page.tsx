@@ -69,7 +69,8 @@ function formatJobCategory(raw: string | null | undefined): string {
 }
 
 function formatDeadline(deadline: string | null): string {
-  if (deadline === null) return '상시채용';
+  // null 의미는 백엔드 확인 요청 중 — 확인 전까지 그대로 "null" 노출.
+  if (deadline === null) return 'null';
   const date = new Date(deadline);
   return `~${date.getMonth() + 1}.${date.getDate()} (${'일월화수목금토'[date.getDay()]})`;
 }
