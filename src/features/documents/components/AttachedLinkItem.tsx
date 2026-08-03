@@ -34,7 +34,12 @@ export function AttachedLinkItem({ document, onDelete }: AttachedLinkItemProps) 
         >
           {document.url}
         </a>
-        <button type="button" onClick={onDelete} aria-label="링크 삭제" className="shrink-0">
+        <button
+          type="button"
+          onClick={onDelete}
+          aria-label="링크 삭제"
+          className="shrink-0 text-icon-gray"
+        >
           <TrashIcon size={18} />
         </button>
       </div>

@@ -24,9 +24,9 @@ export function Drawer({ isOpen, onClose, children, className = '' }: DrawerProp
 
       {/* Drawer panel */}
       <div
-        className={`relative flex h-full w-[475px] flex-col items-start bg-base-white pt-6 shadow-spread-medium ${className}`}
+        className={`relative flex h-full w-[475px] flex-col items-start bg-base-white shadow-spread-medium ${className}`}
       >
-        <div className="flex w-full items-center justify-between px-5">
+        <div className="flex w-full items-center justify-between px-6 py-7">
           <div className="size-6" aria-hidden="true" />
           <button
             type="button"

@@ -52,6 +52,21 @@ function validateLinkUrl(value: string): string | undefined {
   return undefined;
 }
 
+const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
+
+// 지원 마감일 표시 포맷 — 올해(현재 연도)면 "dd(요일)", 그 외 연도면 "yyyy. mm. dd(요일)"
+function formatDrawerDeadline(deadlineIso: string): string {
+  const date = new Date(deadlineIso);
+  const weekday = WEEKDAYS[date.getDay()];
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  if (date.getFullYear() === new Date().getFullYear()) {
+    return `${month}.${day} (${weekday})`;
+  }
+  const year = date.getFullYear();
+  return `${year}. ${String(month).padStart(2, '0')}. ${String(day).padStart(2, '0')}(${weekday})`;
+}
+
 // career 값 → 표시 텍스트 변환
 function formatCareer(career: string | null): string {
   if (!career) return '-';
@@ -238,7 +253,7 @@ export function CardDetailDrawer({
             )}
 
             {/* 위치 / 경력 / 지원 마감일 — Figma JobSummary */}
-            <div className="flex w-full items-center justify-center rounded-xl bg-neutral-50 py-3 text-center text-1">
+            <div className="flex w-full items-center justify-center rounded-xl bg-neutral-50 py-4 text-center text-1">
               <div className="flex flex-1 flex-col gap-[2px]">
                 <p className="text-label-description">위치</p>
                 <p className="font-semibold text-label-body">{detail.region ?? '-'}</p>
@@ -249,7 +264,9 @@ export function CardDetailDrawer({
               </div>
               <div className="flex flex-1 flex-col gap-[2px]">
                 <p className="text-label-description">지원 마감일</p>
-                <p className="font-semibold text-label-body">{detail.deadline}</p>
+                <p className="font-semibold text-label-body">
+                  {formatDrawerDeadline(detail.deadline)}
+                </p>
               </div>
             </div>
 
@@ -281,14 +298,16 @@ export function CardDetailDrawer({
                   }}
                   placeholder="메모할 내용을 입력해주세요."
                   maxLength={1000}
-                  className={`h-[156px] w-full resize-none rounded-xl border-2 border-line-secondary p-4 text-4 leading-[1.6] text-label-base placeholder:text-label-placeholder outline-none focus:border-line-primary ${
+                  className={`h-[156px] w-full resize-none rounded-xl border-2 border-line-secondary p-5 text-4 leading-[1.6] text-label-base placeholder:text-label-placeholder outline-none focus:border-line-primary ${
                     !isMemoFocused && memoDraft.trim() ? 'bg-neutral-100' : 'bg-base-white'
                   }`}
                 />
-                <p className="text-right text-1 text-label-description">
-                  <span className="text-label-body">{memoDraft.length}</span>
-                  <span className="text-label-caption"> / 1000</span>
-                </p>
+                {memoDraft.length > 0 && (
+                  <p className="text-right text-1 text-label-description">
+                    <span className="text-label-body">{memoDraft.length}</span>
+                    <span className="text-label-caption"> / 1000</span>
+                  </p>
+                )}
               </div>
             </div>
 
@@ -332,12 +351,12 @@ export function CardDetailDrawer({
 
               {isAddingLink ? (
                 <div className="flex flex-col gap-2">
-                  <div className="flex items-stretch gap-2">
+                  <div className="flex items-stretch gap-3">
                     <div className="relative shrink-0">
                       <button
                         type="button"
                         onClick={() => setShowCategoryDropdown((v) => !v)}
-                        className="flex h-full min-w-[108px] items-center justify-between rounded-xl border border-line-secondary bg-base-white px-4 py-3 text-3 font-medium text-label-description"
+                        className="flex h-full min-w-[108px] items-center justify-between rounded-xl border border-line-secondary bg-base-white px-4 py-3 text-3 font-medium text-label-placeholder"
                       >
                         <span className={linkCategory ? 'text-label-base' : ''}>
                           {URL_CATEGORIES.find((c) => c.value === linkCategory)?.label ?? '선택'}
@@ -345,7 +364,7 @@ export function CardDetailDrawer({
                         <ChevronDownIcon />
                       </button>
                       {showCategoryDropdown && (
-                        <div className="absolute bottom-[calc(100%+4px)] left-0 z-10 w-[108px] overflow-hidden rounded-xl border border-line-secondary bg-base-white p-1 shadow-spread-small">
+                        <div className="absolute bottom-[calc(100%+4px)] left-0 z-10 flex w-[108px] flex-col gap-1 overflow-hidden rounded-xl border border-line-secondary bg-base-white p-2">
                           {URL_CATEGORIES.map((cat) => (
                             <button
                               key={cat.value}
@@ -354,8 +373,8 @@ export function CardDetailDrawer({
                                 setLinkCategory(cat.value);
                                 setShowCategoryDropdown(false);
                               }}
-                              className={`flex h-10 w-full items-center px-4 text-3 font-medium text-label-base ${
-                                linkCategory === cat.value ? 'rounded-lg bg-neutral-100' : 'hover:bg-neutral-50'
+                              className={`flex w-full items-center rounded-lg px-5 py-[10px] text-3 font-medium text-label-base ${
+                                linkCategory === cat.value ? 'bg-neutral-100' : 'hover:bg-neutral-50'
                               }`}
                             >
                               {cat.label}
@@ -372,7 +391,7 @@ export function CardDetailDrawer({
                       }}
                       onKeyDown={(e) => e.key === 'Enter' && handleLinkSubmit()}
                       placeholder="텍스트를 입력해 주세요."
-                      className={`flex-1 rounded-xl border px-4 py-3 text-3 font-medium text-label-base placeholder:text-label-placeholder outline-none ${
+                      className={`flex-1 rounded-xl border px-5 py-4 text-3 font-medium text-label-base placeholder:text-label-placeholder outline-none ${
                         linkError ? 'border-status-negative' : 'border-line-secondary'
                       }`}
                     />
@@ -380,23 +399,6 @@ export function CardDetailDrawer({
                   {linkError && (
                     <p className="text-1 font-medium text-status-negative">{linkError}</p>
                   )}
-                  <div className="flex gap-2">
-                    <Button
-                      variant="secondary"
-                      className="flex-1"
-                      onClick={() => {
-                        setIsAddingLink(false);
-                        setLinkCategory(null);
-                        setLinkUrl('');
-                        setLinkError(null);
-                      }}
-                    >
-                      취소
-                    </Button>
-                    <Button variant="primary" className="flex-1" onClick={handleLinkSubmit}>
-                      추가
-                    </Button>
-                  </div>
                 </div>
               ) : (
                 <Button
@@ -420,7 +422,7 @@ function ChevronDownIcon() {
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path
         d="M4 6l4 4 4-4"
-        stroke="#BDBDC0"
+        stroke="var(--color-icon-gray)"
         strokeWidth="1.4"
         strokeLinecap="round"
         strokeLinejoin="round"
