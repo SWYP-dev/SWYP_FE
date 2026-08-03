@@ -38,7 +38,7 @@ export function Header({ onSearch, showSearch = true }: HeaderProps) {
             <button
               type="submit"
               aria-label="검색"
-              className="flex size-6 shrink-0 items-center justify-center"
+              className="flex size-7 shrink-0 items-center justify-center"
             >
               <svg
                 width="24"
