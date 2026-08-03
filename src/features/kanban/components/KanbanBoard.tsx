@@ -60,7 +60,7 @@ function mapCardErrorCode(code: string): FormErrors | null {
     case 'K019':
       return { originalUrl: '공고 링크를 입력해 주세요.' };
     case 'K020':
-      return { originalUrl: '웹페이지를 찾을 수 없어요. URL 주소를 다시 확인해 주세요.' };
+      return { originalUrl: '올바른 URL 형식(https://...)으로 입력해 주세요.' };
     case 'K021':
       return { originalUrl: '2048자를 초과하여 입력할 수 없어요.' };
     case 'K003':
