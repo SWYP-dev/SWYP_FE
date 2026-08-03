@@ -23,6 +23,8 @@ import { postScrap, deleteScrap } from '@/features/feed/api/scrap';
 import { registerKanbanCard, registerKanbanCardDirect } from '@/features/kanban/api/registerCard';
 import { kanbanKeys } from '@/features/kanban/api/useKanbanQuery';
 import { ApiClientError, AuthRequiredError } from '@/lib/api/api-client';
+import { useAuthStore } from '@/features/auth/store/authStore';
+import { openLoginModalOutsideReact } from '@/features/auth/store/loginModalStore';
 import { formatCareer } from '@/features/feed/utils/formatCareer';
 import type { FeedQueryParams } from '@/types/api';
 
@@ -115,6 +117,14 @@ export default function FeedPage() {
   }, [data]);
 
   async function handleToggleScrap(feedId: number, currentlyScrapped: boolean) {
+    // ⚠️ [QA 반영] 비로그인 상태면 아이콘을 낙관적으로 채우지 않고 로그인 모달만 띄움.
+    // (기존엔 낙관적 업데이트 후 401 응답을 받고서야 롤백해서, 잠깐 아이콘이 채워졌다가
+    // 되돌아가는 것처럼 보였음)
+    if (!useAuthStore.getState().isAuthenticated) {
+      openLoginModalOutsideReact();
+      return;
+    }
+
     // 낙관적 업데이트: 서버 응답 기다리지 않고 먼저 화면 반영
     setScrapOverrides((prev) => ({ ...prev, [feedId]: !currentlyScrapped }));
 
