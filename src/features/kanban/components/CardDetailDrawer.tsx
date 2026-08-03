@@ -298,7 +298,7 @@ export function CardDetailDrawer({
                   }}
                   placeholder="메모할 내용을 입력해주세요."
                   maxLength={1000}
-                  className={`h-[156px] w-full resize-none rounded-xl border-2 border-line-secondary p-4 text-4 leading-[1.6] text-label-base placeholder:text-label-placeholder outline-none focus:border-line-primary ${
+                  className={`h-[156px] w-full resize-none rounded-xl border-2 border-line-secondary p-5 text-4 leading-[1.6] text-label-base placeholder:text-label-placeholder outline-none focus:border-line-primary ${
                     !isMemoFocused && memoDraft.trim() ? 'bg-neutral-100' : 'bg-base-white'
                   }`}
                 />
