@@ -32,12 +32,12 @@ export function AttachedFileItem({ document, onDownload, onDelete }: AttachedFil
       <button
         type="button"
         onClick={onDownload}
-        className="flex min-w-0 flex-1 flex-col items-center justify-center pl-4 text-center"
+        className="flex min-w-0 flex-1 flex-col items-start justify-center pl-4 text-left"
       >
         <p className="w-full min-w-0 truncate text-[13px] font-medium text-label-base">
           {displayName}
         </p>
-        <p className="w-full text-[11px] font-medium text-label-description">
+        <p className="w-full text-left text-[11px] font-medium text-label-description">
           {formatFileSize(document.size)}
         </p>
       </button>
