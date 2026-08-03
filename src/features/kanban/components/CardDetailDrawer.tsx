@@ -373,7 +373,7 @@ export function CardDetailDrawer({
                                 setLinkCategory(cat.value);
                                 setShowCategoryDropdown(false);
                               }}
-                              className={`flex h-10 w-full items-center px-4 text-3 font-medium text-label-base ${
+                              className={`flex w-full items-center px-5 py-[10px] text-3 font-medium text-label-base ${
                                 linkCategory === cat.value ? 'rounded-lg bg-neutral-100' : 'hover:bg-neutral-50'
                               }`}
                             >
