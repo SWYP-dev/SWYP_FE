@@ -41,7 +41,12 @@ export function AttachedFileItem({ document, onDownload, onDelete }: AttachedFil
           {formatFileSize(document.size)}
         </p>
       </button>
-      <button type="button" onClick={onDelete} aria-label="서류 삭제" className="shrink-0">
+      <button
+        type="button"
+        onClick={onDelete}
+        aria-label="서류 삭제"
+        className="shrink-0 text-icon-gray"
+      >
         <TrashIcon size={18} />
       </button>
     </div>
