@@ -21,7 +21,7 @@ export function Header({ onSearch, showSearch = true }: HeaderProps) {
   };
 
   return (
-    <header className="flex w-full items-center justify-end gap-5 border-b border-line-secondary bg-base-white px-12 py-6">
+    <header className="flex w-full min-h-12 items-center justify-end gap-6 border-b border-line-secondary bg-base-white px-12 py-6">
       {showSearch && (
         <form
           onSubmit={handleSubmit}
@@ -38,7 +38,7 @@ export function Header({ onSearch, showSearch = true }: HeaderProps) {
             <button
               type="submit"
               aria-label="검색"
-              className="flex size-6 shrink-0 items-center justify-center"
+              className="flex size-7 shrink-0 items-center justify-center"
             >
               <svg
                 width="24"
