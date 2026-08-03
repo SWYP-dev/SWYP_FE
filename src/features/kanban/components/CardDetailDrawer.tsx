@@ -351,7 +351,7 @@ export function CardDetailDrawer({
 
               {isAddingLink ? (
                 <div className="flex flex-col gap-2">
-                  <div className="flex items-stretch gap-2">
+                  <div className="flex items-stretch gap-3">
                     <div className="relative shrink-0">
                       <button
                         type="button"
