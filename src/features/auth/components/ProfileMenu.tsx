@@ -20,7 +20,7 @@ export function ProfileMenu() {
         ref={triggerRef}
         type="button"
         onClick={toggle}
-        className="flex w-full items-center justify-start gap-3 text-left"
+        className="flex w-full items-center justify-start gap-4 text-left"
       >
         <div className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-max border border-line-secondary bg-neutral-100">
           {user.profileImage ? (
