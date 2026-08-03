@@ -50,7 +50,9 @@ interface SelectionModalProps {
  * Figma 확인 사항 (node 133:23198, 초기 화면 기준 재확인):
  * - 왼쪽 그룹은 여러 개를 동시에 선택 가능 (예: 서울 전체 + 충북 전체 동시 적용).
  *   단, 클릭한 그룹은 즉시 선택 목록에 추가되고, 동시에 우측 하위 항목 편집 대상(포커스)이 됨.
- *   이미 선택된 그룹을 다시 클릭하면 선택은 유지한 채 포커스만 이동.
+ *   이미 선택된 그룹을 다시 클릭하면 선택이 해제됨(토글).
+ *   [QA 반영] 기존엔 "선택 유지 + 포커스만 이동"이었으나, 다시 클릭 시 선택 해제를
+ *   기대하는 사용자 피드백에 따라 토글 방식으로 변경.
  * - "전국"은 다른 모든 지역 선택과 배타적 — 전국을 고르면 나머지 선택은 전부 해제되고,
  *   반대로 다른 지역을 고르면 전국 선택은 자동 해제됨.
  * - 왼쪽 그룹 목록은 2열 그리드.
@@ -108,11 +110,17 @@ export function SelectionModal({
   };
 
   const selectGroup = (group: SelectionGroup) => {
+    // [QA 반영] 이미 선택된 그룹을 다시 클릭하면 선택 해제(토글). focusedGroupId 정리는
+    // removeGroup 내부에서 처리됨(포커스 대상이 제거되는 그룹이면 함께 초기화).
+    const alreadySelected = draft?.some((gv) => gv.groupId === group.id) ?? false;
+    if (alreadySelected) {
+      removeGroup(group.id);
+      return;
+    }
+
     setFocusedGroupId(group.id);
     setDraft((prev) => {
       const list = prev ?? [];
-      if (list.some((gv) => gv.groupId === group.id)) return prev; // 이미 선택된 그룹 → 포커스만 이동
-
       // "전국"은 다른 모든 선택과 배타적
       if (group.id === 'nationwide') return [{ groupId: 'nationwide', childIds: [] }];
       const withoutNationwide = list.filter((gv) => gv.groupId !== 'nationwide');
