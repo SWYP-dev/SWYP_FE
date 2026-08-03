@@ -356,7 +356,7 @@ export function CardDetailDrawer({
                       <button
                         type="button"
                         onClick={() => setShowCategoryDropdown((v) => !v)}
-                        className="flex h-full min-w-[108px] items-center justify-between rounded-xl border border-line-secondary bg-base-white px-4 py-3 text-3 font-medium text-label-description"
+                        className="flex h-full min-w-[108px] items-center justify-between rounded-xl border border-line-secondary bg-base-white px-4 py-3 text-3 font-medium text-label-placeholder"
                       >
                         <span className={linkCategory ? 'text-label-base' : ''}>
                           {URL_CATEGORIES.find((c) => c.value === linkCategory)?.label ?? '선택'}
