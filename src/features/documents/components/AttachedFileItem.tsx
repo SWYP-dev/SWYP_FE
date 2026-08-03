@@ -28,7 +28,7 @@ export function AttachedFileItem({ document, onDownload, onDelete }: AttachedFil
   const displayName = buildVersionedFileName(document.name, document.version);
 
   return (
-    <div className="flex w-full min-w-0 items-center gap-1 rounded-xl bg-neutral-100 py-3 pl-1 pr-5">
+    <div className="flex w-full min-w-0 items-center gap-1 rounded-xl bg-neutral-100 py-4 pl-2 pr-6">
       <button
         type="button"
         onClick={onDownload}
