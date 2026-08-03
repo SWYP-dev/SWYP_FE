@@ -260,12 +260,12 @@ export function SelectionModal({
             {/* ⚠️ [QA #6 반영] 부모가 items-start라 mx-auto가 동작하지 않아 좌측 정렬돼 보이던 문제.
                 빈 상태일 때만 컨테이너를 items-center + justify-center로 전환해 완전히 중앙 정렬. */}
             <div
-              className={`flex w-[868px] overflow-y-auto ${
-                focusedGroup ? 'flex-col items-start pt-10' : 'h-full items-center justify-center'
+              className={`w-[868px] overflow-y-auto [scrollbar-gutter:stable] ${
+                focusedGroup ? 'pt-10' : 'flex h-full items-center justify-center'
               }`}
             >
               {focusedGroup ? (
-                <div className="flex flex-wrap content-start items-start">
+                <div className="grid w-full grid-cols-3 content-start items-start">
                   <ChildRow
                     label={`${focusedGroup.label} 전체`}
                     checked={focusedGroupValue?.childIds.length === 0}
@@ -378,7 +378,7 @@ function ChildRow({
     <button
       type="button"
       onClick={onToggle}
-      className="flex h-10 w-[289.333px] items-center gap-2 rounded px-4 py-3 text-left"
+      className="flex h-10 w-full min-w-0 items-center gap-2 rounded px-4 py-3 text-left"
     >
       <span
         className={`flex size-[18px] shrink-0 items-center justify-center rounded-[4px] border ${
