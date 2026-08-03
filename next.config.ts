@@ -12,6 +12,11 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'image.rocketpunch.com',
       },
+      {
+        // 점핏(jumpit) 목데이터 공고 썸네일 원본 CDN — 미등록으로 /_next/image 400 발생해 추가
+        protocol: 'https',
+        hostname: 'cdn.jumpit.co.kr',
+      },
     ],
   },
 };

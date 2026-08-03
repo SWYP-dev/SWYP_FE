@@ -63,7 +63,10 @@ export interface FeedItem {
   jobTitle: string;
   jobCategory: JobCategory;
   career: Career;
-  deadline: string; // "2026-07-15"
+  // ⚠️ [2026-08-03 실데이터 확인] API 명세서엔 항상 "2026-07-15" 형식 문자열로만
+  // 문서화되어 있으나, 실제 응답엔 상시채용 등 마감일 미표기 공고가 deadline: null로
+  // 내려옴(문서-코드 불일치) — 세영님/동섭님 확인 필요.
+  deadline: string | null; // "2026-07-15" | null(마감일 미표기)
   thumbnailUrl: string;
   originalUrl: string;
   isScrapped: boolean; // v1.9: isFavorite → isScrapped
