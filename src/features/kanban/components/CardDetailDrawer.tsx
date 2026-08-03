@@ -58,13 +58,13 @@ const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 function formatDrawerDeadline(deadlineIso: string): string {
   const date = new Date(deadlineIso);
   const weekday = WEEKDAYS[date.getDay()];
-  const day = String(date.getDate()).padStart(2, '0');
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
   if (date.getFullYear() === new Date().getFullYear()) {
-    return `${day}(${weekday})`;
+    return `${month}.${day} (${weekday})`;
   }
   const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  return `${year}. ${month}. ${day}(${weekday})`;
+  return `${year}. ${String(month).padStart(2, '0')}. ${String(day).padStart(2, '0')}(${weekday})`;
 }
 
 // career 값 → 표시 텍스트 변환
