@@ -44,7 +44,7 @@ function mapCardErrorCode(code: string): FormErrors | null {
     case 'K011':
       return { companyName: '회사명을 입력해 주세요.' };
     case 'K012':
-      return { companyName: '올바른 회사명을 입력해 주세요.' };
+      return { companyName: '특수문자나 이모지는 입력할 수 없어요.' };
     case 'K013':
       return { companyName: '2자 이상 입력해 주세요.' };
     case 'K014':
@@ -52,7 +52,7 @@ function mapCardErrorCode(code: string): FormErrors | null {
     case 'K015':
       return { jobTitle: '공고명을 입력해 주세요.' };
     case 'K016':
-      return { jobTitle: '올바른 공고명을 입력해 주세요.' };
+      return { jobTitle: '특수문자나 이모지는 입력할 수 없어요.' };
     case 'K017':
       return { jobTitle: '2자 이상 입력해 주세요.' };
     case 'K018':
@@ -60,7 +60,7 @@ function mapCardErrorCode(code: string): FormErrors | null {
     case 'K019':
       return { originalUrl: '공고 링크를 입력해 주세요.' };
     case 'K020':
-      return { originalUrl: '올바른 공고 링크를 입력해 주세요.' };
+      return { originalUrl: '웹페이지를 찾을 수 없어요. URL 주소를 다시 확인해 주세요.' };
     case 'K021':
       return { originalUrl: '2048자를 초과하여 입력할 수 없어요.' };
     case 'K003':
@@ -77,7 +77,7 @@ function mapStageNameErrorCode(code: string): string | null {
     case 'K006':
       return '이미 존재하는 전형 단계 이름이에요.';
     case 'K007':
-      return '올바른 전형 단계 이름을 입력해 주세요.';
+      return '특수문자나 이모지는 입력할 수 없어요.';
     case 'K008':
       return '2자 이상 입력해 주세요.';
     case 'K009':

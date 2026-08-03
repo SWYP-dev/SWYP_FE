@@ -15,6 +15,27 @@ import { DragHandleIcon, EditIcon, PlusSmallIcon, TrashIcon } from '@/components
 // 걸어야 함 — 별도 확인 요청 필요.
 const DEFAULT_STAGE_NAMES = ['지원 전', '면접', '최종 결과'];
 
+// 문자(한글/영문 등)나 숫자가 하나도 없으면 특수문자/이모지로만 이루어진 것으로 간주
+function hasNoLetterOrDigit(value: string): boolean {
+  return !/[\p{L}\p{N}]/u.test(value);
+}
+
+// 완성된 한글 음절(가~힣)이 아닌 낱자음/낱모음(ㄱ~ㅎ, ㅏ~ㅣ)만으로 이루어진 입력은
+// hasNoLetterOrDigit로 걸러지지 않아(Unicode상 "글자"로 분류) 별도 감지.
+function isOnlyHangulJamo(value: string): boolean {
+  return /^[ㄱ-ㅎㅏ-ㅣ\s]+$/.test(value);
+}
+
+// API 명세서 3.7/3.8 이름 검증 규칙(K005~K009)과 동일한 기준으로 클라이언트 사전 검증.
+function validateStageName(trimmed: string): string | undefined {
+  if (!trimmed) return '전형 단계 이름을 입력해 주세요.';
+  if (isOnlyHangulJamo(trimmed)) return '올바른 단어 형태로 입력해 주세요.';
+  if (trimmed.length < 2) return '2자 이상 입력해 주세요.';
+  if (trimmed.length > 20) return '20자를 초과하여 입력할 수 없어요.';
+  if (hasNoLetterOrDigit(trimmed)) return '특수문자나 이모지는 입력할 수 없어요.';
+  return undefined;
+}
+
 interface KanbanColumnProps {
   stage: KanbanStage;
   isDraft?: boolean;
@@ -79,7 +100,7 @@ export function KanbanColumn({
 
   const [isEditingName, setIsEditingName] = useState(isDraft);
   const [localDraftName, setLocalDraftName] = useState(isDraft ? '' : stage.name);
-  const [hasError, setHasError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const isLocked = stage.isDefault || DEFAULT_STAGE_NAMES.includes(stage.name);
 
@@ -91,27 +112,30 @@ export function KanbanColumn({
     } else {
       setLocalDraftName(value);
     }
-    setHasError(false);
+    setErrorMessage(null);
   }
 
   function commit() {
     const trimmed = draftName.trim();
     if (isDraft) {
-      if (!trimmed) {
-        setHasError(true);
+      const validationError = validateStageName(trimmed);
+      if (validationError) {
+        setErrorMessage(validationError);
         return;
       }
       onConfirmDraft?.(trimmed);
       return;
     }
-    if (!trimmed) {
-      setLocalDraftName(stage.name);
+    if (trimmed === stage.name) {
       setIsEditingName(false);
       return;
     }
-    if (trimmed !== stage.name) {
-      onRenameStage?.(stage.id, trimmed, stage.position);
+    const validationError = validateStageName(trimmed);
+    if (validationError) {
+      setErrorMessage(validationError);
+      return;
     }
+    onRenameStage?.(stage.id, trimmed, stage.position);
     setIsEditingName(false);
   }
 
@@ -122,7 +146,7 @@ export function KanbanColumn({
     }
     setLocalDraftName(stage.name);
     setIsEditingName(false);
-    setHasError(false);
+    setErrorMessage(null);
   }
 
   return (
@@ -158,13 +182,11 @@ export function KanbanColumn({
                     }}
                     placeholder={isDraft ? '전형 단계를 입력하세요.' : '텍스트를 입력해 주세요.'}
                     className={`w-[168px] border-b-2 bg-transparent pb-2 text-5 font-medium text-label-base placeholder:text-label-placeholder outline-none ${
-                      hasError ? 'border-status-negative' : 'border-line-secondary'
+                      errorMessage ? 'border-status-negative' : 'border-line-secondary'
                     }`}
                   />
-                  {hasError && (
-                    <p className="text-1 font-medium text-status-negative">
-                      전형 이름을 입력해주세요.
-                    </p>
+                  {errorMessage && (
+                    <p className="text-1 font-medium text-status-negative">{errorMessage}</p>
                   )}
                 </div>
               ) : (

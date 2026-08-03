@@ -69,29 +69,30 @@ function validateField(key: keyof FormState, form: FormState): string | undefine
   if (key === 'companyName') {
     const trimmed = form.companyName.trim();
     if (!trimmed) return '회사명을 입력해 주세요.';
-    if (isOnlyHangulJamo(trimmed)) return '자음이나 모음만으로는 입력할 수 없습니다.';
+    if (isOnlyHangulJamo(trimmed)) return '올바른 단어 형태로 입력해 주세요.';
     if (trimmed.length < 2) return '2자 이상 입력해 주세요.';
     if (trimmed.length > 50) return '50자를 초과하여 입력할 수 없어요.';
-    if (hasNoLetterOrDigit(trimmed)) return '올바른 회사명을 입력해 주세요.';
+    if (hasNoLetterOrDigit(trimmed)) return '특수문자나 이모지는 입력할 수 없어요.';
   }
   if (key === 'jobTitle') {
     const trimmed = form.jobTitle.trim();
     if (!trimmed) return '공고명을 입력해 주세요.';
+    if (isOnlyHangulJamo(trimmed)) return '올바른 단어 형태로 입력해 주세요.';
     if (trimmed.length < 2) return '2자 이상 입력해 주세요.';
     if (trimmed.length > 100) return '100자를 초과하여 입력할 수 없어요.';
-    if (hasNoLetterOrDigit(trimmed)) return '올바른 공고명을 입력해 주세요.';
+    if (hasNoLetterOrDigit(trimmed)) return '특수문자나 이모지는 입력할 수 없어요.';
   }
   if (key === 'originalUrl') {
     const trimmed = form.originalUrl.trim();
     if (!trimmed) return '공고 링크를 입력해 주세요.';
     // 최소한의 도메인 형태(점 포함) 검증 — "abcde" 같은 비URL 텍스트 차단
     if (!trimmed.includes('.') || trimmed.includes(' ')) {
-      return "공고 링크는 'https://'가 포함된 정확한 웹 주소로 입력해 주세요.";
+      return '올바른 URL 형식(https://...)으로 입력해 주세요.';
     }
     try {
       new URL(normalizeUrl(trimmed));
     } catch {
-      return "공고 링크는 'https://'가 포함된 정확한 웹 주소로 입력해 주세요.";
+      return '올바른 URL 형식(https://...)으로 입력해 주세요.';
     }
     if (trimmed.length > 2048) return '2048자를 초과하여 입력할 수 없어요.';
   }

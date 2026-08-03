@@ -29,6 +29,29 @@ type UrlCategoryValue = (typeof URL_CATEGORIES)[number]['value'];
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB (API 명세서 4.4.2 정책)
 
+function normalizeUrl(url: string): string {
+  const trimmed = url.trim();
+  if (!trimmed) return trimmed;
+  return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+}
+
+// ⚠️ 이 필드엔 "유효하지 않은 URL(웹페이지를 찾을 수 없음)" 판정 기준(reachability
+// 확인 API 등)이 명세서에 없어 형식 검증까지만 클라이언트에서 처리 — 백엔드 확인 필요.
+function validateLinkUrl(value: string): string | undefined {
+  const trimmed = value.trim();
+  if (!trimmed) return '공고 링크를 입력해 주세요.';
+  if (!trimmed.includes('.') || trimmed.includes(' ')) {
+    return '올바른 URL 형식(https://...)으로 입력해 주세요.';
+  }
+  try {
+    new URL(normalizeUrl(trimmed));
+  } catch {
+    return '올바른 URL 형식(https://...)으로 입력해 주세요.';
+  }
+  if (trimmed.length > 2048) return '2048자를 초과하여 입력할 수 없어요.';
+  return undefined;
+}
+
 // career 값 → 표시 텍스트 변환
 function formatCareer(career: string | null): string {
   if (!career) return '-';
@@ -71,6 +94,7 @@ export function CardDetailDrawer({
   const [linkUrl, setLinkUrl] = useState('');
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [fileError, setFileError] = useState<string | null>(null);
+  const [linkError, setLinkError] = useState<string | null>(null);
 
   // 상세 데이터 로드 시 1회만 memo 초기값 동기화
   if (detail && !isMemoSynced) {
@@ -85,6 +109,7 @@ export function CardDetailDrawer({
     setLinkUrl('');
     setShowCategoryDropdown(false);
     setFileError(null);
+    setLinkError(null);
   }
 
   function handleMemoBlur() {
@@ -124,15 +149,20 @@ export function CardDetailDrawer({
   }
 
   function handleLinkSubmit() {
-    if (!linkUrl.trim()) return;
+    const validationError = validateLinkUrl(linkUrl);
+    if (validationError) {
+      setLinkError(validationError);
+      return;
+    }
     const category = linkCategory ?? 'OTHER';
     registerLink.mutate(
-      { category, url: linkUrl.trim() },
+      { category, url: normalizeUrl(linkUrl.trim()) },
       {
         onSuccess: () => {
           setLinkUrl('');
           setLinkCategory(null);
           setIsAddingLink(false);
+          setLinkError(null);
         },
       }
     );
@@ -336,12 +366,20 @@ export function CardDetailDrawer({
                     </div>
                     <input
                       value={linkUrl}
-                      onChange={(e) => setLinkUrl(e.target.value)}
+                      onChange={(e) => {
+                        setLinkUrl(e.target.value);
+                        setLinkError(null);
+                      }}
                       onKeyDown={(e) => e.key === 'Enter' && handleLinkSubmit()}
                       placeholder="텍스트를 입력해 주세요."
-                      className="flex-1 rounded-xl border border-line-secondary px-4 py-3 text-3 font-medium text-label-base placeholder:text-label-placeholder outline-none"
+                      className={`flex-1 rounded-xl border px-4 py-3 text-3 font-medium text-label-base placeholder:text-label-placeholder outline-none ${
+                        linkError ? 'border-status-negative' : 'border-line-secondary'
+                      }`}
                     />
                   </div>
+                  {linkError && (
+                    <p className="text-1 font-medium text-status-negative">{linkError}</p>
+                  )}
                   <div className="flex gap-2">
                     <Button
                       variant="secondary"
@@ -350,6 +388,7 @@ export function CardDetailDrawer({
                         setIsAddingLink(false);
                         setLinkCategory(null);
                         setLinkUrl('');
+                        setLinkError(null);
                       }}
                     >
                       취소
