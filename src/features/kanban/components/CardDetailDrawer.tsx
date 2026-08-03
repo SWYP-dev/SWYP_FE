@@ -399,23 +399,6 @@ export function CardDetailDrawer({
                   {linkError && (
                     <p className="text-1 font-medium text-status-negative">{linkError}</p>
                   )}
-                  <div className="flex gap-2">
-                    <Button
-                      variant="secondary"
-                      className="flex-1"
-                      onClick={() => {
-                        setIsAddingLink(false);
-                        setLinkCategory(null);
-                        setLinkUrl('');
-                        setLinkError(null);
-                      }}
-                    >
-                      취소
-                    </Button>
-                    <Button variant="primary" className="flex-1" onClick={handleLinkSubmit}>
-                      추가
-                    </Button>
-                  </div>
                 </div>
               ) : (
                 <Button
