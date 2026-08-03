@@ -391,7 +391,7 @@ export function CardDetailDrawer({
                       }}
                       onKeyDown={(e) => e.key === 'Enter' && handleLinkSubmit()}
                       placeholder="텍스트를 입력해 주세요."
-                      className={`flex-1 rounded-xl border px-4 py-3 text-3 font-medium text-label-base placeholder:text-label-placeholder outline-none ${
+                      className={`flex-1 rounded-xl border px-5 py-4 text-3 font-medium text-label-base placeholder:text-label-placeholder outline-none ${
                         linkError ? 'border-status-negative' : 'border-line-secondary'
                       }`}
                     />
@@ -439,7 +439,7 @@ function ChevronDownIcon() {
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path
         d="M4 6l4 4 4-4"
-        stroke="#BDBDC0"
+        stroke="var(--color-icon-gray)"
         strokeWidth="1.4"
         strokeLinecap="round"
         strokeLinejoin="round"
