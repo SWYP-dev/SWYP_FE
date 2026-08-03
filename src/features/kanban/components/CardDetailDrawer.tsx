@@ -253,7 +253,7 @@ export function CardDetailDrawer({
             )}
 
             {/* 위치 / 경력 / 지원 마감일 — Figma JobSummary */}
-            <div className="flex w-full items-center justify-center rounded-xl bg-neutral-50 py-3 text-center text-1">
+            <div className="flex w-full items-center justify-center rounded-xl bg-neutral-50 py-4 text-center text-1">
               <div className="flex flex-1 flex-col gap-[2px]">
                 <p className="text-label-description">위치</p>
                 <p className="font-semibold text-label-body">{detail.region ?? '-'}</p>
