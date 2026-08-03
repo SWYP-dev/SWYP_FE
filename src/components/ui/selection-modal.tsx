@@ -102,6 +102,9 @@ export function SelectionModal({
       const next = prev.filter((gv) => gv.groupId !== groupId);
       return next.length > 0 ? next : null;
     });
+    // ⚠️ [QA 반영] 칩의 X로 그룹을 제거해도 focusedGroupId가 그대로 남아있어
+    // 좌측 메뉴의 체크 아이콘이 사라지지 않는 버그 — 제거된 그룹이 포커스 대상이었다면 해제.
+    setFocusedGroupId((prev) => (prev === groupId ? null : prev));
   };
 
   const selectGroup = (group: SelectionGroup) => {
