@@ -47,20 +47,20 @@ function startOfDay(date: Date): Date {
 export function groupCardsByDeadline(entries: DeadlineCardEntry[]): DeadlineGroupData[] {
   const today = startOfDay(new Date());
 
-  // 상시채용(deadline: "1970-01-01" sentinel) 카드는 날짜순 정렬 대상이 아니라
-  // 별도 그룹으로 분리해 목록 맨 뒤에 배치한다. 그대로 두면 1970년 최상단에
-  // 정렬되고 "D+2만" 같은 무의미한 마감 경과일이 표시됨.
+  // 상시채용(deadline: null) 카드는 날짜순 정렬 대상이 아니라 별도 그룹으로 분리해
+  // 목록 맨 뒤에 배치한다. 그대로 두면 new Date(null)이 epoch(1970-01-01)로 파싱되어
+  // 최상단에 정렬되고 "D+2만" 같은 무의미한 마감 경과일이 표시됨.
   const alwaysHiringEntries = entries.filter((e) => isAlwaysHiring(e.card.deadline));
   const datedEntries = entries.filter((e) => !isAlwaysHiring(e.card.deadline));
 
   const sorted = [...datedEntries].sort(
-    (a, b) => new Date(a.card.deadline).getTime() - new Date(b.card.deadline).getTime()
+    (a, b) => new Date(a.card.deadline!).getTime() - new Date(b.card.deadline!).getTime()
   );
 
   const groupMap = new Map<string, DeadlineGroupData>();
 
   for (const entry of sorted) {
-    const dateKey = entry.card.deadline;
+    const dateKey = entry.card.deadline!;
     if (!groupMap.has(dateKey)) {
       const target = startOfDay(new Date(dateKey));
       const diffDays = Math.round((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));

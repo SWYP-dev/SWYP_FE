@@ -56,7 +56,7 @@ function validateLinkUrl(value: string): string | undefined {
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 
 // 지원 마감일 표시 포맷 — 올해(현재 연도)면 "dd(요일)", 그 외 연도면 "yyyy. mm. dd(요일)"
-function formatDrawerDeadline(deadlineIso: string): string {
+function formatDrawerDeadline(deadlineIso: string | null): string {
   if (isAlwaysHiring(deadlineIso)) return '상시채용';
   const date = new Date(deadlineIso);
   const weekday = WEEKDAYS[date.getDay()];

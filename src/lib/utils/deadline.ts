@@ -16,12 +16,10 @@ export function isDeadlinePassed(deadline: string | null): boolean {
   return getDeadlineDiffDays(deadline) < 0;
 }
 
-// job_postings(칸반 카드) 사본은 deadline 컬럼이 NOT NULL이라, 원본 피드가
-// deadline: null(상시채용)인 공고를 지원 현황에 추가하면 1970-01-01(epoch)로
-// 내려온다 — KanbanCard/KanbanCardDetail의 deadline이 null이 아닌 이 값을 상시채용
-// sentinel로 취급해 "상시채용"으로 표시한다.
-export const ALWAYS_HIRING_DEADLINE = '1970-01-01';
-
-export function isAlwaysHiring(deadline: string): boolean {
-  return deadline.startsWith(ALWAYS_HIRING_DEADLINE);
+// KanbanCard/KanbanCardDetail의 deadline은 타입상 string(non-null)으로 문서화돼
+// 있으나, 원본 피드가 deadline: null(상시채용)인 공고를 지원 현황에 추가하면 실제
+// 응답도 null로 내려온다(문서-코드 불일치, FeedItem과 동일한 패턴). new Date(null)이
+// epoch(1970-01-01)로 조용히 파싱되어 "1970.01.01"로 잘못 표시되던 게 원인.
+export function isAlwaysHiring(deadline: string | null): deadline is null {
+  return deadline === null;
 }
