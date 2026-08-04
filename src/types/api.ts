@@ -112,7 +112,9 @@ export interface KanbanCard {
   postingId: number;
   companyName: string;
   jobTitle: string;
-  deadline: string;
+  // ⚠️ [실데이터 확인] 명세상 항상 string이지만, 상시채용 등 마감일 미표기 공고를
+  // 지원 현황에 추가하면 null로 내려옴(FeedItem과 동일 패턴) — 문서-코드 불일치.
+  deadline: string | null;
   thumbnailUrl: string;
   originalUrl: string;
   deadlineChanged: boolean;
@@ -144,7 +146,7 @@ export interface KanbanCardDetail {
   jobCategory: JobCategory | null; // 추가 — 직무 분류 (예: "BACKEND")
   region: string | null; // 추가 — 위치 (예: "판교")
   career: Career | null; // 추가 — 경력 (예: "NEW" | "EXPERIENCED")
-  deadline: string;
+  deadline: string | null; // 상시채용 등 마감일 미표기 공고는 null (KanbanCard와 동일 패턴)
   originalUrl: string;
   deadlineChanged: boolean;
   memo: string | null;
@@ -287,7 +289,7 @@ export interface KanbanCardRegisterResponse {
   postingId: number;
   companyName: string;
   jobTitle: string;
-  deadline: string;
+  deadline: string | null; // 상시채용 등 마감일 미표기 공고는 null (KanbanCard와 동일 패턴)
 }
 
 // 3.3 칸반 카드 스테이지 이동
