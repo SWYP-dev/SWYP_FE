@@ -16,6 +16,7 @@ import {
 import { AttachedFileItem } from '@/features/documents/components/AttachedFileItem';
 import { AttachedLinkItem } from '@/features/documents/components/AttachedLinkItem';
 import { ApiClientError } from '@/lib/api/api-client';
+import { isAlwaysHiring } from '@/lib/utils/deadline';
 
 // Figma node 94:13318 기준 — URL 카테고리 드롭다운 옵션
 // ⚠️ [백엔드 확인 완료] 서버는 한글이 아닌 enum 값(DocumentLinkCategory)을 받음/내려줌.
@@ -56,6 +57,7 @@ const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 
 // 지원 마감일 표시 포맷 — 올해(현재 연도)면 "dd(요일)", 그 외 연도면 "yyyy. mm. dd(요일)"
 function formatDrawerDeadline(deadlineIso: string): string {
+  if (isAlwaysHiring(deadlineIso)) return '상시채용';
   const date = new Date(deadlineIso);
   const weekday = WEEKDAYS[date.getDay()];
   const month = date.getMonth() + 1;

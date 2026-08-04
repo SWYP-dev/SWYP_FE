@@ -1,4 +1,5 @@
 import type { KanbanStage, KanbanCard } from '@/types/api';
+import { isAlwaysHiring } from '@/lib/utils/deadline';
 
 export interface DeadlineCardEntry {
   card: KanbanCard;
@@ -46,7 +47,13 @@ function startOfDay(date: Date): Date {
 export function groupCardsByDeadline(entries: DeadlineCardEntry[]): DeadlineGroupData[] {
   const today = startOfDay(new Date());
 
-  const sorted = [...entries].sort(
+  // 상시채용(deadline: "1970-01-01" sentinel) 카드는 날짜순 정렬 대상이 아니라
+  // 별도 그룹으로 분리해 목록 맨 뒤에 배치한다. 그대로 두면 1970년 최상단에
+  // 정렬되고 "D+2만" 같은 무의미한 마감 경과일이 표시됨.
+  const alwaysHiringEntries = entries.filter((e) => isAlwaysHiring(e.card.deadline));
+  const datedEntries = entries.filter((e) => !isAlwaysHiring(e.card.deadline));
+
+  const sorted = [...datedEntries].sort(
     (a, b) => new Date(a.card.deadline).getTime() - new Date(b.card.deadline).getTime()
   );
 
@@ -88,5 +95,17 @@ export function groupCardsByDeadline(entries: DeadlineCardEntry[]): DeadlineGrou
     groupMap.get(dateKey)!.cards.push(entry);
   }
 
-  return Array.from(groupMap.values());
+  const groups = Array.from(groupMap.values());
+
+  if (alwaysHiringEntries.length > 0) {
+    groups.push({
+      key: 'always-hiring',
+      label: '상시채용',
+      ddayLabel: '',
+      isUrgent: false,
+      cards: alwaysHiringEntries,
+    });
+  }
+
+  return groups;
 }
