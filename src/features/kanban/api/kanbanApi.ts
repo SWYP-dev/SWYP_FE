@@ -16,7 +16,7 @@ export interface KanbanCardDirectResponse {
   postingId: number;
   companyName: string;
   jobTitle: string;
-  deadline: string;
+  deadline: string | null; // 상시채용 등 마감일 미표기 공고는 null (KanbanCard와 동일 패턴)
 }
 
 export interface KanbanCardUpdateResponse {
@@ -24,7 +24,7 @@ export interface KanbanCardUpdateResponse {
   companyName: string;
   jobTitle: string;
   originalUrl: string;
-  deadline: string;
+  deadline: string | null;
 }
 
 export interface KanbanCardMoveResponse {
@@ -64,7 +64,10 @@ export interface CreateDirectCardRequest {
   companyName: string;
   title: string;
   originalUrl: string;
-  deadline: string;
+  // AddCardModal 폼에서는 항상 실제 날짜 문자열이 채워지지만, "삭제 실행 취소"
+  // (KanbanBoard.handleUndoDeleteCard)가 상시채용 카드의 원래 deadline(null)을
+  // 그대로 이 API에 재전송하는 경로가 있어 null도 허용한다.
+  deadline: string | null;
 }
 
 // ⚠️ [QA 반영] 필드 전체를 보내야 했던 기존 방식 때문에, 마감일만 바꾸려 해도

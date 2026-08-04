@@ -16,6 +16,7 @@ import {
 import { AttachedFileItem } from '@/features/documents/components/AttachedFileItem';
 import { AttachedLinkItem } from '@/features/documents/components/AttachedLinkItem';
 import { ApiClientError } from '@/lib/api/api-client';
+import { isAlwaysHiring } from '@/lib/utils/deadline';
 
 // Figma node 94:13318 기준 — URL 카테고리 드롭다운 옵션
 // ⚠️ [백엔드 확인 완료] 서버는 한글이 아닌 enum 값(DocumentLinkCategory)을 받음/내려줌.
@@ -35,8 +36,8 @@ function normalizeUrl(url: string): string {
   return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
 }
 
-// ⚠️ 이 필드엔 "유효하지 않은 URL(웹페이지를 찾을 수 없음)" 판정 기준(reachability
-// 확인 API 등)이 명세서에 없어 형식 검증까지만 클라이언트에서 처리 — 백엔드 확인 필요.
+// ⚠️ [백엔드 확인 완료] 서버는 URL 접근 가능 여부(reachability)를 확인하지 않고
+// http(s) 형식·유효한 호스트 포함 여부만 검증 — 클라이언트도 형식 검증까지만 처리.
 function validateLinkUrl(value: string): string | undefined {
   const trimmed = value.trim();
   if (!trimmed) return '공고 링크를 입력해 주세요.';
@@ -55,7 +56,8 @@ function validateLinkUrl(value: string): string | undefined {
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 
 // 지원 마감일 표시 포맷 — 올해(현재 연도)면 "dd(요일)", 그 외 연도면 "yyyy. mm. dd(요일)"
-function formatDrawerDeadline(deadlineIso: string): string {
+function formatDrawerDeadline(deadlineIso: string | null): string {
+  if (isAlwaysHiring(deadlineIso)) return '상시채용';
   const date = new Date(deadlineIso);
   const weekday = WEEKDAYS[date.getDay()];
   const month = date.getMonth() + 1;

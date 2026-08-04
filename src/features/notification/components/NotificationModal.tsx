@@ -1,32 +1,34 @@
 'use client';
 
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { NotificationItem } from './NotificationItem';
-import { useNotificationInbox } from '../api/useNotificationQuery';
-import { useMarkNotificationsRead } from '../api/useNotificationMutations';
+import { useNotificationInboxInfinite } from '../api/useNotificationQuery';
+import { useDeleteNotification, useDeleteAllNotifications } from '../api/useNotificationMutations';
 
 // Figma "지원 마감일 알림 확인 후(알림 모달 등장)"(node 101:17610) 스펙 반영.
-// ⚠️ "모두 삭제" 버튼: API 명세서 5장에 인앱 알림 삭제 API가 없어(조회 5.4 / 읽음처리 5.5만
-// 존재) 사용자 확인(2026-07-23)에 따라 실제 동작은 "모두 읽음 처리"로 구현. 문구는 Figma
-// 그대로 "모두 삭제"를 두되, 기획 쪽에 문구 수정 여부 확인 필요 — TODO 남김.
-// ⚠️ "더보기": 5.4는 커서 페이지네이션이 없어(최신 N건만 반환) size를 늘려 재조회하는 방식으로
-// 구현. 대량 이력이 필요하면 5.3(발송 이력) 연동을 별도로 검토해야 함.
+// ⚠️ [2026-08-04] 백엔드 알림 API 변경(프론트 연동 공유) 반영: 인앱 알림 단일/전체 삭제
+// API(5.6/5.7)가 신규로 추가됨. 기존엔 삭제 API가 없어 "모두 삭제" 버튼이 실제로는
+// "모두 읽음 처리"만 수행하는 임시 조치였음(사용자 확인 2026-07-23) — 이번에 실제 삭제
+// API로 교체함. 삭제는 되돌릴 수 없는 동작인데 확인 다이얼로그 없이 즉시 실행되므로,
+// UX상 확인 절차가 필요한지 세은님 확인 필요 (TODO).
+// "더보기": v1.11 정정에 따라 5.3과 동일한 cursor/nextCursor/hasNext 커서 페이지네이션 —
+// 클릭 시 직전 응답의 nextCursor로 다음 페이지만 이어서 조회(재조회 아님).
 export function NotificationModal() {
   const router = useRouter();
-  const [size, setSize] = useState(10);
-  const { data, isLoading } = useNotificationInbox(size);
-  const markReadMutation = useMarkNotificationsRead();
+  const { data, isLoading, hasNextPage, fetchNextPage, isFetchingNextPage } =
+    useNotificationInboxInfinite();
+  const deleteMutation = useDeleteNotification();
+  const deleteAllMutation = useDeleteAllNotifications();
 
-  const items = data?.items ?? [];
+  const items = data?.pages.flatMap((page) => page.items) ?? [];
 
-  function handleDismiss(id: number) {
-    markReadMutation.mutate([id]);
+  function handleDelete(id: number) {
+    deleteMutation.mutate(id);
   }
 
-  function handleMarkAllRead() {
-    const unreadIds = items.filter((i) => !i.isRead).map((i) => i.id);
-    if (unreadIds.length > 0) markReadMutation.mutate(unreadIds);
+  function handleDeleteAll() {
+    if (items.length === 0) return;
+    deleteAllMutation.mutate();
   }
 
   return (
@@ -35,8 +37,8 @@ export function NotificationModal() {
         <p className="text-5 font-semibold text-label-base">알림</p>
         <button
           type="button"
-          onClick={handleMarkAllRead}
-          disabled={items.length === 0}
+          onClick={handleDeleteAll}
+          disabled={items.length === 0 || deleteAllMutation.isPending}
           className={`text-1 font-medium ${
             items.length === 0 ? 'cursor-not-allowed text-neutral-300' : 'text-label-body'
           }`}
@@ -71,15 +73,16 @@ export function NotificationModal() {
             </div>
           )}
           {items.map((item) => (
-            <NotificationItem key={item.id} item={item} onDismiss={handleDismiss} />
+            <NotificationItem key={item.id} item={item} onDelete={handleDelete} />
           ))}
         </div>
 
-        {data?.hasNext && (
+        {hasNextPage && (
           <div className="flex w-full flex-col items-center pt-4">
             <button
               type="button"
-              onClick={() => setSize((prev) => prev + 10)}
+              onClick={() => fetchNextPage()}
+              disabled={isFetchingNextPage}
               className="flex items-center justify-center gap-[2px] rounded-lg border border-line-secondary bg-base-white py-2 pl-3 pr-[7px] text-3 font-medium text-label-base"
             >
               더보기
