@@ -213,11 +213,16 @@ export interface NotificationHistoryItem {
   status: NotificationStatus;
 }
 
+// ⚠️ [2026-08-04] 백엔드 프론트 연동 공유 반영: companyName/message 필드가 제거되고
+// dDayLabel/title/description으로 분리됨. title/description은 백엔드가 완성한 문구를
+// 그대로 내려주므로 프론트에서 별도로 조합하지 않음. API 명세서 v1.11 문서에는 아직
+// 반영 전이라, 문서 업데이트 시 필드명 대조 필요 (TODO).
 export interface InAppNotificationItem {
   id: number;
   cardId: number;
-  companyName: string;
-  message: string;
+  dDayLabel: string; // 알림 배지에 표시. 예: "D-1", "D-Day"
+  title: string;
+  description: string;
   isRead: boolean;
   createdAt: string;
 }
