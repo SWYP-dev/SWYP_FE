@@ -7,6 +7,7 @@ import { CSS } from '@dnd-kit/utilities';
 import type { KanbanCard as KanbanCardType, KanbanStage } from '@/types/api';
 import { KanbanCard } from './KanbanCard';
 import { DragHandleIcon, EditIcon, PlusSmallIcon, TrashIcon } from '@/components/ui/icons';
+import { pushDataLayerEvent } from '@/lib/gtm';
 
 // ⚠️ 백엔드는 현재 "지원 전"만 isDefault:true로 내려주고(이동·이름변경 제한),
 // "면접"/"최종 결과"는 서버 차원 제한이 없어 이름 변경/삭제가 실제로 가능한 상태임.
@@ -115,6 +116,15 @@ export function KanbanColumn({
     setErrorMessage(null);
   }
 
+  // 수정 버튼 클릭 / 단계명 더블클릭, 두 진입 경로를 하나로 묶고
+  // GA 이벤트(stage_name_edit_trigger)로 어떤 방식을 더 많이 쓰는지 구분해서 트래킹한다.
+  function startEditing(method: 'button' | 'double_click') {
+    if (isDraft || isLocked) return;
+    pushDataLayerEvent('stage_name_edit_trigger', { method });
+    setLocalDraftName(stage.name);
+    setIsEditingName(true);
+  }
+
   function commit() {
     const trimmed = draftName.trim();
     if (isDraft) {
@@ -190,7 +200,14 @@ export function KanbanColumn({
                   )}
                 </div>
               ) : (
-                <p className="whitespace-nowrap text-6 font-semibold text-label-base">{stage.name}</p>
+                <p
+                  onDoubleClick={() => startEditing('double_click')}
+                  className={`whitespace-nowrap text-6 font-semibold text-label-base ${
+                    isDraft || isLocked ? '' : 'cursor-text'
+                  }`}
+                >
+                  {stage.name}
+                </p>
               )}
             </div>
             {!isDraft && (
@@ -215,11 +232,7 @@ export function KanbanColumn({
               type="button"
               aria-label="스테이지 이름 수정"
               disabled={isDraft || isLocked}
-              onClick={() => {
-                if (isDraft || isLocked) return;
-                setLocalDraftName(stage.name);
-                setIsEditingName(true);
-              }}
+              onClick={() => startEditing('button')}
               className={`flex size-5 items-center justify-center ${
                 isDraft || isLocked ? 'cursor-not-allowed opacity-30' : 'text-icon-gray'
               }`}
