@@ -119,9 +119,9 @@ export function EditDeadlineCardModal({
           </button>
         </div>
 
-        {/* 폼 */}
-        <div className="flex flex-col gap-5 px-8">
-          <div className="flex flex-col gap-2">
+        {/* 폼 — Figma FieldGroup gap-6(20px), Label-Input gap-3(8px) */}
+        <div className="flex flex-col gap-6 px-8">
+          <div className="flex flex-col gap-3">
             <div className="flex items-center gap-2">
               <p className="text-3 font-semibold text-label-base">회사명</p>
             </div>
@@ -134,7 +134,7 @@ export function EditDeadlineCardModal({
             />
           </div>
 
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-3">
             <div className="flex items-center gap-2">
               <p className="text-3 font-semibold text-label-base">공고명</p>
             </div>
@@ -148,7 +148,7 @@ export function EditDeadlineCardModal({
           </div>
 
           {/* 지원 마감일 */}
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-3">
             <div className="flex items-center gap-2">
               <p className="text-3 font-semibold text-label-base">지원 마감일</p>
               <p className="text-3 font-bold text-status-negative">*</p>
@@ -183,7 +183,7 @@ export function EditDeadlineCardModal({
           </div>
 
           {/* 전형 단계 — Figma 그대로 지원 마감일 아래 배치 (사용자 확인 2026-07-23) */}
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-3">
             <div className="flex items-center gap-2">
               <p className="text-3 font-semibold text-label-base">전형 단계</p>
               <p className="text-3 font-bold text-status-negative">*</p>
