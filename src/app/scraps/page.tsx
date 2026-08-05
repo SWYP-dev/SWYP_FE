@@ -28,16 +28,20 @@ import { kanbanKeys } from '@/features/kanban/api/useKanbanQuery';
 import { ApiClientError } from '@/lib/api/api-client';
 import { formatDeadlineText } from '@/features/kanban/utils/formatDeadline';
 import { formatCareer } from '@/features/feed/utils/formatCareer';
+import { formatJobCategory } from '@/features/feed/utils/formatJobCategory';
 import type { ScrapCardData } from '@/features/scraps/types/scrap';
 import type { ScrapItem } from '@/types/api';
 
+// ⚠️ [QA 반영] 통합 공고 탐색(page.tsx)과 동일한 포맷 함수를 사용해 직무/경력/지역
+// 표시 문구가 두 화면에서 어긋나지 않도록 함(지역 미표기 fallback은 JobCard 내부의
+// "지역 정보 없음" 문구를 그대로 타도록 원본 값을 보존).
 function toScrapCardData(item: ScrapItem): ScrapCardData {
   return {
     ...item,
     deadlineLabel: formatDeadlineText(item.deadline),
     platformLabel: item.platform ?? '',
-    jobCategoryLabel: item.jobCategory ?? '',
-    region: item.region ?? '-',
+    jobCategoryLabel: formatJobCategory(item.jobCategory),
+    region: item.region ?? '',
     careerLabel: formatCareer(item.career),
   };
 }
@@ -140,12 +144,12 @@ const ScrapsPage: NextPage = () => {
         <div className="flex-1 flex flex-col px-12 py-7 bg-surface-card">
           <div className="flex flex-col gap-8">
             <div className="flex flex-col items-center gap-3 p-3 bg-base-white rounded-[20px]">
-              {isLoading && <p className="py-10 text-label-description">불러오는 중...</p>}
+              {isLoading && <p className="py-11 text-label-description">불러오는 중...</p>}
               {isError && (
-                <p className="py-10 text-status-negative">스크랩 목록을 불러오지 못했어요.</p>
+                <p className="py-11 text-status-negative">스크랩 목록을 불러오지 못했어요.</p>
               )}
               {!isLoading && !isError && scraps.length === 0 && (
-                <p className="py-10 text-label-description">스크랩한 공고가 없어요.</p>
+                <p className="py-11 text-label-description">스크랩한 공고가 없어요.</p>
               )}
               {scraps.map((scrap) => (
                 <ScrapCard
