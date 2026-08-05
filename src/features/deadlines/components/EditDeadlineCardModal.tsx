@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { CloseIcon } from '@/components/ui/icons';
 import { DatePicker } from '@/components/ui/date-picker';
+import { Button } from '@/components/ui/button';
 import { Popover, usePopoverTrigger } from '@/components/ui/popover';
 import { DropdownMenu, type DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { useEscapeKey } from '@/lib/hooks/useEscapeKey';
@@ -220,18 +221,9 @@ export function EditDeadlineCardModal({
 
         {/* 푸터 */}
         <div className="px-8">
-          <button
-            type="button"
-            onClick={handleConfirm}
-            disabled={!isAllFilled}
-            className={`flex w-full items-center justify-center rounded-xl py-3 text-5 font-semibold text-base-white transition-colors ${
-              isAllFilled
-                ? 'bg-fill-primary hover:bg-action-primary-hover'
-                : 'bg-action-primary-disabled cursor-not-allowed'
-            }`}
-          >
+          <Button variant="primary" size="lg" onClick={handleConfirm} disabled={!isAllFilled} className="w-full">
             확인
-          </button>
+          </Button>
         </div>
       </div>
     </div>
