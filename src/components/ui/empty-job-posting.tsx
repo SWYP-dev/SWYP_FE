@@ -22,7 +22,9 @@ export function EmptyJobPosting({
       <Image src={iconSrc} alt="" width={40} height={40} />
       <div className="flex flex-col items-center gap-2 text-center">
         <p className="text-9 font-semibold leading-[1.4] text-label-base">{title}</p>
-        <p className="text-5 font-medium leading-[1.6] text-label-body">{description}</p>
+        <p className="text-[length:var(--text-5)] font-medium leading-[var(--text-5--line-height)] text-label-body">
+          {description}
+        </p>
       </div>
       {actionLabel && onAction && (
         <button
