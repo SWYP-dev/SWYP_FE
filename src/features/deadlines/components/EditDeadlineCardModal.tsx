@@ -130,7 +130,7 @@ export function EditDeadlineCardModal({
               value={form.companyName}
               disabled
               readOnly
-              className="w-full cursor-not-allowed rounded-xl border border-line-secondary bg-neutral-100 px-4 py-3 text-5 font-medium text-neutral-400 outline-none"
+              className={`${INPUT_CLASS} cursor-not-allowed border-line-secondary bg-neutral-100 text-neutral-400`}
             />
           </div>
 
@@ -143,7 +143,7 @@ export function EditDeadlineCardModal({
               value={form.jobTitle}
               disabled
               readOnly
-              className="w-full cursor-not-allowed rounded-xl border border-line-secondary bg-neutral-100 px-4 py-3 text-5 font-medium text-neutral-400 outline-none"
+              className={`${INPUT_CLASS} cursor-not-allowed border-line-secondary bg-neutral-100 text-neutral-400`}
             />
           </div>
 
@@ -157,7 +157,7 @@ export function EditDeadlineCardModal({
               <button
                 type="button"
                 onClick={() => setShowDatePicker((v) => !v)}
-                className={`flex w-full items-center justify-between rounded-xl border px-4 py-3 text-5 font-medium outline-none ${
+                className={`${FIELD_TRIGGER_CLASS} ${
                   errors.deadline ? 'border-status-negative' : 'border-line-secondary'
                 } ${deadlineText ? 'text-label-base' : 'text-label-placeholder'}`}
               >
@@ -192,7 +192,7 @@ export function EditDeadlineCardModal({
               ref={stageDropdown.triggerRef}
               type="button"
               onClick={stageDropdown.toggle}
-              className="flex w-full items-center justify-between rounded-xl border border-line-secondary px-4 py-3 text-5 font-medium text-label-base outline-none"
+              className={`${FIELD_TRIGGER_CLASS} border-line-secondary text-label-base`}
             >
               <span>{selectedStageName}</span>
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -246,3 +246,10 @@ function CalendarIcon() {
     </svg>
   );
 }
+
+// Figma Input(node 101:17631) — h-10(48px) + px-5(16px), border-box로 border 포함
+const INPUT_CLASS =
+  'h-10 box-border w-full rounded-xl border px-5 text-5 font-medium text-label-base placeholder:text-label-placeholder outline-none';
+
+const FIELD_TRIGGER_CLASS =
+  'flex h-10 box-border w-full items-center justify-between rounded-xl border px-5 text-5 font-medium outline-none';
