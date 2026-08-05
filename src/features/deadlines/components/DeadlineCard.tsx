@@ -60,7 +60,7 @@ export function DeadlineCard({ entry, isUrgent, isSelected, onClick, onEdit, onD
             </div>
           </div>
 
-          <span className="inline-flex w-fit items-center gap-[2px] rounded-md bg-neutral-200 px-2 py-[2px] text-0 font-medium text-label-body">
+          <span className="inline-flex w-fit items-center gap-[2px] rounded-md bg-neutral-200 px-3 py-[2px] text-0 font-medium text-label-body">
             {stageName}
           </span>
         </div>
