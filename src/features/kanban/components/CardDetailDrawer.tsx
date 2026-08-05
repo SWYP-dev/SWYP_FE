@@ -194,7 +194,7 @@ export function CardDetailDrawer({
       ) : (
         <div className="flex w-full flex-col">
           {/* 회사/공고 정보 */}
-          <div className="flex flex-col gap-4 border-b-4 border-line-secondary px-5 py-6">
+          <div className="flex flex-col gap-4 border-b-4 border-line-secondary px-6 py-7">
             <div className="flex flex-col gap-1">
               <div className="flex items-center justify-between">
                 <p className="text-3 font-medium text-label-body">{detail.companyName}</p>
