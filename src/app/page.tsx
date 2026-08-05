@@ -254,7 +254,7 @@ export default function FeedPage() {
                 )}
                 {!isLoading && !isError && (data?.items.length ?? 0) === 0 && isSearching && (
                   <EmptyJobPosting
-                    iconSrc="/icons/empty-filter.svg"
+                    iconSrc="/icons/name=information-off.svg"
                     title={`'${keyword}'에 대한 채용 공고가 없어요`}
                     description="다른 검색어(기업명, 직무명, 공고명)로 다시 검색해 보세요."
                   />
