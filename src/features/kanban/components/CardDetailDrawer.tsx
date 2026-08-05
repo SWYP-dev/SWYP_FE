@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Drawer } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
 import { EditIcon, TrashIcon } from '@/components/ui/icons';
@@ -112,6 +112,29 @@ export function CardDetailDrawer({
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [fileError, setFileError] = useState<string | null>(null);
   const [linkError, setLinkError] = useState<string | null>(null);
+  const linkAddingRef = useRef<HTMLDivElement>(null);
+  const linkAddButtonRef = useRef<HTMLDivElement>(null);
+
+  function cancelAddingLink() {
+    setIsAddingLink(false);
+    setLinkCategory(null);
+    setLinkUrl('');
+    setShowCategoryDropdown(false);
+    setLinkError(null);
+  }
+
+  // URL 입력 중 입력 영역 바깥 클릭 시 취소
+  useEffect(() => {
+    if (!isAddingLink) return;
+    function handleMouseDown(e: MouseEvent) {
+      const target = e.target as Node;
+      if (linkAddingRef.current?.contains(target)) return;
+      if (linkAddButtonRef.current?.contains(target)) return;
+      cancelAddingLink();
+    }
+    document.addEventListener('mousedown', handleMouseDown);
+    return () => document.removeEventListener('mousedown', handleMouseDown);
+  }, [isAddingLink]);
 
   // 상세 데이터 로드 시 1회만 memo 초기값 동기화
   if (detail && !isMemoSynced) {
@@ -355,9 +378,9 @@ export function CardDetailDrawer({
                   ))}
               </div>
 
-              {isAddingLink ? (
-                <div className="flex flex-col gap-2">
-                  <div className="flex items-stretch gap-3">
+              {isAddingLink && (
+                <div ref={linkAddingRef} className="flex flex-col gap-2">
+                  <div className="flex items-stretch gap-2">
                     <div className="relative shrink-0">
                       <button
                         type="button"
@@ -397,24 +420,33 @@ export function CardDetailDrawer({
                       }}
                       onKeyDown={(e) => e.key === 'Enter' && handleLinkSubmit()}
                       placeholder="텍스트를 입력해 주세요."
-                      className={`flex-1 rounded-xl border px-5 py-4 text-3 font-medium text-label-base placeholder:text-label-placeholder outline-none ${
+                      className={`min-h-[45px] flex-1 rounded-xl border px-5 py-4 text-3 font-medium text-label-base placeholder:text-label-placeholder outline-none ${
                         linkError ? 'border-status-negative' : 'border-line-secondary'
                       }`}
                     />
+                    <button
+                      type="button"
+                      onClick={cancelAddingLink}
+                      aria-label="URL 입력 취소"
+                      className="flex shrink-0 items-center self-center text-icon-gray"
+                    >
+                      <TrashIcon size={18} />
+                    </button>
                   </div>
                   {linkError && (
                     <p className="text-1 font-medium text-status-negative">{linkError}</p>
                   )}
                 </div>
-              ) : (
+              )}
+              <div ref={linkAddButtonRef}>
                 <Button
                   variant="secondary"
                   className="w-full"
-                  onClick={() => setIsAddingLink(true)}
+                  onClick={() => (isAddingLink ? handleLinkSubmit() : setIsAddingLink(true))}
                 >
                   + URL 추가
                 </Button>
-              )}
+              </div>
             </div>
           </div>
         </div>
