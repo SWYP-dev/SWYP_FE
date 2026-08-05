@@ -57,8 +57,8 @@ export function JobCategoryFilterButton({ value, onApply }: JobCategoryFilterBut
     summary === null
       ? '직군 · 직무'
       : summary.totalCount === 1
-        ? `직군 · 직무 · ${summary.firstLabel}`
-        : `직군 · 직무 · ${summary.firstLabel} 외 ${summary.totalCount - 1}개`;
+        ? summary.firstLabel
+        : `${summary.firstLabel} 외 ${summary.totalCount - 1}개`;
 
   return (
     <>
