@@ -230,7 +230,7 @@ export function AddCardModal({
                 value={form[key]}
                 onChange={(e) => updateField(key, e.target.value)}
                 placeholder={placeholder}
-                className={`h-10 w-full rounded-xl border px-5 text-5 font-medium text-label-base placeholder:text-label-placeholder outline-none ${
+                className={`${INPUT_CLASS} ${
                   errors[key] ? 'border-status-negative' : 'border-line-secondary'
                 }`}
               />
@@ -247,7 +247,7 @@ export function AddCardModal({
               <button
                 type="button"
                 onClick={() => setShowDatePicker((v) => !v)}
-                className={`flex w-full items-center justify-between rounded-xl px-5 py-4 text-5 font-medium outline-none ring-1 ring-inset ${
+                className={`${FIELD_TRIGGER_CLASS} ring-1 ring-inset ${
                   errors.deadline
                     ? 'ring-status-negative'
                     : showDatePicker
@@ -288,9 +288,29 @@ export function AddCardModal({
 
 function CalendarIcon() {
   return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="3" y="5" width="18" height="16" rx="2" stroke="#BDBDC0" strokeWidth="1.5" />
-      <path d="M3 10h18M8 3v4M16 3v4" stroke="#BDBDC0" strokeWidth="1.5" strokeLinecap="round" />
+    <svg
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className="shrink-0 text-icon-default"
+      aria-hidden="true"
+    >
+      <rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" strokeWidth="1.5" />
+      <path
+        d="M3 10h18M8 3v4M16 3v4"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }
+
+// Figma Input(node 49:8042) — h-10(48px) + px-5(16px), border-box로 border 포함
+const INPUT_CLASS =
+  'h-10 box-border w-full rounded-xl border px-5 text-5 font-medium text-label-base placeholder:text-label-placeholder outline-none';
+
+const FIELD_TRIGGER_CLASS =
+  'flex h-10 box-border w-full items-center justify-between rounded-xl border px-5 text-5 font-medium outline-none';

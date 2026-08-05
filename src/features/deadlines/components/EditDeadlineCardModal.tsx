@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { CloseIcon } from '@/components/ui/icons';
 import { DatePicker } from '@/components/ui/date-picker';
+import { Button } from '@/components/ui/button';
 import { Popover, usePopoverTrigger } from '@/components/ui/popover';
 import { DropdownMenu, type DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { useEscapeKey } from '@/lib/hooks/useEscapeKey';
@@ -119,10 +120,10 @@ export function EditDeadlineCardModal({
           </button>
         </div>
 
-        {/* 폼 */}
-        <div className="flex flex-col gap-5 px-8">
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-1">
+        {/* 폼 — Figma FieldGroup gap-6(20px), Label-Input gap-3(8px) */}
+        <div className="flex flex-col gap-6 px-8">
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-2">
               <p className="text-3 font-semibold text-label-base">회사명</p>
             </div>
             <input
@@ -130,12 +131,12 @@ export function EditDeadlineCardModal({
               value={form.companyName}
               disabled
               readOnly
-              className="w-full cursor-not-allowed rounded-xl border border-line-secondary bg-neutral-100 px-4 py-3 text-5 font-medium text-neutral-400 outline-none"
+              className={`${INPUT_CLASS} cursor-not-allowed border-line-secondary bg-neutral-100 text-neutral-400`}
             />
           </div>
 
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-1">
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-2">
               <p className="text-3 font-semibold text-label-base">공고명</p>
             </div>
             <input
@@ -143,21 +144,21 @@ export function EditDeadlineCardModal({
               value={form.jobTitle}
               disabled
               readOnly
-              className="w-full cursor-not-allowed rounded-xl border border-line-secondary bg-neutral-100 px-4 py-3 text-5 font-medium text-neutral-400 outline-none"
+              className={`${INPUT_CLASS} cursor-not-allowed border-line-secondary bg-neutral-100 text-neutral-400`}
             />
           </div>
 
           {/* 지원 마감일 */}
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-1">
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-2">
               <p className="text-3 font-semibold text-label-base">지원 마감일</p>
-              <p className="font-bold text-status-negative">*</p>
+              <p className="text-3 font-bold text-status-negative">*</p>
             </div>
             <div className="relative">
               <button
                 type="button"
                 onClick={() => setShowDatePicker((v) => !v)}
-                className={`flex w-full items-center justify-between rounded-xl border px-4 py-3 text-5 font-medium outline-none ${
+                className={`${FIELD_TRIGGER_CLASS} ${
                   errors.deadline ? 'border-status-negative' : 'border-line-secondary'
                 } ${deadlineText ? 'text-label-base' : 'text-label-placeholder'}`}
               >
@@ -183,21 +184,19 @@ export function EditDeadlineCardModal({
           </div>
 
           {/* 전형 단계 — Figma 그대로 지원 마감일 아래 배치 (사용자 확인 2026-07-23) */}
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-1">
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-2">
               <p className="text-3 font-semibold text-label-base">전형 단계</p>
-              <p className="font-bold text-status-negative">*</p>
+              <p className="text-3 font-bold text-status-negative">*</p>
             </div>
             <button
               ref={stageDropdown.triggerRef}
               type="button"
               onClick={stageDropdown.toggle}
-              className="flex w-full items-center justify-between rounded-xl border border-line-secondary px-4 py-3 text-5 font-medium text-label-base outline-none"
+              className={`${FIELD_TRIGGER_CLASS} border-line-secondary text-label-base`}
             >
               <span>{selectedStageName}</span>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M7 10l5 5 5-5" stroke="#9E9EA1" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
+              <ChevronDownIcon />
             </button>
             <Popover
               isOpen={stageDropdown.isOpen}
@@ -220,18 +219,9 @@ export function EditDeadlineCardModal({
 
         {/* 푸터 */}
         <div className="px-8">
-          <button
-            type="button"
-            onClick={handleConfirm}
-            disabled={!isAllFilled}
-            className={`flex w-full items-center justify-center rounded-xl py-3 text-5 font-semibold text-base-white transition-colors ${
-              isAllFilled
-                ? 'bg-fill-primary hover:bg-action-primary-hover'
-                : 'bg-action-primary-disabled cursor-not-allowed'
-            }`}
-          >
+          <Button variant="primary" size="lg" onClick={handleConfirm} disabled={!isAllFilled} className="w-full">
             확인
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -240,9 +230,51 @@ export function EditDeadlineCardModal({
 
 function CalendarIcon() {
   return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="3" y="5" width="18" height="16" rx="2" stroke="#BDBDC0" strokeWidth="1.5" />
-      <path d="M3 10h18M8 3v4M16 3v4" stroke="#BDBDC0" strokeWidth="1.5" strokeLinecap="round" />
+    <svg
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className="shrink-0 text-icon-default"
+      aria-hidden="true"
+    >
+      <rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" strokeWidth="1.5" />
+      <path
+        d="M3 10h18M8 3v4M16 3v4"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }
+
+function ChevronDownIcon() {
+  return (
+    <svg
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className="shrink-0 text-icon-default"
+      aria-hidden="true"
+    >
+      <path
+        d="M7 10l5 5 5-5"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+// Figma Input(node 101:17631) — h-10(48px) + px-5(16px), border-box로 border 포함
+const INPUT_CLASS =
+  'h-10 box-border w-full rounded-xl border px-5 text-5 font-medium text-label-base placeholder:text-label-placeholder outline-none';
+
+const FIELD_TRIGGER_CLASS =
+  'flex h-10 box-border w-full items-center justify-between rounded-xl border px-5 text-5 font-medium outline-none';

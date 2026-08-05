@@ -17,7 +17,7 @@ export function DropdownMenu({ items, onSelect, className = '', selectedIndex }:
     <div
       role="menu"
       data-figma-node="33:80"
-      className={`flex flex-col items-stretch gap-1 overflow-clip rounded-xl border border-line-secondary bg-base-white p-1 ${className}`}
+      className={`flex flex-col items-stretch gap-3 overflow-clip rounded-xl border border-line-secondary bg-base-white p-2 ${className}`}
     >
       {items.map((item, index) => {
         const isSelected = index === selectedIndex;
@@ -27,7 +27,7 @@ export function DropdownMenu({ items, onSelect, className = '', selectedIndex }:
             type="button"
             role="menuitem"
             onClick={() => onSelect(item, index)}
-            className={`flex h-12 w-full items-center justify-between gap-2 rounded-lg px-4 py-3 text-left ${
+            className={`flex h-10 box-border w-full items-center justify-between gap-2 rounded-lg px-5 text-left ${
               isSelected ? 'bg-neutral-100' : 'hover:bg-action-secondary-hover'
             }`}
           >
