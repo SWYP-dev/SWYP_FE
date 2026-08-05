@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 import { useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { useEscapeKey } from '@/lib/hooks/useEscapeKey';
@@ -250,7 +249,7 @@ export function SelectionModal({
                     >
                       {group.label}
                     </span>
-                    {isFocused && <CheckIcon />}
+                    {isFocused && group.children.length > 0 && <ChevronRightIcon />}
                   </button>
                 );
               })}
@@ -440,6 +439,23 @@ function CloseIcon(): ReactNode {
   );
 }
 
-function CheckIcon() {
-  return <Image src="/icons/check.svg" alt="" width={16} height={16} />;
+function ChevronRightIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      aria-hidden="true"
+      className="shrink-0 text-[var(--color-label-primary)]"
+    >
+      <path
+        d="M6 4L10 8L6 12"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
 }
