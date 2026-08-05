@@ -21,10 +21,14 @@ interface JobCardProps {
   isScrapped: boolean;
   onToggleScrap?: () => void;
   onAddToKanban?: () => void;
+  /** 스크랩 카드에서 원본 공고가 마감/삭제된 경우 (PRD 5.3) — jobCategory 대신 안내 문구를 표시하고 흐리게 처리 */
+  isExpired?: boolean;
 }
 
 // Figma Card 컴포넌트(node 133:23009) 스펙 반영.
 // 2026-07-23 디자인 변경점 반영: 플랫폼 뱃지 제거.
+// ⚠️ 통합 공고 탐색(Feed)과 스크랩 페이지가 동일한 카드 스펙을 써야 하므로,
+// ScrapCard는 이 컴포넌트를 그대로 감싸서 재사용한다 (별도 마크업 복제 금지 — 스펙 드리프트 방지).
 export function JobCard({
   thumbnailUrl,
   deadlineIso,
@@ -38,13 +42,18 @@ export function JobCard({
   isScrapped,
   onToggleScrap,
   onAddToKanban,
+  isExpired = false,
 }: JobCardProps) {
   const [imgError, setImgError] = useState(false);
   const showImage = !!thumbnailUrl && !imgError;
 
   return (
     // Card: gap-[20px](spacing/6) — Thumbnail ~ 안쪽 Wrapper 사이 간격
-    <div className="flex w-full items-center gap-6 rounded-xl p-4 hover:bg-neutral-100">
+    <div
+      className={`flex w-full items-center gap-6 rounded-xl p-4 transition-colors ${
+        isExpired ? 'opacity-60 grayscale' : 'hover:bg-neutral-100'
+      }`}
+    >
       {/* Thumbnail */}
       <div className="relative size-[100px] shrink-0 overflow-hidden rounded-lg bg-neutral-100 p-[6px]">
         {showImage ? (
@@ -84,7 +93,13 @@ export function JobCard({
             <p className="text-3 font-medium text-label-body">{company}</p>
             <p className="truncate text-6 font-semibold text-label-base">{title}</p>
           </div>
-          <p className="text-1 font-medium text-label-description">{jobCategory}</p>
+          {isExpired ? (
+            <p className="text-1 font-medium text-status-negative">
+              마감되었거나 삭제된 공고예요.
+            </p>
+          ) : (
+            <p className="text-1 font-medium text-label-description">{jobCategory}</p>
+          )}
         </div>
 
         {/* Caption: 텍스트 길이에 맞춰 폭 결정(w-fit) */}
