@@ -8,7 +8,7 @@ export function CardThumbnailPlaceholder() {
       src="/logo/main-logo.svg"
       alt=""
       fill
-      className="rounded-lg object-cover"
+      className="object-cover"
     />
   );
 }

@@ -38,21 +38,23 @@ export function Header({ onSearch, showSearch = true }: HeaderProps) {
             <button
               type="submit"
               aria-label="검색"
-              className="flex size-7 shrink-0 items-center justify-center"
+              className="flex size-7 shrink-0 items-center justify-center text-icon-default"
             >
+              {/* public/icons/search.svg 경로 그대로 — currentColor로 icon/default 적용 */}
               <svg
                 width="24"
                 height="24"
                 viewBox="0 0 24 24"
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
               >
                 <path
-                  fillRule="evenodd"
-                  clipRule="evenodd"
-                  d="M10.3678 3.00006C6.29869 3.00006 3 6.29876 3 10.3679C3 14.4371 6.29869 17.7358 10.3678 17.7358C12.1 17.7358 13.6926 17.138 14.9505 16.1375L19.5671 20.7541C19.8949 21.0819 20.4264 21.0819 20.7542 20.7541C21.0819 20.4263 21.0819 19.8949 20.7542 19.5671L16.1375 14.9504C17.1379 13.6925 17.7356 12.1 17.7356 10.3679C17.7356 6.29876 14.437 3.00006 10.3678 3.00006ZM4.67874 10.3679C4.67874 7.22591 7.22583 4.67881 10.3678 4.67881C13.5098 4.67881 16.0569 7.22591 16.0569 10.3679C16.0569 13.5099 13.5098 16.057 10.3678 16.057C7.22583 16.057 4.67874 13.5099 4.67874 10.3679Z"
-                  fill="#212123"
+                  d="M10.5 18C14.6421 18 18 14.6421 18 10.5C18 6.35786 14.6421 3 10.5 3C6.35786 3 3 6.35786 3 10.5C3 14.6421 6.35786 18 10.5 18Z"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
                 />
+                <path d="M16 16L20 20" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
               </svg>
             </button>
           </div>
