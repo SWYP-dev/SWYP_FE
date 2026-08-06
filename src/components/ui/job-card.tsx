@@ -54,21 +54,23 @@ export function JobCard({
         isExpired ? 'opacity-60 grayscale' : 'hover:bg-neutral-100'
       }`}
     >
-      {/* Thumbnail */}
-      <div className="relative size-[100px] shrink-0 overflow-hidden rounded-lg bg-neutral-100 p-[6px]">
-        {showImage ? (
-          <Image
-            src={thumbnailUrl}
-            alt=""
-            fill
-            className="rounded-lg object-cover"
-            onError={() => setImgError(true)}
-          />
-        ) : (
-          <CardThumbnailPlaceholder />
-        )}
-        {/* Wrapper: D-day 뱃지(좌) + 스크랩 아이콘(우), justify-between — Figma 스펙 그대로 */}
-        <div className="relative flex h-[83px] w-full items-start justify-between">
+      {/* Thumbnail — Figma CardThumbnail: border + white bg로 흰색 로고/이미지도 경계 구분 */}
+      <div className="relative size-[100px] shrink-0 rounded-lg border border-line-secondary bg-base-white p-[6px]">
+        <div className="relative size-full overflow-hidden rounded-[4px]">
+          {showImage ? (
+            <Image
+              src={thumbnailUrl}
+              alt=""
+              fill
+              className="object-cover"
+              onError={() => setImgError(true)}
+            />
+          ) : (
+            <CardThumbnailPlaceholder />
+          )}
+        </div>
+        {/* D-day 뱃지(좌) + 스크랩 아이콘(우) — 썸네일 위 absolute 오버레이 */}
+        <div className="pointer-events-none absolute inset-[6px] flex items-start justify-between">
           <DeadlineBadge deadline={deadlineIso} />
           <button
             type="button"
@@ -78,7 +80,7 @@ export function JobCard({
               e.stopPropagation();
               onToggleScrap?.();
             }}
-            className="flex size-5 shrink-0 items-center justify-center"
+            className="pointer-events-auto flex size-5 shrink-0 items-center justify-center"
           >
             <ScrapBookmarkIcon filled={isScrapped} />
           </button>
