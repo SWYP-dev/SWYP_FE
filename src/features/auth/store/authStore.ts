@@ -7,6 +7,9 @@ import type { AuthUser } from '../type/auth';
 interface AuthState {
   user: AuthUser | null;
   isAuthenticated: boolean;
+  /** persist localStorage 복원이 끝났는지. 복원 전 isAuthenticated는 항상 false라 깜빡임 방지용 */
+  hasHydrated: boolean;
+  setHasHydrated: (v: boolean) => void;
   setUser: (user: AuthUser) => void;
   patchUser: (patch: Partial<AuthUser>) => void;
   clearUser: () => void;
@@ -21,6 +24,8 @@ export const useAuthStore = create<AuthState>()(
     (set) => ({
       user: null,
       isAuthenticated: false,
+      hasHydrated: false,
+      setHasHydrated: (v) => set({ hasHydrated: v }),
       setUser: (user) => set({ user, isAuthenticated: true }),
       patchUser: (patch) =>
         set((state) => (state.user ? { user: { ...state.user, ...patch } } : state)),
@@ -28,6 +33,14 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'chwihap-auth-user',
+      // hasHydrated는 세션마다 복원 완료 시점에만 true가 되어야 하므로 persist 대상에서 제외
+      partialize: (state) => ({
+        user: state.user,
+        isAuthenticated: state.isAuthenticated,
+      }),
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
     }
   )
 );
