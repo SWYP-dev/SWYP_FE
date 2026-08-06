@@ -1,4 +1,3 @@
-import React from 'react';
 import { Pencil, Trash2, ExternalLink, FileText, Plus, ChevronDown, Paperclip } from 'lucide-react';
 
 export default function Solution2Demo() {

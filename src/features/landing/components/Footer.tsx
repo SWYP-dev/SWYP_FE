@@ -1,18 +1,4 @@
-import { Image } from './Image';
-
-const LOGO =
-  'https://media.base44.com/images/public/user_6a72fa227953379597529bf6/2f804dfe0_769aad58c_logo.png';
-
-const sitemap = [
-  {
-    title: '서비스',
-    links: [
-      { label: '문제점', href: '#problem' },
-      { label: '해결 방식', href: '#solution' },
-      { label: '핵심 기능', href: '#features' },
-    ],
-  },
-];
+import Image from 'next/image';
 
 export default function Footer() {
   return (
@@ -22,12 +8,15 @@ export default function Footer() {
           <p className="text-[13.5px] text-slate-400">© 2026 취합(Chwihap). All rights reserved.</p>
         </div>
 
+        {/* 장식용 워터마크 — alt=""로 스크린리더에서 제외.
+            원본 비율(113:20)을 유지해야 글자가 늘어나지 않는다. */}
         <div className="pointer-events-none flex justify-center pb-[8px] opacity-[0.05]">
           <Image
-            src={LOGO}
-            fittingType="fit"
-            className="h-[64px] w-[300px] sm:h-[112px] sm:w-[520px]"
+            src="/logo/chwihap-logo.svg"
             alt=""
+            width={520}
+            height={92}
+            className="h-[53px] w-[300px] sm:h-[92px] sm:w-[520px]"
           />
         </div>
       </div>

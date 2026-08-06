@@ -1,12 +1,8 @@
 'use client';
 
-import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { getKakaoAuthorizeUrl } from '@/features/auth/utils/kakaoOAuth';
-import { Image } from './Image';
-
-const LOGO =
-  'https://media.base44.com/images/public/user_6a72fa227953379597529bf6/2f804dfe0_769aad58c_logo.png';
+import { useLoginModalStore } from '@/features/auth/store/loginModalStore';
+import { ChwihapWordmark } from '@/features/notification/components/icons';
 
 const links = [
   { label: '문제점', href: '#problem' },
@@ -17,11 +13,8 @@ const links = [
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
-
-  // 로그인 수단이 카카오 하나뿐이라 모달을 거치지 않고 바로 인가 페이지로 보낸다.
-  function handleLogin() {
-    window.location.href = getKakaoAuthorizeUrl();
-  }
+  // root layout의 GlobalLoginModal을 그대로 재사용한다.
+  const openLoginModal = useLoginModalStore((s) => s.open);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
@@ -38,7 +31,7 @@ export default function Navbar() {
     >
       <nav className="mx-auto flex h-[68px] max-w-[1200px] items-center justify-between px-[24px]">
         <a href="#hero" className="flex items-center gap-[8px] py-[8px]" aria-label="취합 홈">
-          <Image src={LOGO} fittingType="fit" className="h-[24px] w-[110px]" alt="취합 로고" />
+          <ChwihapWordmark className="h-[20px] w-[110px]" />
         </a>
 
         <div className="hidden items-center gap-[36px] md:flex">
@@ -62,17 +55,17 @@ export default function Navbar() {
         <div className="flex items-center gap-[12px]">
           <button
             type="button"
-            onClick={handleLogin}
+            onClick={openLoginModal}
             className="inline-flex h-[38px] items-center justify-center gap-[2px] rounded-lg border border-line-secondary bg-base-white px-4 text-3 font-medium leading-[1.5] text-label-primary transition-colors hover:bg-fill-primary-light"
           >
             회원가입/로그인
           </button>
-          <Link
-            href="/jobs"
+          <a
+            href="#cta"
             className="inline-flex h-[38px] items-center justify-center gap-[2px] rounded-lg bg-fill-primary px-4 text-3 font-semibold leading-[1.5] text-base-white transition-colors hover:bg-action-primary-hover"
           >
             무료로 시작하기
-          </Link>
+          </a>
         </div>
       </nav>
     </header>

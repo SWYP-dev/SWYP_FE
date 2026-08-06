@@ -1,5 +1,4 @@
-import React from 'react';
-import { Search, CornerDownLeft, Bookmark, Plus } from 'lucide-react';
+import { Search, Bookmark } from 'lucide-react';
 
 const jobs = [
   {
