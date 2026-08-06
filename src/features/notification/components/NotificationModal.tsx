@@ -50,21 +50,25 @@ export function NotificationModal() {
       <div className="flex w-full flex-col items-start border-t border-line-secondary">
         <div className="flex max-h-[418px] w-full flex-col items-start overflow-y-auto">
           {isLoading && (
-            <p className="w-full px-8 py-6 text-center text-3 text-label-description">불러오는 중...</p>
+            <p className="w-full px-8 py-6 text-center text-3 text-label-description">
+              불러오는 중...
+            </p>
           )}
           {!isLoading && items.length === 0 && (
             <div className="flex w-full flex-1 flex-col items-center justify-center gap-4 px-8 py-10">
               <EmptyBellIcon />
               <div className="flex flex-col items-center gap-4">
                 <div className="flex flex-col items-center gap-1 text-center">
-                  <p className="text-6 font-semibold leading-[1.4] text-label-base">아직 알림이 없어요</p>
+                  <p className="text-6 font-semibold leading-[1.4] text-label-base">
+                    아직 알림이 없어요
+                  </p>
                   <p className="whitespace-pre-line text-3 font-medium leading-[1.6] text-label-body">
                     {'지원 현황에 공고를 추가하면\n마감일이 다가올 때 알림이 도착해요.'}
                   </p>
                 </div>
                 <button
                   type="button"
-                  onClick={() => router.push('/')}
+                  onClick={() => router.push('/jobs')}
                   className="flex items-center justify-center rounded-lg border border-line-primary bg-base-white px-4 py-2"
                 >
                   <span className="text-3 font-medium text-label-primary">공고 둘러보기</span>
@@ -104,7 +108,12 @@ function EmptyBellIcon() {
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      <path d="M16.5 32a3.5 3.5 0 0 0 7 0" stroke="#BDBDC0" strokeWidth="1.6" strokeLinecap="round" />
+      <path
+        d="M16.5 32a3.5 3.5 0 0 0 7 0"
+        stroke="#BDBDC0"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }
