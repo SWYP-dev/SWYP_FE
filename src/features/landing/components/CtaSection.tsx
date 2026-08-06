@@ -12,8 +12,6 @@ export default function CTA() {
           <p className="mx-auto mt-[24px] max-w-[540px] text-[17px] leading-[1.7] text-white/85">
             공고 탐색부터 서류와 일정, 전형 관리 등 취합이 취업 준비의 나머지를 정리해 드릴게요.
           </p>
-          {/* 파랑 배경 위 버튼이라 색상만 반전(흰 배경 + 파란 글씨).
-              치수는 Hero CTA와 동일한 DS Button lg 규격. */}
         </Reveal>
       </div>
     </section>
