@@ -22,10 +22,10 @@ export function AttachedLinkItem({ document, onDelete }: AttachedLinkItemProps) 
 
   return (
     <div className="flex w-full min-w-0 items-stretch gap-2">
-      <div className="flex w-[108px] shrink-0 items-center rounded-xl border border-line-secondary bg-neutral-100 py-3 pl-4 pr-[11px]">
+      <div className="flex w-[108px] shrink-0 items-center rounded-xl border border-line-secondary bg-neutral-100 py-3 pl-5 pr-[11px]">
         <span className="flex-1 text-3 font-medium text-label-description">{label}</span>
       </div>
-      <div className="flex min-w-0 flex-1 items-center gap-2 rounded-xl border border-line-secondary bg-neutral-100 px-4 py-3">
+      <div className="flex min-w-0 flex-1 items-center rounded-xl border border-line-secondary bg-neutral-100 px-5 py-3">
         <a
           href={document.url}
           target="_blank"
@@ -34,15 +34,15 @@ export function AttachedLinkItem({ document, onDelete }: AttachedLinkItemProps) 
         >
           {document.url}
         </a>
-        <button
-          type="button"
-          onClick={onDelete}
-          aria-label="링크 삭제"
-          className="shrink-0 text-icon-gray"
-        >
-          <TrashIcon size={18} />
-        </button>
       </div>
+      <button
+        type="button"
+        onClick={onDelete}
+        aria-label="링크 삭제"
+        className="flex shrink-0 items-center self-center text-icon-gray"
+      >
+        <TrashIcon size={18} />
+      </button>
     </div>
   );
 }

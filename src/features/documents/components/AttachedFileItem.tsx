@@ -11,11 +11,11 @@ interface AttachedFileItemProps {
 
 export function AttachedFileItem({ document, onDownload, onDelete }: AttachedFileItemProps) {
   return (
-    <div className="flex w-full min-w-0 items-center gap-1 rounded-xl bg-neutral-100 py-4 pl-2 pr-6">
+    <div className="flex w-full min-w-0 items-center gap-2">
       <button
         type="button"
         onClick={onDownload}
-        className="flex min-w-0 flex-1 flex-col items-start justify-center pl-4 text-left"
+        className="flex min-w-0 flex-1 flex-col items-start justify-center rounded-xl bg-neutral-100 py-4 pl-6 pr-4 text-left"
       >
         <p className="w-full min-w-0 truncate text-[13px] font-medium text-label-base">
           {document.name}

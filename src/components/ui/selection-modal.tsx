@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 import { useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { useEscapeKey } from '@/lib/hooks/useEscapeKey';
@@ -219,7 +218,7 @@ export function SelectionModal({
             type="button"
             onClick={onClose}
             aria-label="닫기"
-            className="size-6 text-[var(--color-icon-default)]"
+            className="size-7 text-[var(--color-icon-default)]"
           >
             <CloseIcon />
           </button>
@@ -228,7 +227,7 @@ export function SelectionModal({
         <div className="flex flex-col items-start gap-5 px-[32px]">
           <div className="flex h-[331px] w-[1248px] items-stretch justify-between rounded-2xl border border-[var(--color-line-secondary)]">
             {/* 좌측: 그룹(복수 선택) — grid-cols-2 */}
-            <div className="grid flex-1 grid-cols-2 content-start items-start gap-x-0 gap-y-0 overflow-y-auto border-r border-[var(--color-line-secondary)] px-2 pt-2">
+            <div className="grid flex-1 grid-cols-2 content-start items-start gap-2 overflow-y-auto border-r border-[var(--color-line-secondary)] p-3">
               {groups.map((group) => {
                 const isSelected = draft?.some((gv) => gv.groupId === group.id) ?? false;
                 const isFocused = group.id === focusedGroupId;
@@ -237,7 +236,7 @@ export function SelectionModal({
                     key={group.id}
                     type="button"
                     onClick={() => selectGroup(group)}
-                    className={`flex h-10 w-full items-center gap-2 rounded-lg px-4 py-3 text-left ${
+                    className={`flex w-full items-center gap-2 rounded-lg px-4 py-3 text-left ${
                       isSelected ? 'bg-[var(--color-fill-primary-light)]' : 'bg-[var(--color-neutral-0)]'
                     }`}
                   >
@@ -250,7 +249,7 @@ export function SelectionModal({
                     >
                       {group.label}
                     </span>
-                    {isFocused && <CheckIcon />}
+                    {isFocused && group.children.length > 0 && <ChevronRightIcon />}
                   </button>
                 );
               })}
@@ -290,7 +289,7 @@ export function SelectionModal({
           </div>
 
           {chips.length > 0 && (
-            <div className="flex flex-wrap items-start gap-2">
+            <div className="flex flex-wrap items-start gap-3">
               {chips.map((chip) => (
                 <Chip key={chip.key} label={chip.label} onRemove={chip.onRemove} />
               ))}
@@ -378,7 +377,7 @@ function ChildRow({
     <button
       type="button"
       onClick={onToggle}
-      className="flex h-10 w-full min-w-0 items-center gap-2 rounded px-4 py-3 text-left"
+      className="flex w-full min-w-0 items-center gap-3 rounded px-5 py-4 text-left"
     >
       <span
         className={`flex size-[18px] shrink-0 items-center justify-center rounded-[4px] border ${
@@ -414,15 +413,15 @@ function ChildRow({
 
 function Chip({ label, onRemove }: { label: string; onRemove: () => void }) {
   return (
-    <span className="inline-flex items-center gap-1 rounded-lg bg-[var(--color-neutral-50)] px-[var(--spacing-3)] py-[6px]">
-      <span className="text-[11px] font-semibold leading-[1.5] text-[var(--color-neutral-600)]">
+    <span className="inline-flex items-center gap-2 rounded-lg bg-[var(--color-neutral-50)] px-[var(--spacing-3)] py-[6px]">
+      <span className="text-[length:var(--text-1)] font-semibold leading-[1.5] text-[var(--color-neutral-600)]">
         {label}
       </span>
       <button
         type="button"
         onClick={onRemove}
         aria-label={`${label} 삭제`}
-        className="flex size-3 items-center justify-center"
+        className="flex size-4 items-center justify-center"
       >
         <svg viewBox="0 0 12 12" fill="none" aria-hidden="true">
           <path d="M3 3L9 9M9 3L3 9" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
@@ -440,6 +439,23 @@ function CloseIcon(): ReactNode {
   );
 }
 
-function CheckIcon() {
-  return <Image src="/icons/check.svg" alt="" width={16} height={16} />;
+function ChevronRightIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      aria-hidden="true"
+      className="shrink-0 text-[var(--color-label-primary)]"
+    >
+      <path
+        d="M6 4L10 8L6 12"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
 }

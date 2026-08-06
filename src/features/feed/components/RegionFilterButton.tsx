@@ -400,8 +400,8 @@ export function RegionFilterButton({ value, onApply }: RegionFilterButtonProps) 
     summary === null
       ? '지역'
       : summary.totalCount === 1
-        ? `지역 · ${summary.firstLabel}`
-        : `지역 · ${summary.firstLabel} 외 ${summary.totalCount - 1}개`;
+        ? summary.firstLabel
+        : `${summary.firstLabel} 외 ${summary.totalCount - 1}개`;
 
   return (
     <>

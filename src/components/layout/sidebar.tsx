@@ -20,7 +20,7 @@ const NAV_ITEMS: {
   label: string;
   icon: ComponentType<{ className?: string }>;
 }[] = [
-  { href: '/', icon: BriefcaseNavIcon, label: '통합 공고 탐색' },
+  { href: '/jobs', icon: BriefcaseNavIcon, label: '통합 공고 탐색' },
   { href: '/scraps', icon: BookmarkNavIcon, label: '스크랩' },
   { href: '/kanban', icon: KanbanNavIcon, label: '지원 현황' },
   { href: '/deadlines', icon: CalendarNavIcon, label: '지원 마감일' },
@@ -42,19 +42,19 @@ export function Sidebar() {
   // 그래서 '/'에 있을 때만 강제 리로드로 완전히 초기화된 상태로 복귀시킴.
   // 필터 상태가 URL 쿼리로 이전되면 이 분기 제거하고 router.push('/')로 통일 가능.
   function handleLogoClick(e: React.MouseEvent<HTMLAnchorElement>) {
-    if (pathname === '/') {
+    if (pathname === '/jobs') {
       e.preventDefault();
-      window.location.href = '/';
+      window.location.href = '/jobs';
       return;
     }
-    router.push('/');
+    router.push('/jobs');
   }
 
   return (
     <aside className="flex h-full w-[257px] flex-col items-start justify-between border-r border-line-secondary bg-base-white">
       <div className="flex w-full flex-col items-start">
         <Link
-          href="/"
+          href="/jobs"
           onClick={handleLogoClick}
           aria-label="통합 공고 탐색으로 이동"
           className="flex h-[80px] w-full flex-col items-start justify-center gap-3 px-6 py-3"

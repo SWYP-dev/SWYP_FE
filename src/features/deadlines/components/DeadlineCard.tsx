@@ -33,7 +33,7 @@ export function DeadlineCard({ entry, isUrgent, isSelected, onClick, onEdit, onD
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') onClick();
       }}
-      className={`flex w-full cursor-pointer items-start gap-1 overflow-hidden rounded-xl border px-5 py-4 transition-colors ${
+      className={`flex w-full cursor-pointer items-start gap-1 overflow-hidden rounded-xl border px-5 transition-colors ${
         isSelected
           ? 'border-neutral-200 bg-neutral-50'
           : 'border-line-secondary bg-base-white hover:bg-neutral-50'
@@ -60,7 +60,7 @@ export function DeadlineCard({ entry, isUrgent, isSelected, onClick, onEdit, onD
             </div>
           </div>
 
-          <span className="inline-flex w-fit items-center gap-[2px] rounded-md bg-neutral-200 px-2 py-[2px] text-0 font-medium text-label-body">
+          <span className="inline-flex w-fit items-center gap-[2px] rounded-md bg-neutral-200 px-3 py-[2px] text-0 font-medium text-label-body">
             {stageName}
           </span>
         </div>

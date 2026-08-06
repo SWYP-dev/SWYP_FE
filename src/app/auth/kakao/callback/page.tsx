@@ -44,7 +44,7 @@ function CallbackHandler() {
     hasRequested.current = true;
 
     loginMutation.mutate(code, {
-      onSuccess: () => router.replace('/'),
+      onSuccess: () => router.replace('/jobs'),
       onError: () => router.replace('/?loginError=1'),
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
