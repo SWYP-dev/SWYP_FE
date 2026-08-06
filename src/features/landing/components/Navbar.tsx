@@ -1,8 +1,9 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { useLoginModalStore } from '@/features/auth/store/loginModalStore';
 import { ChwihapWordmark } from '@/features/notification/components/icons';
+import KakaoLoginButton from './KakaoLoginButton';
 
 const links = [
   { label: '문제점', href: '#problem' },
@@ -13,8 +14,6 @@ const links = [
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
-  // root layout의 GlobalLoginModal을 그대로 재사용한다.
-  const openLoginModal = useLoginModalStore((s) => s.open);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
@@ -53,19 +52,15 @@ export default function Navbar() {
             h-[38px]: 로그인 버튼만 1px border가 있어 자연 높이가 39px/37px로 어긋남
             (Button lg가 h-10으로 고정한 것과 동일한 이유) → border-box 기준으로 고정. */}
         <div className="flex items-center gap-[12px]">
-          <button
-            type="button"
-            onClick={openLoginModal}
-            className="inline-flex h-[38px] items-center justify-center gap-[2px] rounded-lg border border-line-secondary bg-base-white px-4 text-3 font-medium leading-[1.5] text-label-primary transition-colors hover:bg-fill-primary-light"
-          >
+          <KakaoLoginButton className="inline-flex h-[38px] items-center justify-center gap-[2px] rounded-lg border border-line-secondary bg-base-white px-4 text-3 font-medium leading-[1.5] text-label-primary transition-colors hover:bg-fill-primary-light">
             회원가입/로그인
-          </button>
-          <a
-            href="#cta"
+          </KakaoLoginButton>
+          <Link
+            href="/jobs"
             className="inline-flex h-[38px] items-center justify-center gap-[2px] rounded-lg bg-fill-primary px-4 text-3 font-semibold leading-[1.5] text-base-white transition-colors hover:bg-action-primary-hover"
           >
             무료로 시작하기
-          </a>
+          </Link>
         </div>
       </nav>
     </header>
