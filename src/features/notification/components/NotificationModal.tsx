@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { NotificationItem } from './NotificationItem';
 import { useNotificationInboxInfinite } from '../api/useNotificationQuery';
 import { useDeleteNotification, useDeleteAllNotifications } from '../api/useNotificationMutations';
+import { Spinner } from '@/components/ui/spinner';
 
 // Figma "지원 마감일 알림 확인 후(알림 모달 등장)"(node 101:17610) 스펙 반영.
 // ⚠️ [2026-08-04] 백엔드 알림 API 변경(프론트 연동 공유) 반영: 인앱 알림 단일/전체 삭제
@@ -50,9 +51,9 @@ export function NotificationModal() {
       <div className="flex w-full flex-col items-start border-t border-line-secondary">
         <div className="flex max-h-[418px] w-full flex-col items-start overflow-y-auto">
           {isLoading && (
-            <p className="w-full px-8 py-6 text-center text-3 text-label-description">
-              불러오는 중...
-            </p>
+            <div className="flex w-full items-center justify-center px-8 py-6">
+              <Spinner />
+            </div>
           )}
           {!isLoading && items.length === 0 && (
             <div className="flex w-full flex-1 flex-col items-center justify-center gap-4 px-8 py-10">

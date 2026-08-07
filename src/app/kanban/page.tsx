@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic';
 import { Sidebar } from '@/components/layout/sidebar';
 import { Header } from '@/components/layout/header';
 import { useKanbanBoard } from '@/features/kanban/api/useKanbanQuery';
+import { KanbanBoardSkeleton } from '@/features/kanban/components/KanbanBoardSkeleton';
 
 const KanbanBoard = dynamic(
   () => import('@/features/kanban/components/KanbanBoard').then((m) => m.KanbanBoard),
@@ -23,11 +24,7 @@ export default function KanbanPage() {
         </div>
 
         <div className="flex min-h-0 flex-1 flex-col px-[80px] py-7">
-          {isLoading && (
-            <div className="flex h-full items-center justify-center text-3 text-label-description">
-              불러오는 중...
-            </div>
-          )}
+          {isLoading && <KanbanBoardSkeleton />}
           {isError && (
             <div className="flex h-full items-center justify-center text-3 text-status-negative">
               데이터를 불러오지 못했어요. 다시 시도해 주세요.
