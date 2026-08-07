@@ -25,15 +25,15 @@ export function Header({ onSearch, showSearch = true }: HeaderProps) {
       {showSearch && (
         <form
           onSubmit={handleSubmit}
-          className="flex h-[40px] w-[237px] box-border items-center overflow-hidden rounded-max border border-line-secondary bg-base-white px-6"
+          className="flex h-[40px] w-[237px] box-border items-center overflow-hidden rounded-max border border-line-secondary bg-base-white px-6 py-3"
         >
-          <div className="flex min-h-6 flex-1 items-center justify-between">
+          <div className="flex min-h-6 min-w-0 flex-1 items-center justify-between">
             <input
               type="text"
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
               placeholder="텍스트를 입력해 주세요."
-              className="flex-1 bg-transparent text-3 font-medium text-label-base placeholder:text-label-placeholder outline-none"
+              className="min-w-0 flex-1 bg-transparent text-3 font-medium text-label-base placeholder:text-label-placeholder outline-none"
             />
             <button
               type="submit"
