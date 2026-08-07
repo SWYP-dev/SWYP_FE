@@ -72,19 +72,28 @@ interface DeadlineBadgeProps {
 }
 
 export function DeadlineBadge({ deadline }: DeadlineBadgeProps) {
+  // CardThumbnail 위 흰 배경에서도 뱃지가 묻히지 않도록 shadow 적용 (Figma CardThumbnail 스펙)
+  const cardShadow = 'shadow-normal-xsmall';
+
   if (deadline === null) {
-    return <Badge className="bg-base-white text-neutral-500">상시채용</Badge>;
+    return <Badge className={`bg-base-white text-neutral-500 ${cardShadow}`}>상시채용</Badge>;
   }
 
   const diffDays = getDeadlineDiffDays(deadline);
 
   if (diffDays < 0) {
-    return <Badge className="bg-base-white text-neutral-500">마감</Badge>;
+    return <Badge className={`bg-base-white text-neutral-500 ${cardShadow}`}>마감</Badge>;
   }
 
   // ⚠️ [QA 반영] 커스텀 red 컬러 대신 Badge에 이미 정의된 default/primary 타입을 그대로 사용.
   const isUrgent = diffDays <= 1;
   const label = diffDays === 0 ? '오늘 마감' : `D-${diffDays}`;
 
-  return <Badge type={isUrgent ? 'primary' : 'default'}>{label}</Badge>;
+  return (
+    <Badge
+      className={`${isUrgent ? TYPE_CLASS.primary : TYPE_CLASS.default} ${cardShadow}`}
+    >
+      {label}
+    </Badge>
+  );
 }

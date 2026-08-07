@@ -7,6 +7,7 @@ import type { NextPage } from 'next';
 import { Sidebar } from '@/components/layout/sidebar';
 import { Header } from '@/components/layout/header';
 import { Pagination } from '@/components/ui/pagination';
+import { JobCardSkeleton } from '@/components/ui/job-card-skeleton';
 import { Toast } from '@/components/ui/toast';
 import type { SelectionValue } from '@/components/ui/selection-modal';
 import {
@@ -144,7 +145,8 @@ const ScrapsPage: NextPage = () => {
         <div className="flex-1 flex flex-col px-12 py-7 bg-surface-card">
           <div className="flex flex-col gap-8">
             <div className="flex flex-col items-center gap-3 p-3 bg-base-white rounded-[20px]">
-              {isLoading && <p className="py-11 text-label-description">불러오는 중...</p>}
+              {isLoading &&
+                Array.from({ length: 5 }).map((_, i) => <JobCardSkeleton key={i} />)}
               {isError && (
                 <p className="py-11 text-status-negative">스크랩 목록을 불러오지 못했어요.</p>
               )}

@@ -7,17 +7,25 @@ import { useNotificationInbox } from '../api/useNotificationQuery';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { LoginModal } from '@/features/auth/components/LoginModal';
 
+// public/icons/bell.svg(Figma node 101:17618) 경로 그대로 — currentColor로 icon/default 적용
 function BellIcon() {
   return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className="text-icon-default"
+      aria-hidden="true"
+    >
       <path
-        d="M12 3.5c-3.5 0-5.5 2.4-5.5 6v3.2c0 .6-.2 1.2-.6 1.7l-1 1.3c-.6.8 0 2 1 2h12.2c1 0 1.6-1.2 1-2l-1-1.3c-.4-.5-.6-1.1-.6-1.7V9.5c0-3.6-2-6-5.5-6Z"
-        stroke="#212123"
+        d="M9.98141 21.2505H14.0186M18.9985 14.9805C18.6973 14.5038 18.5375 13.9529 18.5372 13.3905V9.22651C18.5372 7.5087 17.8485 5.86125 16.6225 4.64658C15.3965 3.43191 13.7338 2.74951 12 2.74951C10.2662 2.74951 8.60345 3.43191 7.37749 4.64658C6.15152 5.86125 5.46278 7.5087 5.46278 9.22651V13.3885C5.46286 13.9515 5.30302 14.5032 5.00153 14.9805L3.90342 16.7205C3.80793 16.8719 3.75508 17.0458 3.75035 17.2243C3.74562 17.4027 3.78919 17.5792 3.87652 17.7353C3.96386 17.8914 4.09179 18.0215 4.24702 18.1121C4.40225 18.2027 4.57914 18.2505 4.7593 18.2505H19.2407C19.4209 18.2505 19.5977 18.2027 19.753 18.1121C19.9082 18.0215 20.0361 17.8914 20.1235 17.7353C20.2108 17.5792 20.2544 17.4027 20.2497 17.2243C20.2449 17.0458 20.1921 16.8719 20.0966 16.7205L18.9985 14.9805Z"
+        stroke="currentColor"
         strokeWidth="1.5"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      <path d="M10 19a2 2 0 0 0 4 0" stroke="#212123" strokeWidth="1.5" strokeLinecap="round" />
     </svg>
   );
 }
