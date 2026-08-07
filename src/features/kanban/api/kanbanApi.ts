@@ -85,7 +85,8 @@ export interface UpdateCardRequest {
   companyName?: string;
   title?: string;
   originalUrl?: string;
-  deadline?: string;
+  // 상시채용 이슈 대응: 마감일을 비워서 저장하면 상시채용(null)으로 처리.
+  deadline?: string | null;
 }
 
 // ================================
@@ -134,7 +135,7 @@ export function moveCard(
 // 가능" 설명을 근거로 구성함 — 세영님 확인 필요.
 export function updateCardStageDeadline(
   cardId: number,
-  body: { deadline?: string; stageId?: number }
+  body: { deadline?: string | null; stageId?: number }
 ): Promise<KanbanCardStageDeadlineResponse> {
   return apiFetch<KanbanCardStageDeadlineResponse>(`/api/v1/kanban/cards/${cardId}/stage-deadline`, {
     method: 'PATCH',

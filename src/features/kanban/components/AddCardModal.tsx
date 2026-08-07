@@ -25,7 +25,8 @@ interface AddCardModalProps {
     companyName: string;
     jobTitle: string;
     originalUrl: string;
-    deadline: string;
+    // 상시채용 이슈 대응: 마감일 미입력 시 null(상시채용)로 전송.
+    deadline: string | null;
     stageId: number;
     cardId?: number;
   }) => Promise<FormErrors | undefined>;
@@ -42,7 +43,6 @@ export interface FormErrors {
   companyName?: string;
   jobTitle?: string;
   originalUrl?: string;
-  deadline?: string;
 }
 
 function normalizeUrl(url: string): string {
@@ -96,7 +96,6 @@ function validateField(key: keyof FormState, form: FormState): string | undefine
     }
     if (trimmed.length > 2048) return '2048자를 초과하여 입력할 수 없어요.';
   }
-  if (key === 'deadline' && !form.deadline) return '지원 마감일을 입력해 주세요.';
   return undefined;
 }
 
@@ -105,7 +104,6 @@ function validateAll(form: FormState): FormErrors {
     companyName: validateField('companyName', form),
     jobTitle: validateField('jobTitle', form),
     originalUrl: validateField('originalUrl', form),
-    deadline: validateField('deadline', form),
   };
 }
 
@@ -157,14 +155,17 @@ export function AddCardModal({
     setErrors(finalErrors);
     if (Object.values(finalErrors).some(Boolean)) return;
 
-    const d = form.deadline!;
+    const d = form.deadline;
     setIsSubmitting(true);
     try {
       const serverErrors = await onConfirm({
         companyName: form.companyName.trim(),
         jobTitle: form.jobTitle.trim(),
         originalUrl: normalizeUrl(form.originalUrl),
-        deadline: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`,
+        // 상시채용 이슈 대응: 마감일을 선택하지 않으면 null(상시채용)로 전송.
+        deadline: d
+          ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+          : null,
         stageId,
         cardId: mode === 'edit' ? card?.id : undefined,
       });
@@ -241,22 +242,39 @@ export function AddCardModal({
           <div className="flex flex-col gap-3">
             <div className="flex items-center gap-2">
               <p className="text-3 font-semibold text-label-base">지원 마감일</p>
-              <p className="text-3 font-bold text-status-negative">*</p>
             </div>
             <div className="relative">
               <button
                 type="button"
                 onClick={() => setShowDatePicker((v) => !v)}
                 className={`${FIELD_TRIGGER_CLASS} ring-1 ring-inset ${
-                  errors.deadline
-                    ? 'ring-status-negative'
-                    : showDatePicker
-                      ? 'ring-line-primary'
-                      : 'ring-line-secondary'
+                  showDatePicker ? 'ring-line-primary' : 'ring-line-secondary'
                 } ${deadlineText ? 'text-label-base' : 'text-label-placeholder'}`}
               >
-                <span>{deadlineText || '지원 마감일을 선택해주세요.'}</span>
-                <CalendarIcon />
+                <span>{deadlineText || '입력하지 않으면 상시채용으로 등록돼요.'}</span>
+                <span className="flex items-center gap-2">
+                  {deadlineText && (
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      aria-label="지원 마감일 지우기(상시채용으로 전환)"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        updateField('deadline', null);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.stopPropagation();
+                          updateField('deadline', null);
+                        }
+                      }}
+                      className="text-label-description hover:text-label-body"
+                    >
+                      <ClearIcon />
+                    </span>
+                  )}
+                  <CalendarIcon />
+                </span>
               </button>
               {showDatePicker && (
                 <div className="absolute bottom-[calc(100%+8px)] left-0 z-10">
@@ -270,9 +288,6 @@ export function AddCardModal({
                 </div>
               )}
             </div>
-            {errors.deadline && (
-              <p className="text-1 font-medium text-status-negative">{errors.deadline}</p>
-            )}
           </div>
         </div>
 
@@ -283,6 +298,19 @@ export function AddCardModal({
         </div>
       </div>
     </div>
+  );
+}
+
+function ClearIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path
+        d="M6 6L18 18M18 6L6 18"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+    </svg>
   );
 }
 

@@ -35,7 +35,7 @@ export function useUpdateCard() {
       companyName?: string;
       title?: string;
       originalUrl?: string;
-      deadline?: string;
+      deadline?: string | null;
     }) => updateCard(cardId, body),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: kanbanKeys.board() });
@@ -78,7 +78,7 @@ export function useUpdateCardStageDeadline() {
       ...body
     }: {
       cardId: number;
-      deadline?: string;
+      deadline?: string | null;
       stageId?: number;
     }) => updateCardStageDeadline(cardId, body),
     onSuccess: () => {
