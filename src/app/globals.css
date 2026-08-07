@@ -89,3 +89,19 @@
 html:has(.landing-root) {
   scroll-behavior: smooth;
 }
+
+/* 카카오 로그인 로딩 스피너 (src/components/ui/spinner.tsx) */
+@keyframes spinner-dot {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) translate(0, 0) scale(0.6);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translate(-50%, -50%) translate(var(--spinner-dot-x), var(--spinner-dot-y)) scale(1);
+    opacity: 1;
+  }
+}
+.animate-spinner-dot {
+  animation: spinner-dot 1.2s ease-in-out infinite;
+}

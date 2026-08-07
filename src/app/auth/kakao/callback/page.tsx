@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useKakaoLoginMutation } from '@/features/auth/hooks/useAuthMutations';
+import { Spinner } from '@/components/ui/spinner';
 
 // 카카오 인가 코드 콜백 처리 페이지.
 // NEXT_PUBLIC_KAKAO_REDIRECT_URI를 이 경로로 등록해야 함 (예: http://localhost:3000/auth/kakao/callback)
@@ -17,7 +18,7 @@ export default function KakaoCallbackPage() {
     <Suspense
       fallback={
         <div className="flex h-screen w-full items-center justify-center bg-base-white">
-          <p className="text-3 text-label-body">카카오 로그인 처리 중입니다...</p>
+          <Spinner />
         </div>
       }
     >
@@ -52,7 +53,7 @@ function CallbackHandler() {
 
   return (
     <div className="flex h-screen w-full items-center justify-center bg-base-white">
-      <p className="text-3 text-label-body">카카오 로그인 처리 중입니다...</p>
+      <Spinner />
     </div>
   );
 }
