@@ -40,21 +40,21 @@ export function Header({ onSearch, showSearch = true }: HeaderProps) {
               aria-label="검색"
               className="flex size-7 shrink-0 items-center justify-center text-icon-default"
             >
-              {/* public/icons/search.svg 경로 그대로 — currentColor로 icon/default 적용 */}
+              {/* Figma Header(226:27922) SearchInput 아이콘 스펙(18x18, fill) 그대로 반영 */}
               <svg
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
+                width="18"
+                height="18"
+                viewBox="0 0 18 17.9999"
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
                 aria-hidden="true"
               >
                 <path
-                  d="M10.5 18C14.6421 18 18 14.6421 18 10.5C18 6.35786 14.6421 3 10.5 3C6.35786 3 3 6.35786 3 10.5C3 14.6421 6.35786 18 10.5 18Z"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
+                  fillRule="evenodd"
+                  clipRule="evenodd"
+                  d="M7.36782 0C3.29869 0 0 3.2987 0 7.36785C0 11.437 3.29869 14.7357 7.36782 14.7357C9.10001 14.7357 10.6926 14.1379 11.9505 13.1374L16.5671 17.7541C16.8949 18.0818 17.4264 18.0818 17.7542 17.7541C18.0819 17.4263 18.0819 16.8948 17.7542 16.567L13.1375 11.9504C14.1379 10.6925 14.7356 9.09995 14.7356 7.36785C14.7356 3.2987 11.437 0 7.36782 0ZM1.67874 7.36785C1.67874 4.22585 4.22583 1.67875 7.36782 1.67875C10.5098 1.67875 13.0569 4.22585 13.0569 7.36785C13.0569 10.5099 10.5098 13.0569 7.36782 13.0569C4.22583 13.0569 1.67874 10.5099 1.67874 7.36785Z"
+                  fill="currentColor"
                 />
-                <path d="M16 16L20 20" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
               </svg>
             </button>
           </div>
