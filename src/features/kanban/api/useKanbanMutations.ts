@@ -3,6 +3,7 @@ import {
   createDirectCard,
   updateCard,
   moveCard,
+  updateCardStageDeadline,
   deleteCard,
   createStage,
   updateStage,
@@ -63,6 +64,24 @@ export function useMoveCard() {
       queryClient.invalidateQueries({ queryKey: kanbanKeys.board() });
     },
     onError: () => {
+      queryClient.invalidateQueries({ queryKey: kanbanKeys.board() });
+    },
+  });
+}
+
+// 카드 마감일/전형 단계 수정 (지원 마감일 페이지 전용, API 3.13)
+export function useUpdateCardStageDeadline() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      cardId,
+      ...body
+    }: {
+      cardId: number;
+      deadline?: string;
+      stageId?: number;
+    }) => updateCardStageDeadline(cardId, body),
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: kanbanKeys.board() });
     },
   });
