@@ -33,20 +33,20 @@ export function DeadlineCard({ entry, isUrgent, isSelected, onClick, onEdit, onD
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') onClick();
       }}
-      className={`flex w-full cursor-pointer items-start gap-1 overflow-hidden rounded-xl border px-5 transition-colors ${
+      className={`flex w-full cursor-pointer items-start gap-2 overflow-hidden rounded-xl border px-5 py-4 transition-colors ${
         isSelected
           ? 'border-neutral-200 bg-neutral-50'
           : 'border-line-secondary bg-base-white hover:bg-neutral-50'
       }`}
     >
-      <div className="flex flex-1 items-stretch gap-5">
+      <div className="flex flex-1 items-center gap-5">
         <div
           className={`w-2 shrink-0 self-stretch rounded-max ${
             isUrgent ? 'bg-fill-primary' : 'bg-[var(--color-label-base)]'
           }`}
         />
 
-        <div className="flex flex-1 flex-col gap-4 py-2">
+        <div className="flex flex-1 flex-col gap-3 py-1">
           <div className="flex flex-col gap-2">
             <div className="flex flex-col">
               <p className="text-3 font-medium text-label-body">{card.companyName}</p>
