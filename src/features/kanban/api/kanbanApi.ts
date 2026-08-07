@@ -34,6 +34,14 @@ export interface KanbanCardMoveResponse {
   position: number;
 }
 
+export interface KanbanCardStageDeadlineResponse {
+  cardId: number;
+  stageId: number;
+  stageName: string;
+  position: number;
+  deadline: string | null;
+}
+
 export interface KanbanStageCreateResponse {
   id: number;
   name: string;
@@ -114,6 +122,21 @@ export function moveCard(
   body: { stageId: number; position: number }
 ): Promise<KanbanCardMoveResponse> {
   return apiFetch<KanbanCardMoveResponse>(`/api/v1/kanban/cards/${cardId}/stage`, {
+    method: 'PATCH',
+    body,
+  });
+}
+
+// PATCH /api/v1/kanban/cards/{cardId}/stage-deadline
+// API 명세서 3.13(7/30 추가) — 지원 마감일 페이지 전용 수정 API. 마감일/전형 단계를
+// 부분 수정 가능하며, 스테이지 이동 시 위치는 서버가 항상 맨 위로 결정함(응답 position 참고).
+// ⚠️ 명세서에 Request Body 예시가 없어 Response 필드(deadline/stageId)와 "부분 수정
+// 가능" 설명을 근거로 구성함 — 세영님 확인 필요.
+export function updateCardStageDeadline(
+  cardId: number,
+  body: { deadline?: string; stageId?: number }
+): Promise<KanbanCardStageDeadlineResponse> {
+  return apiFetch<KanbanCardStageDeadlineResponse>(`/api/v1/kanban/cards/${cardId}/stage-deadline`, {
     method: 'PATCH',
     body,
   });

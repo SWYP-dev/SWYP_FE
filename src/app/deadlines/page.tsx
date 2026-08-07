@@ -1,8 +1,10 @@
 'use client';
 
+import { Suspense } from 'react';
 import { Sidebar } from '@/components/layout/sidebar';
 import { DeadlineHeader } from '@/features/deadlines/components/DeadlineHeader';
 import { DeadlineList } from '@/features/deadlines/components/DeadlineList';
+import { DeadlineListSkeleton } from '@/features/deadlines/components/DeadlineListSkeleton';
 
 // Figma "지원 마감일 메인"(node 101:17608). sidebar '/deadlines' 라우팅 대상.
 export default function DeadlinesPage() {
@@ -16,7 +18,9 @@ export default function DeadlinesPage() {
         </div>
 
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto bg-neutral-50 px-[80px] py-7">
-          <DeadlineList />
+          <Suspense fallback={<DeadlineListSkeleton />}>
+            <DeadlineList />
+          </Suspense>
         </div>
       </main>
     </div>

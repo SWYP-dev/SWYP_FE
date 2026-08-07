@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import Link from 'next/link';
 import { Popover, usePopoverTrigger } from '@/components/ui/popover';
 import { useAuthStore } from '../store/authStore';
 import { useLogoutMutation } from '../hooks/useAuthMutations';
@@ -51,6 +52,14 @@ export function ProfileMenu() {
           style={{ width: 140 }}
           className="box-border overflow-clip rounded-xl border border-line-secondary bg-base-white p-1"
         >
+          <Link
+            href="/settings"
+            role="menuitem"
+            onClick={close}
+            className="flex h-10 w-full items-center rounded-lg px-4 text-left text-4 font-medium leading-[1.5] text-label-base hover:bg-action-secondary-hover"
+          >
+            설정
+          </Link>
           <button
             type="button"
             role="menuitem"

@@ -1,5 +1,25 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { markNotificationsRead, deleteNotification, deleteAllNotifications } from './notificationApi';
+import {
+  markNotificationsRead,
+  deleteNotification,
+  deleteAllNotifications,
+  updateNotificationSettings,
+  type NotificationSettingsUpdate,
+} from './notificationApi';
+import { notificationKeys } from './useNotificationQuery';
+
+// 설정 > 알림 페이지 저장 (API 5.2).
+export function useUpdateNotificationSettings() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: NotificationSettingsUpdate) => updateNotificationSettings(body),
+    onSuccess: (data) => {
+      queryClient.setQueryData(notificationKeys.settings, (prev: unknown) =>
+        prev ? { ...prev, ...data } : prev
+      );
+    },
+  });
+}
 
 // 개별 항목 읽음 처리(API 5.5). 현재 UI에서 직접 트리거하는 곳은 없지만, 추후 알림 클릭 시
 // 카드 상세로 이동하면서 함께 호출하는 용도로 유지.

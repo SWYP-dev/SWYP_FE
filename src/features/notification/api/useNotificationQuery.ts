@@ -1,5 +1,5 @@
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
-import { fetchNotificationInbox } from './notificationApi';
+import { fetchNotificationInbox, fetchNotificationSettings } from './notificationApi';
 import { useAuthStore } from '@/features/auth/store/authStore';
 
 const DEFAULT_SIZE = 10;
@@ -7,7 +7,19 @@ const DEFAULT_SIZE = 10;
 export const notificationKeys = {
   inbox: (size: number) => ['notifications', 'inbox', size] as const,
   inboxInfinite: (size: number) => ['notifications', 'inbox', 'infinite', size] as const,
+  settings: ['notifications', 'settings'] as const,
 };
+
+// 설정 > 알림 페이지 초기값 로드 (API 5.1).
+export function useNotificationSettings() {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+
+  return useQuery({
+    queryKey: notificationKeys.settings,
+    queryFn: fetchNotificationSettings,
+    enabled: isAuthenticated,
+  });
+}
 
 // 지원 마감일 페이지 헤더 알림벨이 사용하는 인앱 알림함 조회 (API 5.4).
 // 벨 뱃지가 어느 정도 실시간성을 갖도록 1분마다 재조회.
