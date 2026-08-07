@@ -1,9 +1,9 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
-import { kanbanKeys, useKanbanBoard } from '@/features/kanban/api/useKanbanQuery';
-import { useUpdateCard, useMoveCard, useDeleteCard } from '@/features/kanban/api/useKanbanMutations';
+import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { useKanbanBoard } from '@/features/kanban/api/useKanbanQuery';
+import { useUpdateCardStageDeadline, useDeleteCard } from '@/features/kanban/api/useKanbanMutations';
 import { DeleteCardModal } from '@/features/kanban/components/DeleteCardModal';
 import { CardDetailDrawer } from '@/features/kanban/components/CardDetailDrawer';
 import { Toast } from '@/components/ui/toast';
@@ -15,10 +15,9 @@ import { EditDeadlineCardModal } from './EditDeadlineCardModal';
 
 // Figma "지원 마감일 메인"(node 101:17608) 스펙 반영.
 export function DeadlineList() {
-  const queryClient = useQueryClient();
+  const searchParams = useSearchParams();
   const { data, isLoading, isError } = useKanbanBoard();
-  const updateCardMutation = useUpdateCard();
-  const moveCardMutation = useMoveCard();
+  const updateStageDeadlineMutation = useUpdateCardStageDeadline();
   const deleteCardMutation = useDeleteCard();
 
   const [viewingCardId, setViewingCardId] = useState<number | null>(null);
@@ -26,6 +25,7 @@ export function DeadlineList() {
   const [deletingCard, setDeletingCard] = useState<KanbanCard | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
+  const [hasAppliedCardIdParam, setHasAppliedCardIdParam] = useState(false);
 
   const entries = useMemo(() => flattenKanbanCards(data?.stages ?? []), [data]);
   const groups = useMemo(() => groupCardsByDeadline(entries), [entries]);
@@ -33,6 +33,20 @@ export function DeadlineList() {
   function findEntry(cardId: number) {
     return entries.find((e) => e.card.id === cardId);
   }
+
+  // 이메일 알림의 "카드 보기" 링크(/deadlines?cardId=123)로 진입 시 해당 카드의
+  // 상세 Drawer를 자동으로 연다. 데이터 로드 후 1회만 적용.
+  useEffect(() => {
+    if (hasAppliedCardIdParam || !data) return;
+    const cardIdParam = searchParams.get('cardId');
+    if (cardIdParam) {
+      const cardId = Number(cardIdParam);
+      if (entries.some((e) => e.card.id === cardId)) {
+        setViewingCardId(cardId);
+      }
+    }
+    setHasAppliedCardIdParam(true);
+  }, [hasAppliedCardIdParam, data, searchParams, entries]);
 
   function handleEditCard(cardId: number) {
     const entry = findEntry(cardId);
@@ -51,17 +65,12 @@ export function DeadlineList() {
     if (!entry) return;
 
     try {
-      await updateCardMutation.mutateAsync({ cardId: formData.cardId, deadline: formData.deadline });
+      await updateStageDeadlineMutation.mutateAsync({
+        cardId: formData.cardId,
+        deadline: formData.deadline,
+        ...(formData.stageId !== entry.stageId ? { stageId: formData.stageId } : {}),
+      });
 
-      if (formData.stageId !== entry.stageId) {
-        await moveCardMutation.mutateAsync({
-          cardId: formData.cardId,
-          stageId: formData.stageId,
-          position: 1,
-        });
-      }
-
-      queryClient.invalidateQueries({ queryKey: kanbanKeys.board() });
       setEditingCard(null);
       setToastType('success');
       setToastMessage('수정 사항이 저장되었어요.');
