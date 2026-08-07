@@ -22,3 +22,10 @@ export function logoutRequest(): Promise<null> {
 export function fetchCurrentUser(): Promise<CurrentUserResponse> {
   return apiFetch<CurrentUserResponse>('/api/v1/users/me');
 }
+
+// 6.2 회원 탈퇴 (DELETE /api/v1/users/me)
+export function deleteAccount(): Promise<null> {
+  return apiFetch<null>('/api/v1/users/me', {
+    method: 'DELETE',
+  });
+}

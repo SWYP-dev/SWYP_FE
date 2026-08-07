@@ -1,6 +1,41 @@
 import { apiFetch } from '@/lib/api/api-client';
 import type { InAppNotificationInbox, NotificationReadResponse } from '@/types/api';
 
+export interface NotificationSettings {
+  emailEnabled: boolean;
+  inAppEnabled: boolean;
+  email: string;
+  remindDays: number[];
+}
+
+export interface NotificationSettingsUpdate {
+  emailEnabled: boolean;
+  inAppEnabled: boolean;
+  remindDays: number[];
+}
+
+export interface NotificationSettingsUpdateResponse {
+  emailEnabled: boolean;
+  inAppEnabled: boolean;
+  remindDays: number[];
+}
+
+// GET /api/v1/notifications/settings (API 명세서 5.1)
+export function fetchNotificationSettings(): Promise<NotificationSettings> {
+  return apiFetch<NotificationSettings>('/api/v1/notifications/settings');
+}
+
+// PATCH /api/v1/notifications/settings (API 명세서 5.2)
+// email은 카카오 계정 연동값이라 수정 불가 필드 — Request Body에 포함하지 않음.
+export function updateNotificationSettings(
+  body: NotificationSettingsUpdate
+): Promise<NotificationSettingsUpdateResponse> {
+  return apiFetch<NotificationSettingsUpdateResponse>('/api/v1/notifications/settings', {
+    method: 'PATCH',
+    body,
+  });
+}
+
 // GET /api/v1/notifications/inbox (API 명세서 5.4)
 // v1.11: cursor/nextCursor/hasNext 기반 커서 페이지네이션. 첫 요청은 cursor 생략,
 // 이후 hasNext=true면 직전 응답의 nextCursor를 다음 요청의 cursor로 전달.

@@ -2,7 +2,7 @@
 
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { loginWithKakao, logoutRequest } from '../api/authApi';
+import { loginWithKakao, logoutRequest, deleteAccount } from '../api/authApi';
 import { useAuthStore } from '../store/authStore';
 import { setTokens, clearTokens } from '@/lib/api/token';
 import { queryClient } from '@/lib/api/query-client';
@@ -23,6 +23,22 @@ export function useKakaoLoginMutation() {
       // ⚠️ [QA 반영] 로그인 성공 시, 비로그인 상태로 캐시된 "빈 데이터"가 남아있을 수
       // 있으니 전체 쿼리를 무효화해서 로그인된 사용자 기준으로 다시 불러오도록 함.
       queryClient.invalidateQueries();
+    },
+  });
+}
+
+// 6.2 회원 탈퇴 — 성공 시 로그아웃과 동일하게 토큰/유저 상태/쿼리 캐시를 정리하고 홈으로 이동.
+export function useDeleteAccountMutation() {
+  const clearUser = useAuthStore((s) => s.clearUser);
+  const router = useRouter();
+
+  return useMutation({
+    mutationFn: deleteAccount,
+    onSuccess: () => {
+      clearTokens();
+      clearUser();
+      queryClient.clear();
+      router.push('/');
     },
   });
 }
