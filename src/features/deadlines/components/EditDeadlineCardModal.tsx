@@ -23,7 +23,8 @@ interface EditDeadlineCardModalProps {
    */
   isOverDrawer?: boolean;
   onClose: () => void;
-  onConfirm: (data: { cardId: number; deadline: string; stageId: number }) => void;
+  // 상시채용 이슈 대응: 마감일 미입력 시 null(상시채용)로 전송.
+  onConfirm: (data: { cardId: number; deadline: string | null; stageId: number }) => void;
 }
 
 interface FormState {
@@ -31,10 +32,6 @@ interface FormState {
   jobTitle: string;
   stageId: number;
   deadline: Date | null;
-}
-
-interface FormErrors {
-  deadline?: string;
 }
 
 // Figma "지원 마감일 수정"(node 101:17631) 스펙 반영.
@@ -61,7 +58,6 @@ export function EditDeadlineCardModal({
     stageId: currentStageId,
     deadline: card?.deadline ? parseDeadline(card.deadline) : null,
   });
-  const [errors, setErrors] = useState<FormErrors>({});
   const [showDatePicker, setShowDatePicker] = useState(false);
   const stageDropdown = usePopoverTrigger<HTMLButtonElement>();
 
@@ -72,21 +68,14 @@ export function EditDeadlineCardModal({
 
   if (!isOpen || !card) return null;
 
-  const isAllFilled = form.deadline !== null;
-
-  function validate(): boolean {
-    const next: FormErrors = {};
-    if (!form.deadline) next.deadline = '지원 마감일을 입력해 주세요.';
-    setErrors(next);
-    return Object.keys(next).length === 0;
-  }
-
   function handleConfirm() {
-    if (!validate()) return;
-    const d = form.deadline!;
+    const d = form.deadline;
     onConfirm({
       cardId: card!.id,
-      deadline: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`,
+      // 상시채용 이슈 대응: 마감일을 선택하지 않으면 null(상시채용)로 전송.
+      deadline: d
+        ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+        : null,
       stageId: form.stageId,
     });
   }
@@ -152,18 +141,39 @@ export function EditDeadlineCardModal({
           <div className="flex flex-col gap-3">
             <div className="flex items-center gap-2">
               <p className="text-3 font-semibold text-label-base">지원 마감일</p>
-              <p className="text-3 font-bold text-status-negative">*</p>
             </div>
             <div className="relative">
               <button
                 type="button"
                 onClick={() => setShowDatePicker((v) => !v)}
-                className={`${FIELD_TRIGGER_CLASS} ${
-                  errors.deadline ? 'border-status-negative' : 'border-line-secondary'
-                } ${deadlineText ? 'text-label-base' : 'text-label-placeholder'}`}
+                className={`${FIELD_TRIGGER_CLASS} border-line-secondary ${
+                  deadlineText ? 'text-label-base' : 'text-label-placeholder'
+                }`}
               >
-                <span>{deadlineText || '지원 마감일을 선택해주세요.'}</span>
-                <CalendarIcon />
+                <span>{deadlineText || '입력하지 않으면 상시채용으로 등록돼요.'}</span>
+                <span className="flex items-center gap-2">
+                  {deadlineText && (
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      aria-label="지원 마감일 지우기(상시채용으로 전환)"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setForm((prev) => ({ ...prev, deadline: null }));
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.stopPropagation();
+                          setForm((prev) => ({ ...prev, deadline: null }));
+                        }
+                      }}
+                      className="text-label-description hover:text-label-body"
+                    >
+                      <ClearIcon />
+                    </span>
+                  )}
+                  <CalendarIcon />
+                </span>
               </button>
               {showDatePicker && (
                 <div className="absolute bottom-[calc(100%+8px)] left-0 z-10">
@@ -172,15 +182,11 @@ export function EditDeadlineCardModal({
                     onChange={(date) => {
                       setForm((prev) => ({ ...prev, deadline: date }));
                       setShowDatePicker(false);
-                      if (errors.deadline) setErrors((prev) => ({ ...prev, deadline: undefined }));
                     }}
                   />
                 </div>
               )}
             </div>
-            {errors.deadline && (
-              <p className="text-1 font-medium text-status-negative">{errors.deadline}</p>
-            )}
           </div>
 
           {/* 전형 단계 — Figma 그대로 지원 마감일 아래 배치 (사용자 확인 2026-07-23) */}
@@ -219,12 +225,20 @@ export function EditDeadlineCardModal({
 
         {/* 푸터 */}
         <div className="px-8">
-          <Button variant="primary" size="lg" onClick={handleConfirm} disabled={!isAllFilled} className="w-full">
+          <Button variant="primary" size="lg" onClick={handleConfirm} className="w-full">
             확인
           </Button>
         </div>
       </div>
     </div>
+  );
+}
+
+function ClearIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
   );
 }
 

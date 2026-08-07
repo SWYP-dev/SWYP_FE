@@ -60,7 +60,11 @@ export function DeadlineList() {
 
   // ⚠️ 회사명/공고명은 폼에서 아예 안 보내서(비활성 필드), K010 걱정 없이
   // 지원 마감일 + 전형 단계만 독립적으로 업데이트
-  async function handleConfirmEditCard(formData: { cardId: number; deadline: string; stageId: number }) {
+  async function handleConfirmEditCard(formData: {
+    cardId: number;
+    deadline: string | null;
+    stageId: number;
+  }) {
     const entry = findEntry(formData.cardId);
     if (!entry) return;
 
