@@ -10,6 +10,7 @@ import { Toast } from '@/components/ui/toast';
 import type { KanbanCard } from '@/types/api';
 import { flattenKanbanCards, groupCardsByDeadline } from '../utils/groupByDeadline';
 import { DeadlineGroup } from './DeadlineGroup';
+import { DeadlineListSkeleton } from './DeadlineListSkeleton';
 import { EditDeadlineCardModal } from './EditDeadlineCardModal';
 
 // Figma "지원 마감일 메인"(node 101:17608) 스펙 반영.
@@ -86,11 +87,7 @@ export function DeadlineList() {
   }
 
   if (isLoading) {
-    return (
-      <div className="flex h-full items-center justify-center text-3 text-label-description">
-        불러오는 중...
-      </div>
-    );
+    return <DeadlineListSkeleton />;
   }
 
   if (isError) {

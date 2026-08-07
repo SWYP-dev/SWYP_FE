@@ -6,6 +6,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Header } from '@/components/layout/header';
 import { Sidebar } from '@/components/layout/sidebar';
 import { JobCard } from '@/components/ui/job-card';
+import { JobCardSkeleton } from '@/components/ui/job-card-skeleton';
 import { EmptyJobPosting } from '@/components/ui/empty-job-posting';
 import { Pagination } from '@/components/ui/pagination';
 import { Toast } from '@/components/ui/toast';
@@ -209,7 +210,8 @@ export default function FeedPage() {
           <div className="flex flex-1 flex-col gap-6">
             <div className="flex flex-1 flex-col gap-8">
               <div className="flex flex-1 flex-col items-center gap-3 rounded-[20px] bg-base-white p-3">
-                {isLoading && <p className="py-11 text-label-description">불러오는 중...</p>}
+                {isLoading &&
+                  Array.from({ length: 5 }).map((_, i) => <JobCardSkeleton key={i} />)}
                 {isError && (
                   <p className="py-11 text-status-negative">
                     공고를 불러오지 못했어요. 잠시 후 다시 시도해주세요.
