@@ -193,8 +193,9 @@ interface JobCategoryFilterButtonProps {
 export function JobCategoryFilterButton({ value, onApply }: JobCategoryFilterButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
 
-  // 그룹(직군)이 여러 개라 지역 필터와 동일하게 그룹명을 라벨에 포함.
-  const summary = getSelectionSummary(value, JOB_CATEGORY_GROUPS);
+  // 직무명만으로 충분해서 그룹(직군) 접두어는 생략 — 모달 하단 칩과 동일한 규칙.
+  // (지역은 "중구"·"동구"가 여러 시/도에 중복돼서 접두어를 유지함)
+  const summary = getSelectionSummary(value, JOB_CATEGORY_GROUPS, false);
   const label =
     summary === null
       ? '직군 · 직무'
@@ -219,6 +220,7 @@ export function JobCategoryFilterButton({ value, onApply }: JobCategoryFilterBut
           setIsOpen(false);
         }}
         emptyStateLines={['직군을 선택하면', '직무를 볼 수 있어요']}
+        includeGroupLabelInChips={false}
       />
     </>
   );

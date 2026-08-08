@@ -42,6 +42,13 @@ interface SelectionModalProps {
    * "초기화" 버튼도 완전히 빈 상태가 아니라 이 기본값으로 되돌아감.
    */
   defaultValue?: SelectionValue;
+  /**
+   * 하단 칩에 그룹명을 접두어로 붙일지 여부. 기본 true.
+   * 지역은 "중구"·"동구"처럼 여러 시/도에 같은 이름이 있어 접두어가 없으면 구분이 안 되지만,
+   * 직군·직무는 직무명만으로 충분해서 false로 넘긴다.
+   * ("OO 전체" 칩은 이 값과 무관하게 항상 그룹명을 유지 — "전체"만으로는 어느 그룹인지 알 수 없음)
+   */
+  includeGroupLabelInChips?: boolean;
 }
 
 /**
@@ -70,6 +77,7 @@ export function SelectionModal({
   onClose,
   emptyStateLines,
   defaultValue,
+  includeGroupLabelInChips = true,
 }: SelectionModalProps) {
   // ⚠️ [QA #8 반영] 최초 마운트 시점부터 defaultValue(지역 필터="전국")가 draft에 반영되도록
   // lazy initializer로 변경. 기존엔 열림 전환 effect에만 의존해 초기 렌더 타이밍에 따라
@@ -192,7 +200,7 @@ export function SelectionModal({
         if (!child) return;
         chips.push({
           key: `${gv.groupId}-${childId}`,
-          label: `${group.label} ${child.label}`,
+          label: includeGroupLabelInChips ? `${group.label} ${child.label}` : child.label,
           onRemove: () => removeChildChip(gv.groupId, childId),
         });
       });
@@ -327,8 +335,9 @@ export function SelectionModal({
 }
 
 // ⚠️ [QA #4 반영] 여러 개 선택 시 "[가장 먼저 선택한 이름] 외 n개" 형식으로 표시하기 위한
-// 공용 헬퍼. includeGroupLabel=false면 그룹명 없이 하위 항목 라벨만 반환
-// (직군·직무처럼 그룹이 프리픽스와 중복되는 경우 사용).
+// 공용 헬퍼. includeGroupLabel=false면 하위 항목에 그룹명 접두어를 붙이지 않는다
+// (직군·직무처럼 직무명만으로 충분한 경우 사용). 모달 하단 칩과 동일한 규칙.
+// "OO 전체"는 이 값과 무관하게 항상 그룹명을 유지 — "전체"만으로는 어느 그룹인지 알 수 없음.
 export function getSelectionSummary(
   value: SelectionValue | null,
   groups: SelectionGroup[],
@@ -345,7 +354,7 @@ export function getSelectionSummary(
 
     if (gv.childIds.length === 0) {
       totalCount += 1;
-      if (firstLabel === null) firstLabel = includeGroupLabel ? `${group.label} 전체` : '전체';
+      if (firstLabel === null) firstLabel = `${group.label} 전체`;
     } else {
       for (const childId of gv.childIds) {
         const child = group.children.find((c) => c.id === childId);
