@@ -328,7 +328,7 @@ export function CardDetailDrawer({
                       ? 'border border-line-primary bg-base-white'
                       : memoDraft.trim()
                         ? 'border border-line-secondary bg-neutral-100'
-                        : 'border border-icon-gray bg-base-white'
+                        : 'border border-line-secondary bg-base-white'
                   }`}
                 />
                 {memoDraft.length > 0 && (
