@@ -247,8 +247,8 @@ export function AddCardModal({
               <button
                 type="button"
                 onClick={() => setShowDatePicker((v) => !v)}
-                className={`${FIELD_TRIGGER_CLASS} ring-1 ring-inset ${
-                  showDatePicker ? 'ring-line-primary' : 'ring-line-secondary'
+                className={`${FIELD_TRIGGER_CLASS} ${
+                  showDatePicker ? 'border-line-primary' : 'border-line-secondary'
                 } ${deadlineText ? 'text-label-base' : 'text-label-placeholder'}`}
               >
                 <span>{deadlineText || '입력하지 않으면 상시채용으로 등록돼요.'}</span>
