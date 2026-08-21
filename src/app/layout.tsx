@@ -5,6 +5,7 @@ import './globals.css';
 import { QueryProvider } from '@/providers/query-provider';
 import { GlobalLoginModal } from '@/features/auth/components/GlobalLoginModal';
 import { GTM_ID } from '@/lib/gtm';
+import { MAZE_API_KEY } from '@/lib/maze';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -32,6 +33,32 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       style={{ fontFamily: 'Pretendard, sans-serif' }}
     >
+      {/* Maze */}
+      {MAZE_API_KEY && (
+        <Script id="maze-snippet" strategy="beforeInteractive">
+          {`(function (m, a, z, e) {
+  var s, t, u, v;
+  try { t = m.sessionStorage.getItem('maze-us'); } catch (err) {}
+  if (!t) {
+    t = new Date().getTime();
+    try { m.sessionStorage.setItem('maze-us', t); } catch (err) {}
+  }
+  u = document.currentScript || (function () {
+    var w = document.getElementsByTagName('script');
+    return w[w.length - 1];
+  })();
+  v = u && u.nonce;
+  s = a.createElement('script');
+  s.src = z + '?apiKey=' + e;
+  s.async = true;
+  if (v) s.setAttribute('nonce', v);
+  a.getElementsByTagName('head')[0].appendChild(s);
+  m.mazeUniversalSnippetApiKey = e;
+})(window, document, 'https://snippet.maze.co/maze-universal-loader.js', '${MAZE_API_KEY}');`}
+        </Script>
+      )}
+      {/* End Maze */}
+
       {/* Google Tag Manager */}
       {GTM_ID && (
         <Script id="gtm-script" strategy="afterInteractive">
