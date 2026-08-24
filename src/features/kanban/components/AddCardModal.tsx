@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { CloseIcon } from '@/components/ui/icons';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useEscapeKey } from '@/lib/hooks/useEscapeKey';
 import type { KanbanCard } from '@/types/api';
 
@@ -37,6 +38,11 @@ interface FormState {
   jobTitle: string;
   originalUrl: string;
   deadline: Date | null;
+  /**
+   * 상시 채용 여부. true면 마감일 입력을 비활성화한다.
+   * 체크하는 순간 deadline을 null로 비우므로, isAlwaysHiring이 true면 deadline은 항상 null이다.
+   */
+  isAlwaysHiring: boolean;
 }
 
 export interface FormErrors {
@@ -107,7 +113,7 @@ function validateAll(form: FormState): FormErrors {
   };
 }
 
-// Figma "지원 내역 추가"(49:8042) / "지원 내역 수정"(49:8083) 모달 스펙 반영.
+// Figma "지원 현황 추가"(49:8042) / "지원 현황 수정"(49:8083) 모달 스펙 반영.
 export function AddCardModal({
   isOpen,
   mode,
@@ -127,6 +133,8 @@ export function AddCardModal({
     jobTitle: card?.jobTitle ?? '',
     originalUrl: card?.originalUrl ?? '',
     deadline: card?.deadline ? parseDeadline(card.deadline) : null,
+    // 마감일이 없는(상시채용) 카드를 수정할 때는 체크된 상태로 열린다.
+    isAlwaysHiring: card?.deadline === null,
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -162,7 +170,7 @@ export function AddCardModal({
         companyName: form.companyName.trim(),
         jobTitle: form.jobTitle.trim(),
         originalUrl: normalizeUrl(form.originalUrl),
-        // 상시채용 이슈 대응: 마감일을 선택하지 않으면 null(상시채용)로 전송.
+        // 상시 채용 체크 시 deadline은 이미 null이므로 그대로 null(상시채용)이 전송된다.
         deadline: d
           ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
           : null,
@@ -184,6 +192,14 @@ export function AddCardModal({
     ? `${form.deadline.getFullYear()}. ${form.deadline.getMonth() + 1}. ${form.deadline.getDate()}`
     : '';
 
+  // 마감일 트리거 버튼의 상태별 스타일 — 비활성(상시 채용) / 달력 열림 / 값 유무
+  const deadlineTriggerClass = form.isAlwaysHiring
+    ? 'cursor-not-allowed border-line-secondary bg-action-disabled text-label-secondary-disabled'
+    : [
+        showDatePicker ? 'border-line-primary' : 'border-line-secondary',
+        deadlineText ? 'text-label-base' : 'text-label-placeholder',
+      ].join(' ');
+
   const FIELDS: {
     key: keyof Pick<FormState, 'companyName' | 'jobTitle' | 'originalUrl'>;
     label: string;
@@ -200,10 +216,16 @@ export function AddCardModal({
     },
   ];
 
-  const canSubmit = isFormValid && !isSubmitting;
+  // 지원 마감일 필수화(Figma 847:67278 — 라벨에 * 표시) 반영: 마감일을 고르지 않으면
+  // 확인 버튼을 비활성 상태로 유지한다. 마감일은 별도 에러 메시지 없이 버튼 비활성으로만
+  // 안내하므로 FormErrors에는 포함하지 않고 여기서만 검사한다.
+  // 단, 상시 채용을 체크했다면 마감일이 없는 게 정상이므로 필수 검사에서 제외한다.
+  const canSubmit = isFormValid && (form.isAlwaysHiring || form.deadline !== null) && !isSubmitting;
 
   return (
-    <div className={`fixed inset-0 flex items-center justify-center ${isOverDrawer ? 'z-[60]' : 'z-50'}`}>
+    <div
+      className={`fixed inset-0 flex items-center justify-center ${isOverDrawer ? 'z-[60]' : 'z-50'}`}
+    >
       <div
         className={`absolute inset-0 ${isOverDrawer ? '' : 'bg-base-dimmed'}`}
         onClick={handleClose}
@@ -212,7 +234,7 @@ export function AddCardModal({
       <div className="relative flex w-[394px] flex-col gap-7 overflow-visible rounded-[20px] bg-base-white py-7 shadow-spread-small">
         <div className="flex items-center justify-between px-8">
           <p className="text-7 font-semibold text-label-base">
-            {mode === 'add' ? '지원 현황 추가' : '지원 내역 수정'}
+            {mode === 'add' ? '지원 현황 추가' : '지원 현황 수정'}
           </p>
           <button type="button" onClick={handleClose} aria-label="닫기" className="text-label-base">
             <CloseIcon size={24} />
@@ -235,46 +257,26 @@ export function AddCardModal({
                   errors[key] ? 'border-status-negative' : 'border-line-secondary'
                 }`}
               />
-              {errors[key] && <p className="text-1 font-medium text-status-negative">{errors[key]}</p>}
+              {errors[key] && (
+                <p className="text-1 font-medium text-status-negative">{errors[key]}</p>
+              )}
             </div>
           ))}
 
           <div className="flex flex-col gap-3">
             <div className="flex items-center gap-2">
               <p className="text-3 font-semibold text-label-base">지원 마감일</p>
+              <p className="text-3 font-bold text-status-negative">*</p>
             </div>
             <div className="relative">
               <button
                 type="button"
+                disabled={form.isAlwaysHiring}
                 onClick={() => setShowDatePicker((v) => !v)}
-                className={`${FIELD_TRIGGER_CLASS} ${
-                  showDatePicker ? 'border-line-primary' : 'border-line-secondary'
-                } ${deadlineText ? 'text-label-base' : 'text-label-placeholder'}`}
+                className={`${FIELD_TRIGGER_CLASS} ${deadlineTriggerClass}`}
               >
-                <span>{deadlineText || '입력하지 않으면 상시채용으로 등록돼요.'}</span>
-                <span className="flex items-center gap-2">
-                  {deadlineText && (
-                    <span
-                      role="button"
-                      tabIndex={0}
-                      aria-label="지원 마감일 지우기(상시채용으로 전환)"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        updateField('deadline', null);
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.stopPropagation();
-                          updateField('deadline', null);
-                        }
-                      }}
-                      className="text-label-description hover:text-label-body"
-                    >
-                      <ClearIcon />
-                    </span>
-                  )}
-                  <CalendarIcon />
-                </span>
+                <span>{deadlineText || '지원 마감일을 선택해주세요.'}</span>
+                <CalendarIcon />
               </button>
               {showDatePicker && (
                 <div className="absolute bottom-[calc(100%+8px)] left-0 z-10">
@@ -288,11 +290,32 @@ export function AddCardModal({
                 </div>
               )}
             </div>
+            <Checkbox
+              checked={form.isAlwaysHiring}
+              onChange={(checked) => {
+                setShowDatePicker(false);
+                // 검증 대상이 아니므로 updateField(에러 재계산) 대신 폼 상태만 갱신한다.
+                // 체크 시 고른 날짜를 비운다 — 한참 뒤에 해제했을 때 예전 날짜가 남아 있으면
+                // 사용자가 의도하지 않은 마감일로 저장될 수 있어서.
+                setForm((prev) => ({
+                  ...prev,
+                  isAlwaysHiring: checked,
+                  deadline: checked ? null : prev.deadline,
+                }));
+              }}
+              label="상시 채용"
+            />
           </div>
         </div>
 
         <div className="px-8">
-          <Button variant="primary" size="lg" onClick={handleConfirm} disabled={!canSubmit} className="w-full">
+          <Button
+            variant="primary"
+            size="lg"
+            onClick={handleConfirm}
+            disabled={!canSubmit}
+            className="w-full"
+          >
             확인
           </Button>
         </div>
@@ -301,19 +324,9 @@ export function AddCardModal({
   );
 }
 
-function ClearIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <path
-        d="M6 6L18 18M18 6L6 18"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
+// 색을 지정하지 않고 트리거 버튼의 currentColor를 상속받는다 — 값 있음(label/base)·
+// 값 없음(label/placeholder)·상시 채용(label/secondary-disabled) 세 상태가 그대로 반영된다.
+// icon/default(#212123)가 label/base와 같은 값이라 기존 활성 상태 색도 유지된다.
 function CalendarIcon() {
   return (
     <svg
@@ -322,7 +335,7 @@ function CalendarIcon() {
       viewBox="0 0 24 24"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      className="shrink-0 text-icon-default"
+      className="shrink-0"
       aria-hidden="true"
     >
       <rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" strokeWidth="1.5" />

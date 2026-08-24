@@ -3,6 +3,18 @@
 @import 'tailwindcss';
 @import '../styles/tokens.css';
 
+/* Tailwind v4는 Preflight에서 button의 cursor: pointer를 제거하고 브라우저 기본값(default)을
+   따르도록 바뀌었음 → v3와 동일한 커서 동작으로 복구. 비활성 요소는 각 컴포넌트의
+   disabled:cursor-not-allowed가 그대로 적용되도록 제외한다. */
+@layer base {
+  button:not(:disabled),
+  [role='button']:not(:disabled),
+  label[for],
+  summary {
+    cursor: pointer;
+  }
+}
+
 @utility text-trim {
   text-box: trim-both cap alphabetic;
 }

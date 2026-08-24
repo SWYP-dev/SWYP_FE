@@ -80,7 +80,7 @@ export function KanbanCardContent({
               <button
                 type="button"
                 onClick={() => onEditCard?.(card)}
-                aria-label="지원 내역 수정"
+                aria-label="지원 현황 수정"
                 className="flex size-5 items-center justify-center text-icon-gray"
               >
                 <EditIcon size={16} />
@@ -88,7 +88,7 @@ export function KanbanCardContent({
               <button
                 type="button"
                 onClick={() => onDeleteCard?.(card)}
-                aria-label="지원 내역 삭제"
+                aria-label="지원 현황 삭제"
                 className="flex size-5 items-center justify-center text-icon-gray"
               >
                 <TrashIcon size={16} />

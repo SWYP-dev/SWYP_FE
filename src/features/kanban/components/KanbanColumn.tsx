@@ -219,7 +219,7 @@ export function KanbanColumn({
           <div className="flex items-center gap-2">
             <button
               type="button"
-              aria-label="지원 내역 추가"
+              aria-label="지원 현황 추가"
               disabled={isDraft}
               onClick={() => onAddCard?.(stage.id)}
               className={`flex size-5 items-center justify-center ${

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { CloseIcon } from '@/components/ui/icons';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, usePopoverTrigger } from '@/components/ui/popover';
 import { DropdownMenu, type DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { useEscapeKey } from '@/lib/hooks/useEscapeKey';
@@ -32,6 +33,11 @@ interface FormState {
   jobTitle: string;
   stageId: number;
   deadline: Date | null;
+  /**
+   * 상시 채용 여부. true면 마감일 입력을 비활성화한다.
+   * 체크하는 순간 deadline을 null로 비우므로, isAlwaysHiring이 true면 deadline은 항상 null이다.
+   */
+  isAlwaysHiring: boolean;
 }
 
 // Figma "지원 마감일 수정"(node 101:17631) 스펙 반영.
@@ -57,6 +63,8 @@ export function EditDeadlineCardModal({
     jobTitle: card?.jobTitle ?? '',
     stageId: currentStageId,
     deadline: card?.deadline ? parseDeadline(card.deadline) : null,
+    // 마감일이 없는(상시채용) 카드를 수정할 때는 체크된 상태로 열린다.
+    isAlwaysHiring: card?.deadline === null,
   });
   const [showDatePicker, setShowDatePicker] = useState(false);
   const stageDropdown = usePopoverTrigger<HTMLButtonElement>();
@@ -72,7 +80,7 @@ export function EditDeadlineCardModal({
     const d = form.deadline;
     onConfirm({
       cardId: card!.id,
-      // 상시채용 이슈 대응: 마감일을 선택하지 않으면 null(상시채용)로 전송.
+      // 상시 채용 체크 시 deadline은 이미 null이므로 그대로 null(상시채용)이 전송된다.
       deadline: d
         ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
         : null,
@@ -89,6 +97,11 @@ export function EditDeadlineCardModal({
   const deadlineText = form.deadline
     ? `${form.deadline.getFullYear()}. ${form.deadline.getMonth() + 1}. ${form.deadline.getDate()}`
     : '';
+
+  // 마감일 트리거 버튼의 상태별 스타일 — 비활성(상시 채용) / 값 유무
+  const deadlineTriggerClass = form.isAlwaysHiring
+    ? 'cursor-not-allowed border-line-secondary bg-action-disabled text-label-secondary-disabled'
+    : `border-line-secondary ${deadlineText ? 'text-label-base' : 'text-label-placeholder'}`;
 
   const stageItems: DropdownMenuItem[] = stages.map((s) => ({ label: s.name }));
   const selectedStageName = stages.find((s) => s.id === form.stageId)?.name ?? '';
@@ -141,39 +154,17 @@ export function EditDeadlineCardModal({
           <div className="flex flex-col gap-3">
             <div className="flex items-center gap-2">
               <p className="text-3 font-semibold text-label-base">지원 마감일</p>
+              <p className="text-3 font-bold text-status-negative">*</p>
             </div>
             <div className="relative">
               <button
                 type="button"
+                disabled={form.isAlwaysHiring}
                 onClick={() => setShowDatePicker((v) => !v)}
-                className={`${FIELD_TRIGGER_CLASS} border-line-secondary ${
-                  deadlineText ? 'text-label-base' : 'text-label-placeholder'
-                }`}
+                className={`${FIELD_TRIGGER_CLASS} ${deadlineTriggerClass}`}
               >
-                <span>{deadlineText || '입력하지 않으면 상시채용으로 등록돼요.'}</span>
-                <span className="flex items-center gap-2">
-                  {deadlineText && (
-                    <span
-                      role="button"
-                      tabIndex={0}
-                      aria-label="지원 마감일 지우기(상시채용으로 전환)"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setForm((prev) => ({ ...prev, deadline: null }));
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.stopPropagation();
-                          setForm((prev) => ({ ...prev, deadline: null }));
-                        }
-                      }}
-                      className="text-label-description hover:text-label-body"
-                    >
-                      <ClearIcon />
-                    </span>
-                  )}
-                  <CalendarIcon />
-                </span>
+                <span>{deadlineText || '지원 마감일을 선택해주세요.'}</span>
+                <CalendarIcon />
               </button>
               {showDatePicker && (
                 <div className="absolute bottom-[calc(100%+8px)] left-0 z-10">
@@ -187,6 +178,15 @@ export function EditDeadlineCardModal({
                 </div>
               )}
             </div>
+            <Checkbox
+              checked={form.isAlwaysHiring}
+              onChange={(checked) => {
+                setShowDatePicker(false);
+                // deadline 값을 리셋
+                setForm((prev) => ({ ...prev, deadline: null, isAlwaysHiring: checked }));
+              }}
+              label="상시 채용"
+            />
           </div>
 
           {/* 전형 단계 — Figma 그대로 지원 마감일 아래 배치 (사용자 확인 2026-07-23) */}
@@ -225,7 +225,17 @@ export function EditDeadlineCardModal({
 
         {/* 푸터 */}
         <div className="px-8">
-          <Button variant="primary" size="lg" onClick={handleConfirm} className="w-full">
+          {/*
+            지원 마감일 필수화 반영: 마감일을 고르지 않으면 확인 버튼을 비활성 상태로 유지한다.
+            (AddCardModal과 동일 규칙)
+          */}
+          <Button
+            variant="primary"
+            size="lg"
+            onClick={handleConfirm}
+            disabled={!form.isAlwaysHiring && form.deadline === null}
+            className="w-full"
+          >
             확인
           </Button>
         </div>
@@ -234,14 +244,9 @@ export function EditDeadlineCardModal({
   );
 }
 
-function ClearIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    </svg>
-  );
-}
-
+// 색을 지정하지 않고 트리거 버튼의 currentColor를 상속받는다 — 값 있음(label/base)·
+// 값 없음(label/placeholder)·상시 채용(label/secondary-disabled) 세 상태가 그대로 반영된다.
+// icon/default(#212123)가 label/base와 같은 값이라 기존 활성 상태 색도 유지된다.
 function CalendarIcon() {
   return (
     <svg
@@ -250,7 +255,7 @@ function CalendarIcon() {
       viewBox="0 0 24 24"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      className="shrink-0 text-icon-default"
+      className="shrink-0"
       aria-hidden="true"
     >
       <rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" strokeWidth="1.5" />

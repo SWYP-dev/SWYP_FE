@@ -3,10 +3,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useKanbanBoard } from '@/features/kanban/api/useKanbanQuery';
-import { useUpdateCardStageDeadline, useDeleteCard } from '@/features/kanban/api/useKanbanMutations';
+import {
+  useUpdateCardStageDeadline,
+  useDeleteCard,
+} from '@/features/kanban/api/useKanbanMutations';
 import { DeleteCardModal } from '@/features/kanban/components/DeleteCardModal';
 import { CardDetailDrawer } from '@/features/kanban/components/CardDetailDrawer';
 import { Toast } from '@/components/ui/toast';
+import { isDeadlinePassed } from '@/lib/utils/deadline';
 import type { KanbanCard } from '@/types/api';
 import { flattenKanbanCards, groupCardsByDeadline } from '../utils/groupByDeadline';
 import { DeadlineGroup } from './DeadlineGroup';
@@ -28,7 +32,14 @@ export function DeadlineList() {
   const [hasAppliedCardIdParam, setHasAppliedCardIdParam] = useState(false);
 
   const entries = useMemo(() => flattenKanbanCards(data?.stages ?? []), [data]);
-  const groups = useMemo(() => groupCardsByDeadline(entries), [entries]);
+  // 마감일이 지난 공고는 목록에서 숨긴다(오늘 마감·상시채용은 유지 — isDeadlinePassed 참고).
+  // entries 자체는 필터하지 않는다: findEntry(수정·삭제 대상 조회)와 ?cardId= 딥링크가
+  // 전체 카드를 기준으로 동작해야 마감 지난 카드의 알림 링크도 계속 열린다.
+  const visibleEntries = useMemo(
+    () => entries.filter((e) => !isDeadlinePassed(e.card.deadline)),
+    [entries]
+  );
+  const groups = useMemo(() => groupCardsByDeadline(visibleEntries), [visibleEntries]);
 
   function findEntry(cardId: number) {
     return entries.find((e) => e.card.id === cardId);
@@ -80,7 +91,7 @@ export function DeadlineList() {
       setToastMessage('수정 사항이 저장되었어요.');
     } catch {
       setToastType('error');
-      setToastMessage('지원 내역 수정에 실패했어요.');
+      setToastMessage('지원 현황 수정에 실패했어요.');
     }
   }
 
@@ -94,7 +105,7 @@ export function DeadlineList() {
       },
       onError: () => {
         setToastType('error');
-        setToastMessage('지원 내역 삭제에 실패했어요.');
+        setToastMessage('지원 현황 삭제에 실패했어요.');
       },
     });
   }
@@ -135,7 +146,7 @@ export function DeadlineList() {
         isOpen={viewingCardId !== null}
         cardId={viewingCardId}
         onClose={() => setViewingCardId(null)}
-        onEditCard={() => {}}
+        onEditCard={(card) => setEditingCard(card)}
         onDeleteCard={(card) => setDeletingCard(card)}
       />
 

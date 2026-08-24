@@ -382,6 +382,8 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
           prev.map((s) => ({ ...s, cards: s.cards.filter((c) => c.id !== cardId) }))
         );
         setDeletingCard(null);
+        // 카드가 사라졌으므로 상세 드로어도 함께 닫는다.
+        if (viewingCardId === cardId) setViewingCardId(null);
         showToast('success', '지원 현황이 삭제되었어요.', {
           label: '되돌리기',
           onClick: () => {
@@ -391,7 +393,7 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
           },
         });
       },
-      onError: () => showToast('error', '지원 내역 삭제에 실패했어요.'),
+      onError: () => showToast('error', '지원 현황 삭제에 실패했어요.'),
     });
   }
 
@@ -420,7 +422,11 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
 
       if (cards.length > 0) {
         for (let idx = 0; idx < cards.length; idx++) {
-          await moveCardMutation.mutateAsync({ cardId: cards[idx].id, stageId: res.id, position: idx + 1 });
+          await moveCardMutation.mutateAsync({
+            cardId: cards[idx].id,
+            stageId: res.id,
+            position: idx + 1,
+          });
         }
       }
     } catch {
@@ -481,7 +487,8 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
                           showToast('error', '기본 전형 단계는 이름을 변경할 수 없어요.');
                           return;
                         }
-                        const mapped = err instanceof ApiClientError ? mapStageNameErrorCode(err.code) : null;
+                        const mapped =
+                          err instanceof ApiClientError ? mapStageNameErrorCode(err.code) : null;
                         showToast('error', mapped ?? '전형 단계 수정에 실패했어요.');
                       },
                     }
@@ -516,7 +523,10 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
 
       <DragOverlay>
         {activeDragCard && (
-          <div style={activeDragWidth ? { width: activeDragWidth } : undefined} className="cursor-grabbing">
+          <div
+            style={activeDragWidth ? { width: activeDragWidth } : undefined}
+            className="cursor-grabbing"
+          >
             <KanbanCardContent card={activeDragCard} />
           </div>
         )}
@@ -593,9 +603,15 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
             };
             if (res.stageId !== targetStageId) {
               setStages((prev) =>
-                prev.map((s) => (s.id === targetStageId ? { ...s, cards: [...s.cards, newCard] } : s))
+                prev.map((s) =>
+                  s.id === targetStageId ? { ...s, cards: [...s.cards, newCard] } : s
+                )
               );
-              await moveCardMutation.mutateAsync({ cardId: res.cardId, stageId: targetStageId, position: 1 });
+              await moveCardMutation.mutateAsync({
+                cardId: res.cardId,
+                stageId: targetStageId,
+                position: 1,
+              });
               queryClient.invalidateQueries({ queryKey: kanbanKeys.board() });
             } else {
               setStages((prev) =>
@@ -611,7 +627,7 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
               const mapped = mapCardErrorCode(err.code);
               if (mapped) return mapped;
             }
-            showToast('error', '지원 내역 추가에 실패했어요.');
+            showToast('error', '지원 현황 추가에 실패했어요.');
             return undefined;
           }
         }}
@@ -623,6 +639,7 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
         mode="edit"
         stageId={stages.find((s) => s.cards.some((c) => c.id === editingCard?.id))?.id ?? 0}
         card={editingCard ?? undefined}
+        isOverDrawer={viewingCardId !== null}
         onClose={() => setEditingCard(null)}
         onConfirm={async (data) => {
           if (!data.cardId) return undefined;
@@ -651,7 +668,7 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
               }))
             );
             setEditingCard(null);
-            showToast('success', '지원 내역이 수정되었어요.');
+            showToast('success', '지원 현황이 수정되었어요.');
             return undefined;
           } catch (err) {
             if (err instanceof ApiClientError) {
@@ -660,13 +677,16 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
               // 필드 에러가 아니라 토스트로 명확히 안내하고 모달을 닫음.
               if (err.code === 'K010' || err.code === 'CARD_UPDATE_NOT_ALLOWED') {
                 setEditingCard(null);
-                showToast('error', '피드에서 등록된 공고는 수정할 수 없어요. (직접 등록한 공고만 수정 가능)');
+                showToast(
+                  'error',
+                  '피드에서 등록된 공고는 수정할 수 없어요. (직접 등록한 공고만 수정 가능)'
+                );
                 return undefined;
               }
               const mapped = mapCardErrorCode(err.code);
               if (mapped) return mapped;
             }
-            showToast('error', '지원 내역 수정에 실패했어요.');
+            showToast('error', '지원 현황 수정에 실패했어요.');
             return undefined;
           }
         }}
@@ -675,6 +695,7 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
       <DeleteCardModal
         isOpen={deletingCard !== null}
         card={deletingCard}
+        isOverDrawer={viewingCardId !== null}
         onClose={() => setDeletingCard(null)}
         onConfirm={handleConfirmDeleteCard}
       />
@@ -683,14 +704,10 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
         isOpen={viewingCardId !== null}
         cardId={viewingCardId}
         onClose={() => setViewingCardId(null)}
-        onEditCard={(card) => {
-          setViewingCardId(null);
-          setEditingCard(card); // 기존 AddCardModal(mode=edit) 재사용
-        }}
-        onDeleteCard={(card) => {
-          setViewingCardId(null);
-          setDeletingCard(card); // 기존 DeleteCardModal 재사용
-        }}
+        // 드로어는 열어둔 채 모달만 위에 겹친다(isOverDrawer) — 닫아버리면 저장하지 않은
+        // 메모·첨부 draft가 사라지고, 수정 후 돌아올 카드도 다시 찾아야 한다.
+        onEditCard={(card) => setEditingCard(card)}
+        onDeleteCard={(card) => setDeletingCard(card)}
       />
     </DndContext>
   );

@@ -1,48 +1,61 @@
 'use client';
 
-import type { DocumentItem } from '@/types/api';
 import { TrashIcon } from '@/components/ui/icons';
 
-interface AttachedLinkItemProps {
-  document: Extract<DocumentItem, { type: 'LINK' }>;
-  onDelete: () => void;
+// Figma node 38199:50756 기준 — URL 카테고리 드롭다운 옵션
+// ⚠️ [백엔드 확인 완료] 서버는 한글이 아닌 enum 값(DocumentLinkCategory)을 받음/내려줌.
+export const URL_CATEGORIES = [
+  { value: 'RESUME', label: '이력서' },
+  { value: 'PORTFOLIO', label: '포트폴리오' },
+  { value: 'PERSONAL_CHANNEL', label: '개인 채널' },
+  { value: 'OTHER', label: '기타' },
+] as const;
+
+export type UrlCategoryValue = (typeof URL_CATEGORIES)[number]['value'];
+
+export function categoryLabel(category: string): string {
+  return URL_CATEGORIES.find((c) => c.value === category)?.label ?? category;
 }
 
-// ⚠️ [백엔드 확인] category가 name과 분리된 별도 필드로 확정됨 — 카테고리 표시는
-// document.category 기준으로 처리 (document.name은 더 이상 카테고리 값이 아님).
-const CATEGORY_LABELS: Record<string, string> = {
-  RESUME: '이력서',
-  PORTFOLIO: '포트폴리오',
-  PERSONAL_CHANNEL: '개인 채널',
-  OTHER: '기타',
-};
+interface AttachedLinkItemProps {
+  category: string;
+  url: string;
+  onDelete: () => void;
+  disabled?: boolean;
+}
 
-export function AttachedLinkItem({ document, onDelete }: AttachedLinkItemProps) {
-  const label = CATEGORY_LABELS[document.category] ?? document.category;
-
+// URL 누적 리스트의 한 행 (Figma node 847:67330).
+// 등록은 상단 입력 슬롯에서만 하므로 이 행은 읽기 전용 — 카테고리 박스로 유형을 식별한다.
+export function AttachedLinkItem({
+  category,
+  url,
+  onDelete,
+  disabled = false,
+}: AttachedLinkItemProps) {
   return (
-    <div className="flex w-full min-w-0 items-stretch gap-2">
+    <div className="flex w-full min-w-0 items-stretch gap-3">
       <div className="flex w-[108px] shrink-0 items-center rounded-xl border border-line-secondary bg-neutral-100 py-3 pl-5 pr-[11px]">
-        <span className="flex-1 text-3 font-medium text-label-description">{label}</span>
+        <span className="text-3 font-medium text-label-base">{categoryLabel(category)}</span>
       </div>
-      <div className="flex min-w-0 flex-1 items-center rounded-xl border border-line-secondary bg-neutral-100 px-5 py-3">
+      <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden rounded-xl bg-neutral-100 px-6 py-4">
         <a
-          href={document.url}
+          href={url}
           target="_blank"
           rel="noreferrer"
           className="min-w-0 flex-1 truncate text-3 font-medium text-label-base"
         >
-          {document.url}
+          {url}
         </a>
+        <button
+          type="button"
+          onClick={onDelete}
+          disabled={disabled}
+          aria-label="URL 삭제"
+          className="flex shrink-0 items-center text-icon-gray disabled:cursor-not-allowed"
+        >
+          <TrashIcon size={18} />
+        </button>
       </div>
-      <button
-        type="button"
-        onClick={onDelete}
-        aria-label="링크 삭제"
-        className="flex shrink-0 items-center self-center text-icon-gray"
-      >
-        <TrashIcon size={18} />
-      </button>
     </div>
   );
 }
