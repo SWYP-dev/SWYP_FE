@@ -54,6 +54,12 @@ async function refreshAccessToken(): Promise<string> {
 
 interface RequestOptions extends Omit<RequestInit, 'body'> {
   body?: unknown; // 객체를 그대로 넘기면 내부에서 JSON.stringify 처리
+  /**
+   * 경로 앞에 붙일 오리진. 기본값은 백엔드 API(NEXT_PUBLIC_API_BASE_URL).
+   * 같은 오리진의 Route Handler(예: /api/test-session)를 부를 때만 ''로 지정한다.
+   * 응답 포맷이 백엔드와 같으면 아래 에러 처리·언래핑 로직을 그대로 쓸 수 있다.
+   */
+  baseUrl?: string;
 }
 
 // 모든 API 호출이 거쳐가는 공통 함수.
@@ -65,18 +71,20 @@ export async function apiFetch<T>(
 ): Promise<T> {
   const accessToken = getAccessToken();
   const isFormData = options.body instanceof FormData;
+  // baseUrl은 fetch가 모르는 옵션이라 분리해서 빼둔다 (init에 그대로 넘기면 안 됨)
+  const { baseUrl = BASE_URL, ...init } = options;
 
-  const res = await fetch(`${BASE_URL}${path}`, {
-    ...options,
+  const res = await fetch(`${baseUrl}${path}`, {
+    ...init,
     headers: {
       ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
       ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-      ...options.headers,
+      ...init.headers,
     },
     body: isFormData
-      ? (options.body as FormData)
-      : options.body !== undefined
-        ? JSON.stringify(options.body)
+      ? (init.body as FormData)
+      : init.body !== undefined
+        ? JSON.stringify(init.body)
         : undefined,
   });
 

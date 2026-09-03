@@ -20,6 +20,28 @@ const DOTS: { id: number; x: number; y: number; delayMs: number }[] = [
   { id: 3, x: -9.2, y: -3.2, delayMs: 300 },
 ];
 
+/**
+ * 버튼 안에 들어가는 16px 로딩 아이콘.
+ * 위 Spinner는 화면 전체 로딩용(40px)이라 버튼에는 크다.
+ * stroke가 currentColor라 버튼의 글자색(primary=흰색 등)을 그대로 따라간다.
+ */
+export function ButtonSpinnerIcon() {
+  return (
+    <svg
+      className="animate-spin"
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+    >
+      <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="2" opacity="0.3" />
+      <path d="M14 8a6 6 0 0 0-6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 export function Spinner({ className }: SpinnerProps) {
   return (
     <div className={`relative size-[40px] ${className ?? ''}`} role="status" aria-label="로딩 중">

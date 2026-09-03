@@ -13,6 +13,12 @@ export interface KakaoLoginResponse {
   };
 }
 
+// 로그인 없는 테스트 계정 세션 발급 응답 (POST /api/v1/auth/test-session).
+// 백엔드 안내: 카카오 로그인(1.1)과 response shape가 완전히 동일하다.
+// 발급 경로를 백엔드가 구분하지 않으므로 로그인 성공 처리 로직을 그대로 재사용한다.
+// nickname이 '테스트유저_xxxx' 형태로 내려오므로 필요하면 이걸로 테스트 계정 배너를 띄울 수 있다.
+export type TestSessionResponse = KakaoLoginResponse;
+
 // API 명세서 v1.9 - 6.1 내 정보 조회 응답 중 사이드바에 필요한 부분만 발췌
 export interface CurrentUserResponse {
   id: number;

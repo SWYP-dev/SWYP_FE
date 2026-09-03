@@ -1,5 +1,5 @@
 import { apiFetch } from '@/lib/api/api-client';
-import type { KakaoLoginResponse, CurrentUserResponse } from '../type/auth';
+import type { KakaoLoginResponse, CurrentUserResponse, TestSessionResponse } from '../type/auth';
 
 // 1.1 카카오 소셜 로그인 (POST /api/v1/auth/kakao)
 export function loginWithKakao(code: string): Promise<KakaoLoginResponse> {
@@ -7,6 +7,18 @@ export function loginWithKakao(code: string): Promise<KakaoLoginResponse> {
   return apiFetch<KakaoLoginResponse>('/api/v1/auth/kakao', {
     method: 'POST',
     body: { code, redirectUri },
+  });
+}
+
+// 로그인 없는 테스트 계정 세션 발급.
+// 백엔드(POST /api/v1/auth/test-session)를 직접 부르지 않고 같은 오리진의
+// Route Handler(src/app/api/test-session/route.ts)를 거친다 —
+// X-Test-Session-Secret을 브라우저 번들에 노출하지 않기 위함.
+// baseUrl: ''로 지정해야 apiFetch가 백엔드 주소를 앞에 붙이지 않는다.
+export function createTestSession(): Promise<TestSessionResponse> {
+  return apiFetch<TestSessionResponse>('/api/test-session', {
+    method: 'POST',
+    baseUrl: '',
   });
 }
 
