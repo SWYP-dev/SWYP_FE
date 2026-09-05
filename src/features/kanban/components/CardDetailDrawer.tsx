@@ -5,6 +5,7 @@ import { Drawer } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
 import { Toast } from '@/components/ui/toast';
 import { AttachIcon, EditIcon, TrashIcon } from '@/components/ui/icons';
+import { ButtonSpinnerIcon } from '@/components/ui/spinner';
 import type { KanbanCard, DocumentItem } from '@/types/api';
 import { useCardDetail } from '@/features/kanban/api/useKanbanQuery';
 import {
@@ -629,23 +630,6 @@ function ChevronDownIcon() {
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-    </svg>
-  );
-}
-
-function ButtonSpinnerIcon() {
-  return (
-    <svg
-      className="animate-spin"
-      width="16"
-      height="16"
-      viewBox="0 0 16 16"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden="true"
-    >
-      <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="2" opacity="0.3" />
-      <path d="M14 8a6 6 0 0 0-6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
     </svg>
   );
 }

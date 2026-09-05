@@ -1,8 +1,9 @@
 'use client';
 
-import Link from 'next/link';
 import { useRef, useState } from 'react';
 import { motion, type Variants } from 'framer-motion';
+import { useTestSessionMutation } from '@/features/auth/hooks/useAuthMutations';
+import { ButtonSpinnerIcon } from '@/components/ui/spinner';
 import HeroMockup from './mockups/HeroMockup';
 
 // custom={i}로 넘긴 순번만큼 등장이 지연된다.
@@ -19,6 +20,7 @@ const rise: Variants = {
 export default function Hero() {
   const ref = useRef<HTMLDivElement>(null);
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
+  const testSession = useTestSessionMutation();
 
   const onMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const r = ref.current?.getBoundingClientRect();
@@ -79,12 +81,16 @@ export default function Hero() {
           >
             {/* 크기는 디자인 시스템 Button lg 규격(h48/px28/py12/text16/radius12).
                 색상만 토큰을 쓰고 치수는 이 파일 컨벤션대로 arbitrary px로 표기. */}
-            <Link
-              href="/jobs"
-              className="inline-flex h-[48px] items-center justify-center gap-[2px] rounded-[12px] bg-fill-primary px-[28px] py-[12px] text-[16px] font-semibold leading-[1.5] text-base-white transition-colors hover:bg-action-primary-hover"
+            {/* 카카오 로그인 없이 테스트 계정 세션을 발급받아 바로 서비스로 진입시킨다 */}
+            <button
+              type="button"
+              onClick={() => testSession.mutate()}
+              disabled={testSession.isPending}
+              className="inline-flex h-[48px] items-center justify-center gap-[2px] rounded-[12px] bg-fill-primary px-[28px] py-[12px] text-[16px] font-semibold leading-[1.5] text-base-white transition-colors hover:bg-action-primary-hover disabled:bg-action-primary-disabled"
             >
-              무료로 시작하기
-            </Link>
+              {testSession.isPending && <ButtonSpinnerIcon />}
+              {testSession.isPending ? '준비 중' : '테스트 시작하기'}
+            </button>
           </motion.div>
         </div>
 

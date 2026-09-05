@@ -2,7 +2,7 @@
 
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { loginWithKakao, logoutRequest, deleteAccount } from '../api/authApi';
+import { loginWithKakao, logoutRequest, deleteAccount, createTestSession } from '../api/authApi';
 import { useAuthStore } from '../store/authStore';
 import { setTokens, clearTokens } from '@/lib/api/token';
 import { queryClient } from '@/lib/api/query-client';
@@ -23,6 +23,30 @@ export function useKakaoLoginMutation() {
       // ⚠️ [QA 반영] 로그인 성공 시, 비로그인 상태로 캐시된 "빈 데이터"가 남아있을 수
       // 있으니 전체 쿼리를 무효화해서 로그인된 사용자 기준으로 다시 불러오도록 함.
       queryClient.invalidateQueries();
+    },
+  });
+}
+
+/**
+ * 로그인 없는 테스트 계정 세션 발급.
+ *
+ * 백엔드가 토큰 발급 경로를 구분하지 않으므로, 성공 시 처리는 카카오 로그인과 동일하다
+ * (토큰 저장 → 유저 상태 반영 → 쿼리 무효화). 이후 화면은 로그인된 것처럼 동작한다.
+ *
+ * 카카오 로그인은 콜백 페이지가 이동을 담당하지만, 이쪽은 버튼이 두 군데(Navbar/Hero)라
+ * 각 호출부에서 중복으로 처리하지 않도록 훅 안에서 이동시킨다.
+ */
+export function useTestSessionMutation() {
+  const setUser = useAuthStore((s) => s.setUser);
+  const router = useRouter();
+
+  return useMutation({
+    mutationFn: createTestSession,
+    onSuccess: (data) => {
+      setTokens(data.accessToken, data.refreshToken);
+      setUser(data.user);
+      queryClient.invalidateQueries();
+      router.replace('/jobs');
     },
   });
 }
