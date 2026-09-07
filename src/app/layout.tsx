@@ -3,6 +3,7 @@ import Script from 'next/script';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import { QueryProvider } from '@/providers/query-provider';
+import { PostHogProvider } from '@/providers/posthog-provider';
 import { GlobalLoginModal } from '@/features/auth/components/GlobalLoginModal';
 import { GTM_ID } from '@/lib/gtm';
 import { MAZE_API_KEY } from '@/lib/maze';
@@ -79,10 +80,12 @@ export default function RootLayout({
           </noscript>
         )}
         {/* End Google Tag Manager (noscript) */}
-        <QueryProvider>
-          {children}
-          <GlobalLoginModal />
-        </QueryProvider>
+        <PostHogProvider>
+          <QueryProvider>
+            {children}
+            <GlobalLoginModal />
+          </QueryProvider>
+        </PostHogProvider>
       </body>
     </html>
   );
