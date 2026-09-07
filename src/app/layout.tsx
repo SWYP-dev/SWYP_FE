@@ -34,10 +34,11 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       style={{ fontFamily: 'Pretendard, sans-serif' }}
     >
-      {/* Maze */}
-      {MAZE_API_KEY && (
-        <Script id="maze-snippet" strategy="beforeInteractive">
-          {`(function (m, a, z, e) {
+      <body className="min-h-full flex flex-col">
+        {/* Maze */}
+        {MAZE_API_KEY && (
+          <Script id="maze-snippet" strategy="afterInteractive">
+            {`(function (m, a, z, e) {
   var s, t, u, v;
   try { t = m.sessionStorage.getItem('maze-us'); } catch (err) {}
   if (!t) {
@@ -56,18 +57,18 @@ export default function RootLayout({
   a.getElementsByTagName('head')[0].appendChild(s);
   m.mazeUniversalSnippetApiKey = e;
 })(window, document, 'https://snippet.maze.co/maze-universal-loader.js', '${MAZE_API_KEY}');`}
-        </Script>
-      )}
-      {/* End Maze */}
+          </Script>
+        )}
+        {/* End Maze */}
 
-      {/* Google Tag Manager */}
-      {GTM_ID && (
-        <Script id="gtm-script" strategy="afterInteractive">
-          {`(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','${GTM_ID}');`}
-        </Script>
-      )}
-      {/* End Google Tag Manager */}
-      <body className="min-h-full flex flex-col">
+        {/* Google Tag Manager */}
+        {GTM_ID && (
+          <Script id="gtm-script" strategy="afterInteractive">
+            {`(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','${GTM_ID}');`}
+          </Script>
+        )}
+        {/* End Google Tag Manager */}
+
         {/* Google Tag Manager (noscript) */}
         {GTM_ID && (
           <noscript>
@@ -80,6 +81,7 @@ export default function RootLayout({
           </noscript>
         )}
         {/* End Google Tag Manager (noscript) */}
+
         <PostHogProvider>
           <QueryProvider>
             {children}
