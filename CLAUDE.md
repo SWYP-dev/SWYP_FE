@@ -81,3 +81,5 @@ Windows PowerShell. grep 사용 불가 → Select-String 사용. head 사용 불
 
 - **.claude/rules/code-style.md**: 코드 스타일 규칙
 - **.claude/rules/git-rules.md**: Git 브랜치/커밋 규칙
+- **.claude/rules/qa-rules.md**: QA 작업 워크플로우 (AS-IS/TO-BE 처리 및 검증)
+- **docs/qa/QA_LIST.md**: QA 리스트 (우선순위/AS-IS·TO-BE/상태 관리)
