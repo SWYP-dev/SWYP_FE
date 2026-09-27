@@ -21,6 +21,14 @@
 - 타입 정의는 `src/types/` 또는 해당 feature 폴더 내 `type.ts`를 사용합니다.
 - 코드는 한국어 주석을 선호합니다.
 
+## 언어 커뮤니케이션 규칙
+
+- **기본 응답**: 한국어
+- **코드 주석**: 한국어
+- **커밋 메시지**: 한국어
+- **문서화**: 한국어
+- **변수명/함수명**: 영어 (코드 표준 준수)
+
 ## 팀 구성
 
 - PM: 이세은
@@ -47,26 +55,12 @@
 - vim 우회: git commit 중 vim 열릴 경우 git commit -m "message" 직접 사용.
 - DropdownMenu z-index: Popover z-50 < 모달 z-[60] 충돌 → 클릭이 모달을 닫아버리는 버그 주의.
 
-## Approach & patterns
-
-코드 작업 시 필수 Git 프로세스 안내 (단순 에러 해결·질문 제외, 후속 수정본에도 동일 적용):
-
-- 브랜치 생성 명령어 (feature/기능명 또는 fix/기능명, develop 기준)
-- CONTRIBUTING.md 커밋 컨벤션에 맞춘 커밋 메시지
-- PR 생성 링크 및 CONTRIBUTING.md 기반 PR 디스크립션 (.github/PULL_REQUEST_TEMPLATE.md 형식, "리뷰어에게" / "확인 필요" 섹션 포함)
-
 ## 코드 결과물 제공 방식:
 
 새 폴더 트리 전체 출력 금지
 기존 프로젝트 구조 대비 파일 추가/수정/삭제 내역을 명시적으로 구분해서 안내
 파일은 한 번에 하나씩 완성된 전체 내용으로 제공 (부분 스니펫 금지)
 수정 전 항상 develop 브랜치 코드 기준으로 작업; 필요한 파일·코드가 없으면 추측하지 말고 어떤 파일이 필요한지 먼저 질문
-
-## Figma MCP 사용:
-
-Figma:get_design_context: fileKey=ar1tLubNIUVwLhU09duB9n, nodeId (URL의 ?node-id= 파라미터에서 하이픈→콜론 변환, 예: 49-8062 → 49:8062), clientFrameworks=react,nextjs, clientLanguages=typescript
-Figma:get_metadata: fallback으로 사용
-두 node ID가 동일 출력 반환 시 사용자에게 어떤 차이를 의도하는지 질문
 
 ## 환경:
 
@@ -82,3 +76,8 @@ Windows PowerShell. grep 사용 불가 → Select-String 사용. head 사용 불
 - DNS (Gabia): A레코드 @ → Vercel, api → 백엔드 IP; CNAME www → Vercel DNS. Gabia CNAME 값에 trailing period(.) 필수.
 - Figma MCP: Figma:get_design_context, Figma:get_metadata
 - 에디터: Cursor (VS Code fork), Windows PowerShell
+
+## 관련 파일
+
+- **.claude/rules/code-style.md**: 코드 스타일 규칙
+- **.claude/rules/git-rules.md**: Git 브랜치/커밋 규칙
