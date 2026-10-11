@@ -149,6 +149,17 @@ export function KanbanColumn({
     setIsEditingName(false);
   }
 
+  // 입력란 focus-out 처리.
+  // 새 전형 단계 추가 중 텍스트 없이 외부를 클릭하면 에러를 띄우지 않고 draft 컬럼을 바로 취소한다.
+  // 텍스트가 있으면 기존대로 생성(commit)을 확정한다.
+  function handleBlur() {
+    if (isDraft && draftName.trim() === '') {
+      onCancelDraft?.();
+      return;
+    }
+    commit();
+  }
+
   function cancel() {
     if (isDraft) {
       onCancelDraft?.();
@@ -185,7 +196,7 @@ export function KanbanColumn({
                     autoFocus
                     value={draftName}
                     onChange={(e) => updateDraftName(e.target.value)}
-                    onBlur={commit}
+                    onBlur={handleBlur}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') commit();
                       if (e.key === 'Escape') cancel();
