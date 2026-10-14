@@ -280,6 +280,7 @@ export function KanbanColumn({
                 key={card.id}
                 card={card}
                 stageId={stage.id}
+                showDeadlineBadge={stage.name === '지원 전'}
                 onCardClick={onCardClick}
                 onEditCard={onEditCard}
                 onDeleteCard={onDeleteCard}
