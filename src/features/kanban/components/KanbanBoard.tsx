@@ -527,7 +527,13 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
             style={activeDragWidth ? { width: activeDragWidth } : undefined}
             className="cursor-grabbing"
           >
-            <KanbanCardContent card={activeDragCard} />
+            {/* 드래그 중 카드가 현재 속한 단계가 '지원 전'일 때만 뱃지 노출 (실제 카드와 동일 기준) */}
+            <KanbanCardContent
+              card={activeDragCard}
+              showDeadlineBadge={stages.some(
+                (s) => s.name === '지원 전' && s.cards.some((c) => c.id === activeDragCard.id)
+              )}
+            />
           </div>
         )}
       </DragOverlay>

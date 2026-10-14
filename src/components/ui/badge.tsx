@@ -69,14 +69,17 @@ export function PlatformBadge({ platform }: PlatformBadgeProps) {
 // ===================================
 interface DeadlineBadgeProps {
   deadline: string | null; // "2026-07-15" 형식. null이면 상시채용 공고(원본 공고 확인 완료).
+  alwaysHiringLabel?: string; // 상시채용 뱃지 문구. 화면별로 표기가 다를 때만 지정 (기본: 상시채용)
 }
 
-export function DeadlineBadge({ deadline }: DeadlineBadgeProps) {
+export function DeadlineBadge({ deadline, alwaysHiringLabel = '상시채용' }: DeadlineBadgeProps) {
   // CardThumbnail 위 흰 배경에서도 뱃지가 묻히지 않도록 shadow 적용 (Figma CardThumbnail 스펙)
   const cardShadow = 'shadow-normal-xsmall';
 
   if (deadline === null) {
-    return <Badge className={`bg-base-white text-neutral-500 ${cardShadow}`}>상시채용</Badge>;
+    return (
+      <Badge className={`bg-base-white text-neutral-500 ${cardShadow}`}>{alwaysHiringLabel}</Badge>
+    );
   }
 
   const diffDays = getDeadlineDiffDays(deadline);
