@@ -10,7 +10,7 @@ import { ChwihapWordmark } from '@/features/notification/components/icons';
 // 실제 서비스 Sidebar(src/components/layout/sidebar.tsx)의 NAV_ITEMS와 동일한 구성.
 // 아이콘도 서비스가 쓰는 컴포넌트를 그대로 재사용한다.
 const navItems = [
-  { label: '통합 공고 탐색', icon: BriefcaseNavIcon },
+  { label: '채용 공고', icon: BriefcaseNavIcon },
   { label: '스크랩', icon: BookmarkNavIcon },
   // 우측 패널이 칸반 보드이므로 '지원 현황'이 활성 상태
   { label: '지원 현황', icon: KanbanNavIcon, active: true },
