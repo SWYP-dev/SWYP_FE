@@ -1,13 +1,10 @@
 'use client';
 
-import { useState } from 'react';
-import { FilterTriggerButton } from '@/components/ui/filter-trigger-button';
 import {
-  SelectionModal,
-  getSelectionSummary,
+  SelectionFilter,
   type SelectionGroup,
   type SelectionValue,
-} from '@/components/ui/selection-modal';
+} from '@/components/ui/selection-filter';
 
 // "직군 및 직무 도메인 정의.xlsx"(2026-08-08, 진영님 공유) 기준.
 // B열(신규 직군) = 그룹, C열(신규 직무, 시트 내 숨김 컬럼) = 하위 직무.
@@ -191,38 +188,17 @@ interface JobCategoryFilterButtonProps {
 }
 
 export function JobCategoryFilterButton({ value, onApply }: JobCategoryFilterButtonProps) {
-  const [isOpen, setIsOpen] = useState(false);
-
-  // 직무명만으로 충분해서 그룹(직군) 접두어는 생략 — 모달 하단 칩과 동일한 규칙.
+  // 직무명만으로 충분해서 그룹(직군) 접두어는 생략한다.
   // (지역은 "중구"·"동구"가 여러 시/도에 중복돼서 접두어를 유지함)
-  const summary = getSelectionSummary(value, JOB_CATEGORY_GROUPS, false);
-  const label =
-    summary === null
-      ? '직군 · 직무'
-      : summary.totalCount === 1
-        ? summary.firstLabel
-        : `${summary.firstLabel} 외 ${summary.totalCount - 1}개`;
-
   return (
-    <>
-      <FilterTriggerButton onClick={() => setIsOpen(true)} isActive={isOpen || value !== null}>
-        {label}
-      </FilterTriggerButton>
-
-      <SelectionModal
-        title="직군 · 직무"
-        groups={JOB_CATEGORY_GROUPS}
-        value={value}
-        isOpen={isOpen}
-        onClose={() => setIsOpen(false)}
-        onApply={(next) => {
-          onApply(next);
-          setIsOpen(false);
-        }}
-        emptyStateLines={['직군을 선택하면', '직무를 볼 수 있어요']}
-        includeGroupLabelInChips={false}
-      />
-    </>
+    <SelectionFilter
+      label="직군 · 직무"
+      groups={JOB_CATEGORY_GROUPS}
+      value={value}
+      onApply={onApply}
+      emptyStateLines={['직군을 선택하면', '직무를 볼 수 있어요']}
+      includeGroupLabel={false}
+    />
   );
 }
 

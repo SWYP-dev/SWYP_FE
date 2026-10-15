@@ -1,10 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { createPortal } from 'react-dom';
-import { Modal } from '@/components/ui/modal';
-import { FilterTriggerButton } from '@/components/ui/filter-trigger-button';
-import { useEscapeKey } from '@/lib/hooks/useEscapeKey';
+import { Popover, usePopoverTrigger } from '@/components/ui/popover';
+import { FilterSegment } from '@/components/ui/filter-segment';
 
 export type CareerTagId = 'EXPERIENCED' | 'NEW' | 'BOTH' | 'FOREIGN';
 
@@ -27,8 +25,8 @@ interface CareerFilterChipProps {
   onApply: (tags: CareerTagId[]) => void;
 }
 
-function formatChipLabel(tags: CareerTagId[]): string {
-  if (tags.length === 0) return '경력';
+function formatValueText(tags: CareerTagId[]): string {
+  if (tags.length === 0) return '전체';
   const firstLabel = CAREER_TAG_OPTIONS.find((t) => t.id === tags[0])?.label ?? '';
   if (tags.length === 1) {
     return firstLabel;
@@ -36,34 +34,42 @@ function formatChipLabel(tags: CareerTagId[]): string {
   return `${firstLabel} 외 ${tags.length - 1}개`;
 }
 
+function isSameTags(a: CareerTagId[], b: CareerTagId[]): boolean {
+  return a.length === b.length && a.every((tag) => b.includes(tag));
+}
+
 /**
- * 통합 공고 피드의 경력 필터.
+ * 통합 공고 피드의 경력 필터 — FilterBar 안의 세그먼트 + 그 아래 드롭다운.
  *
  * Figma 재확인(node 133:23476): 슬라이더(신입~15년)에서 태그 다중 선택 방식으로
  * 디자인 변경됨. "전체/경력/신입/경력+신입/외국인 전형" 5개 버튼, 여러 개 동시 선택
  * 가능 (2026-07-24 태영님 확인: 멀티 선택).
+ * 드롭다운 바깥을 클릭하거나 Escape를 눌러 닫으면 선택 중이던 내용이 그대로 적용된다(QA-002).
  *
- * ⚠️ "외국인 전형"은 API 명세서 career enum(NEW/EXPERIENCED)에 없는 값. 백엔드 확인
- * 전까지 UI 선택은 가능하지만 실제 쿼리 파라미터에는 반영하지 않음 (buildCareerParam 참고).
+ * ⚠️ "외국인 전형"은 API 명세서 career enum(NEW/EXPERIENCED)에 없는 값. 백엔드 확인 전까지
+ * UI 선택은 가능하지만 실제 쿼리 파라미터에는 반영하지 않음 (buildCareerParam 참고).
  */
 export function CareerFilterChip({ appliedTags, onApply }: CareerFilterChipProps) {
-  const [isOpen, setIsOpen] = useState(false);
+  const { isOpen, triggerRef, open, close } = usePopoverTrigger<HTMLButtonElement>();
   const [draft, setDraft] = useState<CareerTagId[]>(appliedTags);
 
-  useEscapeKey(isOpen, () => setIsOpen(false));
+  // "닫힘 -> 열림"으로 바뀐 시점을 렌더링 중에 감지해서 draft를 현재 적용값으로 리셋.
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+  if (isOpen !== prevIsOpen) {
+    setPrevIsOpen(isOpen);
+    if (isOpen) setDraft(appliedTags);
+  }
 
-  const openModal = () => {
-    setDraft(appliedTags);
-    setIsOpen(true);
+  // 바깥 클릭/Escape/같은 세그먼트 재클릭으로 닫을 때: 선택 중이던 내용을 그대로 적용한다.
+  // 건드린 게 없으면 적용하지 않아, 열었다 닫는 것만으로 필터 상태가 바뀌지 않는다.
+  const handleDismiss = () => {
+    if (!isSameTags(draft, appliedTags)) onApply(draft);
+    close();
   };
 
   const handleApply = () => {
     onApply(draft);
-    setIsOpen(false);
-  };
-
-  const handleReset = () => {
-    setDraft([]);
+    close();
   };
 
   const toggleTag = (tagId: CareerTagId) => {
@@ -72,43 +78,47 @@ export function CareerFilterChip({ appliedTags, onApply }: CareerFilterChipProps
 
   return (
     <>
-      <FilterTriggerButton onClick={openModal} isActive={isOpen || appliedTags.length > 0}>
-        {formatChipLabel(appliedTags)}
-      </FilterTriggerButton>
+      <FilterSegment
+        ref={triggerRef}
+        label="경력"
+        valueText={formatValueText(appliedTags)}
+        isApplied={appliedTags.length > 0}
+        isOpen={isOpen}
+        onClick={isOpen ? handleDismiss : open}
+      />
 
-      {isOpen &&
-        typeof document !== 'undefined' &&
-        createPortal(
-          <div
-            role="dialog"
-            className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--color-base-dimmed)]"
-            onClick={() => setIsOpen(false)}
-          >
-            <div onClick={(e) => e.stopPropagation()}>
-              <Modal
-                title="경력"
-                onClose={() => setIsOpen(false)}
-                primaryLabel={draft.length > 0 ? `${draft.length}개 적용` : '적용'}
-                secondaryLabel="초기화"
-                onPrimaryClick={handleApply}
-                onSecondaryClick={handleReset}
-              >
-                <div className="flex flex-wrap items-center gap-3 py-5">
-                  <TagButton label="전체" isActive={draft.length === 0} onClick={() => setDraft([])} />
-                  {CAREER_TAG_OPTIONS.map((tag) => (
-                    <TagButton
-                      key={tag.id}
-                      label={tag.label}
-                      isActive={draft.includes(tag.id)}
-                      onClick={() => toggleTag(tag.id)}
-                    />
-                  ))}
-                </div>
-              </Modal>
-            </div>
-          </div>,
-          document.body
-        )}
+      <Popover isOpen={isOpen} onClose={handleDismiss} triggerRef={triggerRef} align="start">
+        <div className="flex w-[360px] flex-col gap-[var(--spacing-5)] rounded-[var(--radius-xl)] border border-[var(--color-line-secondary)] bg-[var(--color-base-white)] p-[var(--spacing-4)] shadow-[var(--shadow-spread-small)]">
+          <div className="flex flex-wrap items-center gap-3">
+            <TagButton label="전체" isActive={draft.length === 0} onClick={() => setDraft([])} />
+            {CAREER_TAG_OPTIONS.map((tag) => (
+              <TagButton
+                key={tag.id}
+                label={tag.label}
+                isActive={draft.includes(tag.id)}
+                onClick={() => toggleTag(tag.id)}
+              />
+            ))}
+          </div>
+
+          <div className="flex items-center gap-[var(--spacing-3)]">
+            <button
+              type="button"
+              onClick={() => setDraft([])}
+              className="flex-1 rounded-[var(--radius-lg)] border border-[var(--color-line-secondary)] py-[var(--spacing-4)] text-[length:var(--text-3)] font-medium text-[var(--color-label-base)]"
+            >
+              초기화
+            </button>
+            <button
+              type="button"
+              onClick={handleApply}
+              className="flex-1 rounded-[var(--radius-lg)] bg-[var(--color-fill-primary)] py-[var(--spacing-4)] text-[length:var(--text-3)] font-semibold text-[var(--color-neutral-0)]"
+            >
+              {draft.length > 0 ? `${draft.length}개 적용` : '적용'}
+            </button>
+          </div>
+        </div>
+      </Popover>
     </>
   );
 }

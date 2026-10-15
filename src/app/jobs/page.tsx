@@ -10,8 +10,9 @@ import { JobCardSkeleton } from '@/components/ui/job-card-skeleton';
 import { EmptyJobPosting } from '@/components/ui/empty-job-posting';
 import { Pagination } from '@/components/ui/pagination';
 import { FilterTriggerButton } from '@/components/ui/filter-trigger-button';
+import { FilterBar } from '@/components/ui/filter-segment';
 import { Toast } from '@/components/ui/toast';
-import type { SelectionValue } from '@/components/ui/selection-modal';
+import type { SelectionValue } from '@/components/ui/selection-filter';
 import {
   CareerFilterChip,
   buildCareerParam,
@@ -184,9 +185,12 @@ export default function FeedPage() {
 
           <div className="flex items-center justify-between pt-7 px-12 pb-5 text-center">
             <div className="flex items-center gap-3">
-              <JobCategoryFilterButton value={jobCategoryValue} onApply={setJobCategoryValue} />
-              <RegionFilterButton value={regionValue} onApply={setRegionValue} />
-              <CareerFilterChip appliedTags={careerTags} onApply={setCareerTags} />
+              {/* QA-002: 직군·직무 / 지역 / 경력을 하나의 가로 바로 묶고, 각 세그먼트 아래에 드롭다운으로 연다. */}
+              <FilterBar>
+                <JobCategoryFilterButton value={jobCategoryValue} onApply={setJobCategoryValue} />
+                <RegionFilterButton value={regionValue} onApply={setRegionValue} />
+                <CareerFilterChip appliedTags={careerTags} onApply={setCareerTags} />
+              </FilterBar>
               <DeadlineSoonFilterButton isActive={deadlineSoon} onToggle={setDeadlineSoon} />
               {/* 전체 초기화: 마감일 임박 버튼과 동일한 디자인, 필터 적용 여부와 무관하게 항상 노출 */}
               <FilterTriggerButton showChevron={false} onClick={resetFilters}>
