@@ -164,6 +164,17 @@ export function PlusSmallIcon({ size = 16 }: { size?: number }) {
   return <Image src="/icons/plus.svg" alt="" width={size} height={size} />;
 }
 
+// 더보기(···) 가로 점 3개 — KanbanColumn 헤더 케밥 메뉴 트리거. currentColor를 따른다.
+export function MoreHorizontalIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+      <circle cx="4.5" cy="10" r="1.5" />
+      <circle cx="10" cy="10" r="1.5" />
+      <circle cx="15.5" cy="10" r="1.5" />
+    </svg>
+  );
+}
+
 // name="triangle-down-fill" — KanbanColumn 헤더 장식용 화살표.
 // PRD v1.3.0에서 "카드 목록 접기" 기능이 삭제되어 현재는 비활성 장식 아이콘으로만 사용.
 export function TriangleDownFillIcon({ size = 16 }: { size?: number }) {
