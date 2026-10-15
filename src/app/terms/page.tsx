@@ -6,7 +6,8 @@ import { termsOfService } from '@/features/policy/data/terms-of-service';
 import { LegalDocument } from '@/features/policy/components/LegalDocument';
 
 export const metadata: Metadata = {
-  title: '이용약관 | 취합',
+  // 루트 title.template(취합 | %s)을 적용하지 않고 기존 표기("이용약관 | 취합")를 유지한다.
+  title: { absolute: '이용약관 | 취합' },
   description: '취합 서비스 이용에 관한 권리·의무 및 책임 사항을 안내합니다.',
 };
 

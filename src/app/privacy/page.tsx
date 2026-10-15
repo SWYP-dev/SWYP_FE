@@ -5,7 +5,8 @@ import Navbar from '@/features/landing/components/Navbar';
 import { privacyPolicy } from '@/features/policy/data/privacy-policy';
 
 export const metadata: Metadata = {
-  title: '개인정보 처리방침 | 취합',
+  // 루트 title.template(취합 | %s)을 적용하지 않고 기존 표기("개인정보 처리방침 | 취합")를 유지한다.
+  title: { absolute: '개인정보 처리방침 | 취합' },
   description: '취합이 이용자의 개인정보를 어떻게 수집·이용·보관·파기하는지 안내합니다.',
 };
 
