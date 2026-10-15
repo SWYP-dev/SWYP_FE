@@ -208,6 +208,14 @@ export function CardDetailDrawer({
     .filter((item) => item.id === null && item.file)
     .map((item) => item.file as File);
 
+  // 카테고리가 바뀐 기존 링크(서버에 있는 항목만). 신규 링크는 등록 시 카테고리가 함께 전송된다.
+  const updatedLinkCategories = linkItems.flatMap((item) => {
+    if (item.id === null) return [];
+    const original = originalLinks.find((doc) => doc.id === item.id);
+    if (!original || original.category === item.category) return [];
+    return [{ id: item.id, category: item.category, previousCategory: original.category }];
+  });
+
   // 파일·링크는 DELETE 엔드포인트가 같아 삭제 목록을 하나로 합친다.
   const keptIds = new Set(
     [...linkItems, ...fileItems].map((item) => item.id).filter((id) => id !== null)
@@ -217,7 +225,11 @@ export function CardDetailDrawer({
     .map((doc) => doc.id);
 
   const isDirty =
-    memoChanged || createdLinks.length > 0 || createdFiles.length > 0 || deletedIds.length > 0;
+    memoChanged ||
+    createdLinks.length > 0 ||
+    createdFiles.length > 0 ||
+    updatedLinkCategories.length > 0 ||
+    deletedIds.length > 0;
 
   const isSaving = saveCardDetail.isPending;
   const canSave = isDirty && !isSaving;
@@ -240,6 +252,7 @@ export function CardDetailDrawer({
     const payload: SaveCardDetailPayload = {
       createdFiles,
       createdLinks,
+      updatedLinkCategories,
       deleted: deletedIds,
       ...(memoChanged ? { memo: memoDraft, previousMemo: detail?.memo ?? '' } : {}),
     };
@@ -587,6 +600,11 @@ export function CardDetailDrawer({
                           category={item.category}
                           url={item.url}
                           disabled={isSaving}
+                          onCategoryChange={(category) =>
+                            setLinkItems((prev) =>
+                              prev.map((l) => (l.key === item.key ? { ...l, category } : l))
+                            )
+                          }
                           onDelete={() =>
                             setLinkItems((prev) => prev.filter((l) => l.key !== item.key))
                           }
