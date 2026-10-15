@@ -1,12 +1,13 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   markNotificationsRead,
+  markAllNotificationsRead,
   deleteNotification,
   deleteAllNotifications,
   updateNotificationSettings,
   type NotificationSettingsUpdate,
 } from './notificationApi';
-import { notificationKeys } from './useNotificationQuery';
+import { DEFAULT_SIZE, notificationKeys } from './useNotificationQuery';
 
 // 설정 > 알림 페이지 저장 (API 5.2).
 export function useUpdateNotificationSettings() {
@@ -31,6 +32,21 @@ export function useMarkNotificationsRead() {
       // inbox(벨) / inbox-infinite(모달 목록) 쿼리키가 모두 ['notifications','inbox', ...]로
       // 시작하므로 이 prefix invalidate 한 번으로 목록 + unreadCount가 함께 갱신됨.
       queryClient.invalidateQueries({ queryKey: ['notifications', 'inbox'] });
+    },
+  });
+}
+
+// 인앱 알림 모두 읽음 처리 (API 5.8) — 알림 벨을 눌러 알림창을 여는 시점에 호출해 벨의
+// 빨간 점(unreadCount)을 제거한다.
+// 벨 쿼리(unreadCount)만 재조회하고, 모달 목록(inbox-infinite)은 일부러 재조회하지 않는다.
+// 알림창을 보는 도중에 항목별 안 읽음 표시가 갑자기 사라지지 않게 하기 위함이며, 목록은
+// 다음에 알림창을 열 때 읽음 상태로 갱신된다.
+export function useMarkAllNotificationsRead() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => markAllNotificationsRead(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: notificationKeys.inbox(DEFAULT_SIZE), exact: true });
     },
   });
 }

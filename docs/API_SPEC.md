@@ -1773,6 +1773,28 @@ PATCH /api/v1/notifications/inbox/read
 
 ---
 
+### 5.8 인앱 알림 모두 읽음 처리
+
+```
+PATCH /api/v1/notifications/inbox/read-all
+```
+
+**설명**
+로그인한 사용자의 인앱 알림을 모두 읽음 처리한다. Request Body와 Parameter는 없다. 알림 벨을 눌러 알림창을 여는 시점에 호출해 벨의 빨간 점(`unreadCount`)을 제거하는 용도로 사용한다.
+
+**Response 200**
+
+```json
+{
+  "success": true,
+  "data": {
+    "updatedCount": 2
+  }
+}
+```
+
+---
+
 ## 6. 사용자 (User)
 
 ### 6.1 내 정보 조회

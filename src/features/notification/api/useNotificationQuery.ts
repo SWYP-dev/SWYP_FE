@@ -2,7 +2,7 @@ import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { fetchNotificationInbox, fetchNotificationSettings } from './notificationApi';
 import { useAuthStore } from '@/features/auth/store/authStore';
 
-const DEFAULT_SIZE = 10;
+export const DEFAULT_SIZE = 10;
 
 export const notificationKeys = {
   inbox: (size: number) => ['notifications', 'inbox', size] as const,
