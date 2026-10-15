@@ -9,6 +9,7 @@ import { JobCard } from '@/components/ui/job-card';
 import { JobCardSkeleton } from '@/components/ui/job-card-skeleton';
 import { EmptyJobPosting } from '@/components/ui/empty-job-posting';
 import { Pagination } from '@/components/ui/pagination';
+import { FilterTriggerButton } from '@/components/ui/filter-trigger-button';
 import { Toast } from '@/components/ui/toast';
 import type { SelectionValue } from '@/components/ui/selection-modal';
 import {
@@ -161,6 +162,8 @@ export default function FeedPage() {
     setRegionValue(null);
     setCareerTags([]);
     setDeadlineSoon(false);
+    // 필터가 바뀌면 결과가 달라지므로 첫 페이지로 복귀
+    setCurrentPage(0);
   }
 
   return (
@@ -185,6 +188,10 @@ export default function FeedPage() {
               <RegionFilterButton value={regionValue} onApply={setRegionValue} />
               <CareerFilterChip appliedTags={careerTags} onApply={setCareerTags} />
               <DeadlineSoonFilterButton isActive={deadlineSoon} onToggle={setDeadlineSoon} />
+              {/* 전체 초기화: 마감일 임박 버튼과 동일한 디자인, 필터 적용 여부와 무관하게 항상 노출 */}
+              <FilterTriggerButton showChevron={false} onClick={resetFilters}>
+                초기화
+              </FilterTriggerButton>
             </div>
             <div className="flex items-start gap-2 text-label-body">
               <button
