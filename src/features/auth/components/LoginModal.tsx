@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import { CloseIcon } from '@/components/ui/icons';
+import { useEscapeKey } from '@/lib/hooks/useEscapeKey';
 import { getKakaoAuthorizeUrl } from '../utils/kakaoOAuth';
 
 interface LoginModalProps {
@@ -19,6 +20,9 @@ interface LoginModalProps {
 //    (gap-14, px-9 등)는 존재하지 않는 클래스로 조용히 무시되고 간격이 0이 됨.
 //    → Figma 스펙 그대로 전부 대괄호(arbitrary value)로 명시해서 스케일 범위 문제를 원천 차단.
 export function LoginModal({ isOpen, onClose }: LoginModalProps) {
+  // ESC 키로 닫기 (훅은 조건부 return보다 먼저 호출해야 함)
+  useEscapeKey(isOpen, onClose);
+
   if (!isOpen) return null;
 
   function handleKakaoLogin() {
@@ -26,8 +30,10 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-base-dimmed">
-      <div className="flex flex-col items-start gap-[20px] overflow-hidden rounded-[20px] bg-base-white py-[24px] shadow-spread-small">
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      {/* 오버레이 클릭 시 닫기 */}
+      <div className="absolute inset-0 bg-base-dimmed" onClick={onClose} aria-hidden="true" />
+      <div className="relative flex flex-col items-start gap-[20px] overflow-hidden rounded-[20px] bg-base-white py-[24px] shadow-spread-small">
         {/* ModalHeader */}
         <div className="flex w-full items-center justify-end px-[32px]">
           <button
