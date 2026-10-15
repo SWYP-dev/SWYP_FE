@@ -19,28 +19,31 @@ function ChevronIcon({ direction, disabled }: { direction: 'left' | 'right'; dis
   );
 }
 
+// 한 번에 노출하는 페이지 번호 개수 (블록 크기).
+const BLOCK_SIZE = 10;
+
 // Figma Pagination 컴포넌트(node 30:131) 스펙 반영.
-// 현재 페이지 기준 최대 5개 번호를 윈도우 방식으로 노출.
+// 페이지를 10개 블록(1~10, 11~20…) 단위로 노출하고, 이전/다음 화살표는 블록 단위로 이동.
 export function Pagination({ currentPage, totalPages, onPageChange }: PaginationProps) {
   if (totalPages <= 1) return null;
 
-  const windowSize = 5;
-  const half = Math.floor(windowSize / 2);
-  let start = Math.max(0, currentPage - half);
-  const end = Math.min(totalPages, start + windowSize);
-  start = Math.max(0, end - windowSize);
+  const blockIndex = Math.floor(currentPage / BLOCK_SIZE);
+  const start = blockIndex * BLOCK_SIZE;
+  const end = Math.min(totalPages, start + BLOCK_SIZE);
 
   const pages = Array.from({ length: end - start }, (_, i) => start + i);
-  const isFirst = currentPage === 0;
-  const isLast = currentPage === totalPages - 1;
+  // 첫 블록이면 이전 블록이 없고, 마지막 블록이면 다음 블록이 없음
+  const isFirst = start === 0;
+  const isLast = end >= totalPages;
 
   return (
     <div className="flex items-center gap-5">
       <button
         type="button"
-        onClick={() => !isFirst && onPageChange(currentPage - 1)}
+        // 이전 블록의 마지막 페이지로 이동 (예: 11~20 → 10)
+        onClick={() => !isFirst && onPageChange(start - 1)}
         disabled={isFirst}
-        aria-label="이전 페이지"
+        aria-label="이전 10페이지"
         className="disabled:cursor-not-allowed"
       >
         <ChevronIcon direction="left" disabled={isFirst} />
@@ -66,9 +69,10 @@ export function Pagination({ currentPage, totalPages, onPageChange }: Pagination
 
       <button
         type="button"
-        onClick={() => !isLast && onPageChange(currentPage + 1)}
+        // 다음 블록의 첫 페이지로 이동 (예: 1~10 → 11)
+        onClick={() => !isLast && onPageChange(end)}
         disabled={isLast}
-        aria-label="다음 페이지"
+        aria-label="다음 10페이지"
         className="disabled:cursor-not-allowed"
       >
         <ChevronIcon direction="right" disabled={isLast} />
