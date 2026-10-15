@@ -6,6 +6,7 @@ import { loginWithKakao, logoutRequest, deleteAccount, createTestSession } from 
 import { useAuthStore } from '../store/authStore';
 import { setTokens, clearTokens } from '@/lib/api/token';
 import { queryClient } from '@/lib/api/query-client';
+import { capturePostHogEvent } from '@/lib/posthog';
 
 export function useKakaoLoginMutation() {
   const setUser = useAuthStore((s) => s.setUser);
@@ -20,6 +21,8 @@ export function useKakaoLoginMutation() {
       // ⚠️ 현재 스웨거엔 email 필드가 아직 없어서, 반영 전까지는 사이드바 이메일이
       // 빈 값으로 보일 수 있음(정상 — 백엔드 반영 후 자동으로 채워짐).
       setUser(data.user);
+      // PostHog 퍼널 1단계: 로그인 완료. isNewUser를 이후 모든 이벤트의 코호트 축으로 재사용.
+      capturePostHogEvent('kakao_login_completed', { isNewUser: data.isNewUser });
       // ⚠️ [QA 반영] 로그인 성공 시, 비로그인 상태로 캐시된 "빈 데이터"가 남아있을 수
       // 있으니 전체 쿼리를 무효화해서 로그인된 사용자 기준으로 다시 불러오도록 함.
       queryClient.invalidateQueries();

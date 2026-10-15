@@ -1,13 +1,10 @@
 'use client';
 
-import { useState } from 'react';
-import { FilterTriggerButton } from '@/components/ui/filter-trigger-button';
 import {
-  SelectionModal,
-  getSelectionSummary,
+  SelectionFilter,
   type SelectionGroup,
   type SelectionValue,
-} from '@/components/ui/selection-modal';
+} from '@/components/ui/selection-filter';
 
 // 프로젝트 '지역' 문서 기준 데이터. 서울 등 일부 그룹은 자치구, 세종/전국은 하위 지역 없음.
 
@@ -393,36 +390,15 @@ interface RegionFilterButtonProps {
 const REGION_DEFAULT_VALUE: SelectionValue = [{ groupId: 'nationwide', childIds: [] }];
 
 export function RegionFilterButton({ value, onApply }: RegionFilterButtonProps) {
-  const [isOpen, setIsOpen] = useState(false);
-
-  const summary = getSelectionSummary(value, REGION_GROUPS);
-  const label =
-    summary === null
-      ? '지역'
-      : summary.totalCount === 1
-        ? summary.firstLabel
-        : `${summary.firstLabel} 외 ${summary.totalCount - 1}개`;
-
   return (
-    <>
-      <FilterTriggerButton onClick={() => setIsOpen(true)} isActive={isOpen || value !== null}>
-        {label}
-      </FilterTriggerButton>
-
-      <SelectionModal
-        title="지역"
-        groups={REGION_GROUPS}
-        value={value}
-        defaultValue={REGION_DEFAULT_VALUE}
-        isOpen={isOpen}
-        onClose={() => setIsOpen(false)}
-        onApply={(next) => {
-          onApply(next);
-          setIsOpen(false);
-        }}
-        emptyStateLines={['지역을 선택하면', '상세 지역을 볼 수 있어요']}
-      />
-    </>
+    <SelectionFilter
+      label="지역"
+      groups={REGION_GROUPS}
+      value={value}
+      defaultValue={REGION_DEFAULT_VALUE}
+      onApply={onApply}
+      emptyStateLines={['지역을 선택하면', '상세 지역을 볼 수 있어요']}
+    />
   );
 }
 

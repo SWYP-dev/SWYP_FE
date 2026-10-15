@@ -53,6 +53,14 @@ export function markNotificationsRead(ids: number[]): Promise<NotificationReadRe
   });
 }
 
+// PATCH /api/v1/notifications/inbox/read-all (API 명세서 5.8)
+// 로그인한 사용자의 읽지 않은 인앱 알림을 모두 읽음 처리한다. Request Body 없음.
+export function markAllNotificationsRead(): Promise<NotificationReadResponse> {
+  return apiFetch<NotificationReadResponse>('/api/v1/notifications/inbox/read-all', {
+    method: 'PATCH',
+  });
+}
+
 // DELETE /api/v1/notifications/inbox/{notificationId} (2026-08-04 백엔드 프론트 연동 공유, API 5.6 예정)
 // 존재하지 않거나 로그인한 사용자의 알림이 아니면 404 (ApiClientError) 발생.
 // ⚠️ 응답 바디 형식이 명시되지 않아, 다른 삭제류 API(6.2 회원 탈퇴 등)와 동일하게

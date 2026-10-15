@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Popover, usePopoverTrigger } from '@/components/ui/popover';
 import { NotificationModal } from './NotificationModal';
 import { useNotificationInbox } from '../api/useNotificationQuery';
+import { useMarkAllNotificationsRead } from '../api/useNotificationMutations';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { LoginModal } from '@/features/auth/components/LoginModal';
 
@@ -44,12 +45,16 @@ export function NotificationBell() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const { data } = useNotificationInbox();
   const hasUnread = (data?.unreadCount ?? 0) > 0;
+  const markAllReadMutation = useMarkAllNotificationsRead();
 
   function handleClick() {
     if (!isAuthenticated) {
       setIsLoginModalOpen(true);
       return;
     }
+    // ⚠️ [QA-011] 알림창을 여는 시점에 안 읽은 알림을 모두 읽음 처리해 벨의 빨간 점을 제거.
+    // 실패해도 알림창 열기는 막지 않고 빨간 점만 유지됨(다음에 열 때 다시 시도).
+    if (!isOpen && hasUnread) markAllReadMutation.mutate();
     toggle();
   }
 

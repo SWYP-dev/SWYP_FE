@@ -3,6 +3,7 @@ import Script from 'next/script';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import { QueryProvider } from '@/providers/query-provider';
+import { PostHogProvider } from '@/providers/posthog-provider';
 import { GlobalLoginModal } from '@/features/auth/components/GlobalLoginModal';
 import { GTM_ID } from '@/lib/gtm';
 import { MAZE_API_KEY } from '@/lib/maze';
@@ -18,7 +19,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: '취합',
+  // 페이지별 타이틀은 각 라우트에서 title: '페이지명'만 지정하면 '취합 | 페이지명'으로 표시된다.
+  title: {
+    default: '취합',
+    template: '취합 | %s',
+  },
   description: '취업 정보를 하나로 합쳐 관리를 더 편하게, 취합',
 };
 
@@ -33,10 +38,11 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       style={{ fontFamily: 'Pretendard, sans-serif' }}
     >
-      {/* Maze */}
-      {MAZE_API_KEY && (
-        <Script id="maze-snippet" strategy="beforeInteractive">
-          {`(function (m, a, z, e) {
+      <body className="min-h-full flex flex-col">
+        {/* Maze */}
+        {MAZE_API_KEY && (
+          <Script id="maze-snippet" strategy="afterInteractive">
+            {`(function (m, a, z, e) {
   var s, t, u, v;
   try { t = m.sessionStorage.getItem('maze-us'); } catch (err) {}
   if (!t) {
@@ -55,18 +61,18 @@ export default function RootLayout({
   a.getElementsByTagName('head')[0].appendChild(s);
   m.mazeUniversalSnippetApiKey = e;
 })(window, document, 'https://snippet.maze.co/maze-universal-loader.js', '${MAZE_API_KEY}');`}
-        </Script>
-      )}
-      {/* End Maze */}
+          </Script>
+        )}
+        {/* End Maze */}
 
-      {/* Google Tag Manager */}
-      {GTM_ID && (
-        <Script id="gtm-script" strategy="afterInteractive">
-          {`(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','${GTM_ID}');`}
-        </Script>
-      )}
-      {/* End Google Tag Manager */}
-      <body className="min-h-full flex flex-col">
+        {/* Google Tag Manager */}
+        {GTM_ID && (
+          <Script id="gtm-script" strategy="afterInteractive">
+            {`(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','${GTM_ID}');`}
+          </Script>
+        )}
+        {/* End Google Tag Manager */}
+
         {/* Google Tag Manager (noscript) */}
         {GTM_ID && (
           <noscript>
@@ -79,10 +85,13 @@ export default function RootLayout({
           </noscript>
         )}
         {/* End Google Tag Manager (noscript) */}
-        <QueryProvider>
-          {children}
-          <GlobalLoginModal />
-        </QueryProvider>
+
+        <PostHogProvider>
+          <QueryProvider>
+            {children}
+            <GlobalLoginModal />
+          </QueryProvider>
+        </PostHogProvider>
       </body>
     </html>
   );

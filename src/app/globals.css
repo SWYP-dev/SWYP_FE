@@ -102,6 +102,63 @@ html:has(.landing-root) {
   scroll-behavior: smooth;
 }
 
+/* 드로어 슬라이드 인/아웃 (src/components/ui/drawer.tsx, QA-008)
+   열림 300ms ease-out(감속) / 닫힘 200ms ease-in(가속), 배경 딤은 같은 시간으로 페이드.
+   drawer.tsx의 DRAWER_EXIT_MS(200)와 닫힘 시간을 맞춰야 한다. */
+@keyframes drawer-slide-in {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+@keyframes drawer-slide-out {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+@keyframes drawer-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes drawer-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+.animate-drawer-in {
+  animation: drawer-slide-in 300ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.animate-drawer-out {
+  animation: drawer-slide-out 200ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+.animate-drawer-overlay-in {
+  animation: drawer-fade-in 300ms ease-out both;
+}
+.animate-drawer-overlay-out {
+  animation: drawer-fade-out 200ms ease-in both;
+}
+/* 모션 줄이기 설정이면 애니메이션 없이 즉시 표시/제거 */
+@media (prefers-reduced-motion: reduce) {
+  .animate-drawer-in,
+  .animate-drawer-out,
+  .animate-drawer-overlay-in,
+  .animate-drawer-overlay-out {
+    animation: none;
+  }
+}
+
 /* 카카오 로그인 로딩 스피너 (src/components/ui/spinner.tsx) */
 @keyframes spinner-dot {
   0%,

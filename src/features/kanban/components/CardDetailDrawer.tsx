@@ -152,6 +152,8 @@ export function CardDetailDrawer({
   // URL 입력 슬롯 — 등록하면 비워지고 항목은 linkItems로 내려간다.
   const [slotCategory, setSlotCategory] = useState<UrlCategoryValue | null>(null);
   const [slotUrl, setSlotUrl] = useState('');
+  // URL 입력란을 한 번이라도 거쳐 갔는지(포커스 후 이탈 / Enter). 비어 있어도 안내 문구를 보여줄 기준.
+  const [isSlotUrlTouched, setIsSlotUrlTouched] = useState(false);
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
   const categoryRef = useRef<HTMLDivElement>(null);
 
@@ -193,6 +195,7 @@ export function CardDetailDrawer({
     setFileItems([]);
     setSlotCategory(null);
     setSlotUrl('');
+    setIsSlotUrlTouched(false);
     setIsCategoryOpen(false);
     setFileError(null);
     setIsUnsavedModalOpen(false);
@@ -208,6 +211,14 @@ export function CardDetailDrawer({
     .filter((item) => item.id === null && item.file)
     .map((item) => item.file as File);
 
+  // 카테고리가 바뀐 기존 링크(서버에 있는 항목만). 신규 링크는 등록 시 카테고리가 함께 전송된다.
+  const updatedLinkCategories = linkItems.flatMap((item) => {
+    if (item.id === null) return [];
+    const original = originalLinks.find((doc) => doc.id === item.id);
+    if (!original || original.category === item.category) return [];
+    return [{ id: item.id, category: item.category, previousCategory: original.category }];
+  });
+
   // 파일·링크는 DELETE 엔드포인트가 같아 삭제 목록을 하나로 합친다.
   const keptIds = new Set(
     [...linkItems, ...fileItems].map((item) => item.id).filter((id) => id !== null)
@@ -217,14 +228,25 @@ export function CardDetailDrawer({
     .map((doc) => doc.id);
 
   const isDirty =
-    memoChanged || createdLinks.length > 0 || createdFiles.length > 0 || deletedIds.length > 0;
+    memoChanged ||
+    createdLinks.length > 0 ||
+    createdFiles.length > 0 ||
+    updatedLinkCategories.length > 0 ||
+    deletedIds.length > 0;
 
   const isSaving = saveCardDetail.isPending;
   const canSave = isDirty && !isSaving;
 
   // 입력할 때마다 즉시 검증한다(등록·저장을 기다리지 않음). 파생 값이라 항상 입력과 동기화된다.
-  // 빈 값은 검증 대상이 아니다 — 아직 입력하지 않은 슬롯에 에러가 뜨면 안 되기 때문.
-  const slotUrlError = slotUrl.trim() ? validateLinkFormat(slotUrl) : undefined;
+  // 입력하지 않았거나 공백만 입력한 경우에는 "공고 링크를 입력해 주세요."를 보여준다 (QA-015).
+  // 다만 드로어를 열자마자 빈 슬롯에 에러가 뜨면 안 되므로, 공백을 입력했거나 입력란을 한 번
+  // 거쳐 간(포커스 후 이탈 / Enter) 뒤에만 노출한다.
+  const isSlotUrlBlank = slotUrl.trim().length === 0;
+  const slotUrlError = isSlotUrlBlank
+    ? slotUrl.length > 0 || isSlotUrlTouched
+      ? '공고 링크를 입력해 주세요.'
+      : undefined
+    : validateLinkFormat(slotUrl);
   const canRegisterUrl = slotUrl.trim().length > 0 && !slotUrlError && !isSaving;
 
   function handleRequestClose() {
@@ -240,6 +262,7 @@ export function CardDetailDrawer({
     const payload: SaveCardDetailPayload = {
       createdFiles,
       createdLinks,
+      updatedLinkCategories,
       deleted: deletedIds,
       ...(memoChanged ? { memo: memoDraft, previousMemo: detail?.memo ?? '' } : {}),
     };
@@ -277,6 +300,7 @@ export function CardDetailDrawer({
     ]);
     setSlotCategory(null);
     setSlotUrl('');
+    setIsSlotUrlTouched(false);
   }
 
   // 파일 슬롯 → 누적 리스트. 업로드는 하지 않고 목록에만 쌓아둔다(실제 전송은 "저장").
@@ -558,7 +582,12 @@ export function CardDetailDrawer({
                           value={slotUrl}
                           disabled={isSaving}
                           onChange={(e) => setSlotUrl(e.target.value)}
-                          onKeyDown={(e) => e.key === 'Enter' && handleRegisterUrl()}
+                          onBlur={() => setIsSlotUrlTouched(true)}
+                          onKeyDown={(e) => {
+                            if (e.key !== 'Enter') return;
+                            setIsSlotUrlTouched(true);
+                            handleRegisterUrl();
+                          }}
                           placeholder="URL 링크를 입력해 주세요."
                           className="min-w-0 flex-1 bg-transparent text-3 font-medium text-label-base outline-none placeholder:text-label-placeholder disabled:cursor-not-allowed"
                         />
@@ -587,6 +616,11 @@ export function CardDetailDrawer({
                           category={item.category}
                           url={item.url}
                           disabled={isSaving}
+                          onCategoryChange={(category) =>
+                            setLinkItems((prev) =>
+                              prev.map((l) => (l.key === item.key ? { ...l, category } : l))
+                            )
+                          }
                           onDelete={() =>
                             setLinkItems((prev) => prev.filter((l) => l.key !== item.key))
                           }

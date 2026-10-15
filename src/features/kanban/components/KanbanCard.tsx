@@ -4,11 +4,13 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { EditIcon, TrashIcon } from '@/components/ui/icons';
 import type { KanbanCard as KanbanCardType } from '@/types/api';
+import { DeadlineBadge } from '@/components/ui/badge';
 import { formatDeadlineText } from '../utils/formatDeadline';
 
 interface KanbanCardProps {
   card: KanbanCardType;
   stageId: number;
+  showDeadlineBadge?: boolean;
   onCardClick?: (cardId: number) => void;
   onEditCard?: (card: KanbanCardType) => void;
   onDeleteCard?: (card: KanbanCardType) => void;
@@ -55,10 +57,13 @@ function ExternalLinkIcon() {
 // 공유하기 위해 별도 컴포넌트로 분리.
 export function KanbanCardContent({
   card,
+  showDeadlineBadge = false,
   onEditCard,
   onDeleteCard,
 }: {
   card: KanbanCardType;
+  // '지원 전' 단계 카드에서만 true. D-Day/마감 뱃지 노출 여부 (QA-009)
+  showDeadlineBadge?: boolean;
   onEditCard?: (card: KanbanCardType) => void;
   onDeleteCard?: (card: KanbanCardType) => void;
 }) {
@@ -105,6 +110,9 @@ export function KanbanCardContent({
                 마감일 변경
               </span>
             )}
+            {showDeadlineBadge && (
+              <DeadlineBadge deadline={card.deadline} alwaysHiringLabel="상시 채용" />
+            )}
           </div>
         </div>
         <a
@@ -125,6 +133,7 @@ export function KanbanCardContent({
 export function KanbanCard({
   card,
   stageId,
+  showDeadlineBadge,
   onCardClick,
   onEditCard,
   onDeleteCard,
@@ -151,7 +160,12 @@ export function KanbanCard({
       onClick={() => onCardClick?.(card.id)}
       className="group flex w-full cursor-grab flex-col items-start justify-center active:cursor-grabbing"
     >
-      <KanbanCardContent card={card} onEditCard={onEditCard} onDeleteCard={onDeleteCard} />
+      <KanbanCardContent
+        card={card}
+        showDeadlineBadge={showDeadlineBadge}
+        onEditCard={onEditCard}
+        onDeleteCard={onDeleteCard}
+      />
     </div>
   );
 }

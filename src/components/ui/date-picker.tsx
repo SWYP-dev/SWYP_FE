@@ -11,6 +11,7 @@ interface DatePickerProps {
 // Figma DatePicker 마스터 컴포넌트(node 54:13560) 스펙 반영.
 // 날짜 타입 4종: default(평일) / sunday(일요일 빨간) / today(오늘 파란 텍스트) / selected(파란 원 배경)
 // 좌우 chevron으로 월 이동. 외부 라이브러리 없이 직접 구현.
+// 오늘 이전 날짜는 선택할 수 없고(오늘은 선택 가능), 이미 과거 날짜가 선택된 값은 그대로 표시만 한다.
 export function DatePicker({ value, onChange, className = '' }: DatePickerProps) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -71,6 +72,11 @@ export function DatePicker({ value, onChange, className = '' }: DatePickerProps)
     return 'default';
   }
 
+  // 오늘보다 이전 날짜인지 (오늘 당일은 선택 가능)
+  function isPastDay(day: number): boolean {
+    return new Date(viewYear, viewMonth, day).getTime() < today.getTime();
+  }
+
   const headerText = `${viewYear}년 ${viewMonth + 1}월`;
 
   return (
@@ -123,19 +129,23 @@ export function DatePicker({ value, onChange, className = '' }: DatePickerProps)
                   return <div key={colIdx} className="size-[36px]" />;
                 }
                 const type = getDayType(day, colIdx);
+                const isDisabled = isPastDay(day);
                 return (
                   <button
                     key={colIdx}
                     type="button"
+                    disabled={isDisabled}
                     onClick={() => onChange(new Date(viewYear, viewMonth, day))}
                     className={`flex size-[36px] flex-col items-center justify-center rounded-max text-5 ${
                       type === 'selected'
                         ? 'bg-fill-primary font-semibold text-base-white'
-                        : type === 'today'
-                          ? 'font-semibold text-label-primary'
-                          : type === 'sunday'
-                            ? 'font-medium text-status-negative'
-                            : 'font-medium text-label-base'
+                        : isDisabled
+                          ? 'cursor-not-allowed font-medium text-label-secondary-disabled'
+                          : type === 'today'
+                            ? 'font-semibold text-label-primary'
+                            : type === 'sunday'
+                              ? 'font-medium text-status-negative'
+                              : 'font-medium text-label-base'
                     }`}
                   >
                     {day}

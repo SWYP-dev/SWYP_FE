@@ -7,9 +7,10 @@ import type { NextPage } from 'next';
 import { Sidebar } from '@/components/layout/sidebar';
 import { Header } from '@/components/layout/header';
 import { Pagination } from '@/components/ui/pagination';
+import { FilterBar } from '@/components/ui/filter-segment';
 import { JobCardSkeleton } from '@/components/ui/job-card-skeleton';
 import { Toast } from '@/components/ui/toast';
-import type { SelectionValue } from '@/components/ui/selection-modal';
+import type { SelectionValue } from '@/components/ui/selection-filter';
 import {
   JobCategoryFilterButton,
   buildJobCategoryParam,
@@ -129,9 +130,11 @@ const ScrapsPage: NextPage = () => {
 
           <div className="flex items-center justify-between pt-7 px-12 pb-5 text-center">
             <div className="flex items-center gap-3">
-              <JobCategoryFilterButton value={jobCategoryValue} onApply={setJobCategoryValue} />
-              <RegionFilterButton value={regionValue} onApply={setRegionValue} />
-              <CareerFilterChip appliedTags={careerTags} onApply={setCareerTags} />
+              <FilterBar>
+                <JobCategoryFilterButton value={jobCategoryValue} onApply={setJobCategoryValue} />
+                <RegionFilterButton value={regionValue} onApply={setRegionValue} />
+                <CareerFilterChip appliedTags={careerTags} onApply={setCareerTags} />
+              </FilterBar>
               <DeadlineSoonFilterButton isActive={isDeadlineSoon} onToggle={setIsDeadlineSoon} />
             </div>
             <div className="flex items-start gap-2 text-label-body">

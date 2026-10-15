@@ -2,6 +2,8 @@
 
 export interface DropdownMenuItem {
   label: string;
+  /** true면 회색으로 표시하고 선택할 수 없다 (예: 이름 수정이 막힌 기본 전형 단계) */
+  disabled?: boolean;
 }
 
 interface DropdownMenuProps {
@@ -26,9 +28,14 @@ export function DropdownMenu({ items, onSelect, className = '', selectedIndex }:
             key={item.label}
             type="button"
             role="menuitem"
+            disabled={item.disabled}
             onClick={() => onSelect(item, index)}
             className={`flex h-10 box-border w-full items-center justify-between gap-2 rounded-lg px-5 text-left ${
-              isSelected ? 'bg-neutral-100' : 'hover:bg-action-secondary-hover'
+              item.disabled
+                ? 'cursor-not-allowed opacity-30'
+                : isSelected
+                  ? 'bg-neutral-100'
+                  : 'hover:bg-action-secondary-hover'
             }`}
           >
             <span

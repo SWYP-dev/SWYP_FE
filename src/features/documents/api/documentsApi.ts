@@ -29,6 +29,23 @@ export function registerDocumentLink(
   });
 }
 
+// 4.7 링크 카테고리 수정
+// LINK 타입 서류의 카테고리만 변경한다(URL·이름 유지). LINK가 아닌 서류에 호출하면
+// INVALID_LINK_DOCUMENT_TYPE(400) 에러.
+export function updateLinkCategory(
+  cardId: number,
+  documentId: number,
+  category: string
+): Promise<DocumentItem> {
+  return apiFetch<DocumentItem>(
+    `/api/v1/kanban/cards/${cardId}/documents/${documentId}/link/category`,
+    {
+      method: 'PATCH',
+      body: { category },
+    }
+  );
+}
+
 // 4.5 서류 삭제
 export function deleteDocument(cardId: number, documentId: number): Promise<null> {
   return apiFetch<null>(`/api/v1/kanban/cards/${cardId}/documents/${documentId}`, {
