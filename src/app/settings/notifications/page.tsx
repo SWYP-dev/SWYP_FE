@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { useNotificationSettings } from '@/features/notification/api/useNotificationQuery';
 import { useUpdateNotificationSettings } from '@/features/notification/api/useNotificationMutations';
 
@@ -44,15 +43,6 @@ export default function SettingsNotificationsPage() {
   const { data, isLoading } = useNotificationSettings();
   const updateMutation = useUpdateNotificationSettings();
 
-  const [emailEnabled, setEmailEnabled] = useState(true);
-  const [isSynced, setIsSynced] = useState(false);
-
-  useEffect(() => {
-    if (!data || isSynced) return;
-    setEmailEnabled(data.emailEnabled);
-    setIsSynced(true);
-  }, [data, isSynced]);
-
   if (isLoading || !data) {
     return (
       <div className="flex w-full flex-col items-start gap-4">
@@ -60,6 +50,11 @@ export default function SettingsNotificationsPage() {
       </div>
     );
   }
+
+  // 저장 요청 중에는 방금 누른 값을, 아니면 서버에 저장된 값을 보여준다.
+  const emailEnabled = updateMutation.isPending
+    ? updateMutation.variables.emailEnabled
+    : data.emailEnabled;
 
   return (
     <div className="flex w-full flex-col items-start gap-4">
@@ -78,8 +73,9 @@ export default function SettingsNotificationsPage() {
               label="이메일 알림"
               checked={emailEnabled}
               disabled={updateMutation.isPending}
+              // 누르는 즉시 저장(QA-021). 저장 성공/실패 안내 문구는 두지 않는다(기획 확정).
+              // 실패하면 스위치는 저장돼 있던 값으로 자동으로 돌아간다.
               onChange={(next) => {
-                setEmailEnabled(next);
                 updateMutation.mutate({
                   emailEnabled: next,
                   inAppEnabled: data.inAppEnabled,
