@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   uploadDocumentFile,
   registerDocumentLink,
+  updateLinkCategory,
   deleteDocument,
   fetchDownloadUrl,
 } from './documentsApi';
@@ -22,6 +23,8 @@ export interface SaveCardDetailPayload {
   createdFiles: File[];
   /** 신규 등록할 링크 */
   createdLinks: { category: string; url: string }[];
+  /** 카테고리가 바뀐 기존 링크. previousCategory는 저장 실패 시 되돌리기 위한 직전 값 */
+  updatedLinkCategories: { id: number; category: string; previousCategory: string }[];
   /** 목록에서 제거된 기존 서류(파일·링크 공용 — DELETE 엔드포인트가 같다) */
   deleted: number[];
 }
@@ -33,6 +36,7 @@ export function useSaveCardDetail(cardId: number) {
     // 서버에 트랜잭션이 없어 클라이언트에서 보상 요청으로 맞춘다.
     mutationFn: async (payload: SaveCardDetailPayload) => {
       const createdIds: number[] = [];
+      const appliedCategoryUpdates: SaveCardDetailPayload['updatedLinkCategories'] = [];
       let memoApplied = false;
 
       try {
@@ -53,7 +57,13 @@ export function useSaveCardDetail(cardId: number) {
           memoApplied = true;
         }
 
-        // 3) 삭제 — 되돌릴 수 없으므로 가장 마지막에 둔다.
+        // 3) 링크 카테고리 변경 — 되돌릴 수 있다(직전 카테고리로 다시 PATCH).
+        for (const update of payload.updatedLinkCategories) {
+          await updateLinkCategory(cardId, update.id, update.category);
+          appliedCategoryUpdates.push(update);
+        }
+
+        // 4) 삭제 — 되돌릴 수 없으므로 가장 마지막에 둔다.
         //    앞 단계가 실패하면 여기까지 오지 않으므로 서버 상태가 그대로 유지된다.
         for (const documentId of payload.deleted) {
           await deleteDocument(cardId, documentId);
@@ -62,6 +72,9 @@ export function useSaveCardDetail(cardId: number) {
         // 보상 요청. 이것까지 실패하면 더 할 수 있는 게 없으므로 원래 에러를 그대로 올린다.
         await Promise.allSettled([
           ...createdIds.map((id) => deleteDocument(cardId, id)),
+          ...appliedCategoryUpdates.map((u) =>
+            updateLinkCategory(cardId, u.id, u.previousCategory)
+          ),
           ...(memoApplied ? [updateCardMemo(cardId, payload.previousMemo ?? '')] : []),
         ]);
         throw err;
