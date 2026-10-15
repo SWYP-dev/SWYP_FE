@@ -6,7 +6,9 @@ import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-
 import { CSS } from '@dnd-kit/utilities';
 import type { KanbanCard as KanbanCardType, KanbanStage } from '@/types/api';
 import { KanbanCard } from './KanbanCard';
-import { DragHandleIcon, EditIcon, PlusSmallIcon, TrashIcon } from '@/components/ui/icons';
+import { DragHandleIcon, MoreHorizontalIcon, PlusSmallIcon } from '@/components/ui/icons';
+import { DropdownMenu } from '@/components/ui/dropdown-menu';
+import { Popover, usePopoverTrigger } from '@/components/ui/popover';
 import { pushDataLayerEvent } from '@/lib/gtm';
 
 // ⚠️ 백엔드는 현재 "지원 전"만 isDefault:true로 내려주고(이동·이름변경 제한),
@@ -105,6 +107,14 @@ export function KanbanColumn({
 
   const isLocked = stage.isDefault || DEFAULT_STAGE_NAMES.includes(stage.name);
 
+  // 헤더 더보기(···) 케밥 메뉴
+  const {
+    isOpen: isMenuOpen,
+    triggerRef: menuTriggerRef,
+    toggle: toggleMenu,
+    close: closeMenu,
+  } = usePopoverTrigger<HTMLButtonElement>();
+
   const draftName = isDraft ? (draftNameProp ?? '') : localDraftName;
 
   function updateDraftName(value: string) {
@@ -116,8 +126,9 @@ export function KanbanColumn({
     setErrorMessage(null);
   }
 
-  // 수정 버튼 클릭 / 단계명 더블클릭, 두 진입 경로를 하나로 묶고
+  // 케밥 메뉴의 "이름 수정" 항목 / 단계명 더블클릭, 두 진입 경로를 하나로 묶고
   // GA 이벤트(stage_name_edit_trigger)로 어떤 방식을 더 많이 쓰는지 구분해서 트래킹한다.
+  // ⚠️ 메뉴 항목도 기존 지표와 이어지도록 method는 'button'을 그대로 쓴다.
   function startEditing(method: 'button' | 'double_click') {
     if (isDraft || isLocked) return;
     pushDataLayerEvent('stage_name_edit_trigger', { method });
@@ -239,31 +250,35 @@ export function KanbanColumn({
             >
               <PlusSmallIcon size={20} />
             </button>
+            {/* QA-007: 이름 수정·삭제를 더보기(···) 케밥 메뉴로 통합. 카드 추가(+)는 헤더에 유지.
+                기본 3개 단계(isLocked)는 항목을 회색(비활성)으로 노출해 누를 수 없음을 보여준다. */}
             <button
+              ref={menuTriggerRef}
               type="button"
-              aria-label="스테이지 이름 수정"
-              disabled={isDraft || isLocked}
-              onClick={() => startEditing('button')}
+              aria-label="스테이지 더보기"
+              aria-expanded={isMenuOpen}
+              disabled={isDraft}
+              onClick={toggleMenu}
               className={`flex size-5 items-center justify-center ${
-                isDraft || isLocked ? 'cursor-not-allowed opacity-30' : 'text-icon-gray'
+                isDraft ? 'cursor-not-allowed opacity-30' : 'text-icon-gray'
               }`}
             >
-              <EditIcon size={20} />
+              <MoreHorizontalIcon size={20} />
             </button>
-            <button
-              type="button"
-              aria-label="스테이지 삭제"
-              disabled={isDraft || isLocked}
-              onClick={() => {
-                if (isDraft || isLocked) return;
-                onDeleteStage?.(stage.id);
-              }}
-              className={`flex size-5 items-center justify-center ${
-                isDraft || isLocked ? 'cursor-not-allowed opacity-30' : 'text-icon-gray'
-              }`}
-            >
-              <TrashIcon size={20} />
-            </button>
+            <Popover isOpen={isMenuOpen} onClose={closeMenu} triggerRef={menuTriggerRef} align="end">
+              <DropdownMenu
+                items={[
+                  { label: '이름 수정', disabled: isLocked },
+                  { label: '삭제', disabled: isLocked },
+                ]}
+                className="w-[140px]"
+                onSelect={(item) => {
+                  closeMenu();
+                  if (item.label === '이름 수정') startEditing('button');
+                  if (item.label === '삭제') onDeleteStage?.(stage.id);
+                }}
+              />
+            </Popover>
           </div>
         </div>
       </div>
