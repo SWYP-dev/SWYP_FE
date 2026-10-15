@@ -19,7 +19,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: '취합',
+  // 페이지별 타이틀은 각 라우트에서 title: '페이지명'만 지정하면 '취합 | 페이지명'으로 표시된다.
+  title: {
+    default: '취합',
+    template: '취합 | %s',
+  },
   description: '취업 정보를 하나로 합쳐 관리를 더 편하게, 취합',
 };
 
