@@ -217,10 +217,16 @@ export interface NotificationHistoryItem {
 // dDayLabel/title/description으로 분리됨. title/description은 백엔드가 완성한 문구를
 // 그대로 내려주므로 프론트에서 별도로 조합하지 않음. API 명세서 v1.11 문서에는 아직
 // 반영 전이라, 문서 업데이트 시 필드명 대조 필요 (TODO).
+// [2026-10-16] 백엔드 공유: 알림 종류를 구분하는 reason 필드 추가 (QA-012).
+// DEADLINE_REMINDER = 공고 마감일 알림, JOB_FEED_CHANGED = 원본 공고(job_feed) 정보 변경 알림.
+export type InAppNotificationReason = 'DEADLINE_REMINDER' | 'JOB_FEED_CHANGED';
+
 export interface InAppNotificationItem {
   id: number;
+  reason: InAppNotificationReason;
   cardId: number;
-  dDayLabel: string; // 알림 배지에 표시. 예: "D-1", "D-Day"
+  dDayLabel: string | null; // 마감일 알림 배지에 표시. 예: "D-1", "D-Day". 변경 알림은 null
+  // description은 줄바꿈(\n)을 포함할 수 있음. 예: "회사 · 공고명\n마감일: 2026-10-08 → 2026-10-28"
   title: string;
   description: string;
   isRead: boolean;
