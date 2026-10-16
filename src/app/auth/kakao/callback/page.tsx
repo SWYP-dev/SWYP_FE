@@ -44,8 +44,9 @@ function CallbackHandler() {
     if (!code || hasRequested.current) return;
     hasRequested.current = true;
 
+    // [QA 반영] 로그인 후 진입 화면은 통합 공고 탐색(/jobs)이 아닌 지원 현황 관리(/kanban)
     loginMutation.mutate(code, {
-      onSuccess: () => router.replace('/jobs'),
+      onSuccess: () => router.replace('/kanban'),
       onError: () => router.replace('/?loginError=1'),
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
