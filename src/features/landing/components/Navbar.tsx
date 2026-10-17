@@ -3,8 +3,6 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { ChwihapWordmark } from '@/features/notification/components/icons';
-import { useTestSessionMutation } from '@/features/auth/hooks/useAuthMutations';
-import { ButtonSpinnerIcon } from '@/components/ui/spinner';
 import KakaoLoginButton from './KakaoLoginButton';
 
 const links = [
@@ -16,7 +14,7 @@ const links = [
 
 interface NavbarProps {
   /**
-   * 'landing': 랜딩 기본형. 섹션 앵커 메뉴와 '테스트 시작하기' CTA를 모두 노출한다.
+   * 'landing': 랜딩 기본형. 섹션 앵커 메뉴와 '무료로 시작하기' CTA를 모두 노출한다.
    * 'default': 로고와 '회원가입/로그인'만 남긴다. 랜딩 섹션 앵커(#problem 등)가 없는
    *            법률 문서 페이지(/privacy, /terms)에서 쓴다.
    */
@@ -26,7 +24,6 @@ interface NavbarProps {
 export default function Navbar({ variant = 'landing' }: NavbarProps) {
   const isDefault = variant === 'default';
   const [scrolled, setScrolled] = useState(false);
-  const testSession = useTestSessionMutation();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
@@ -87,16 +84,12 @@ export default function Navbar({ variant = 'landing' }: NavbarProps) {
             회원가입/로그인
           </KakaoLoginButton>
           {isDefault ? null : (
-            // 카카오 로그인 없이 테스트 계정 세션을 발급받아 바로 서비스로 진입시킨다
-            <button
-              type="button"
-              onClick={() => testSession.mutate()}
-              disabled={testSession.isPending}
-              className="inline-flex h-[38px] items-center justify-center gap-[2px] rounded-lg bg-fill-primary px-4 text-3 font-semibold leading-[1.5] text-base-white transition-colors hover:bg-action-primary-hover disabled:bg-action-primary-disabled"
+            <Link
+              href="/jobs"
+              className="inline-flex h-[38px] items-center justify-center gap-[2px] rounded-lg bg-fill-primary px-4 text-3 font-semibold leading-[1.5] text-base-white transition-colors hover:bg-action-primary-hover"
             >
-              {testSession.isPending && <ButtonSpinnerIcon />}
-              {testSession.isPending ? '준비 중' : '테스트 시작하기'}
-            </button>
+              무료로 시작하기
+            </Link>
           )}
         </div>
       </nav>

@@ -25,14 +25,20 @@ function formatNotificationDate(iso: string): string {
 //   동일한 Badge(type="primary")를 재사용함 — 진영님 확인 후 조정 필요 (TODO).
 // - X 버튼: 신규 단일 삭제 API(5.6) 연동. 기존엔 삭제 API가 없어 "읽음 처리"로 대체
 //   구현했었지만, 본래 "닫기(X) = 삭제" 의도대로 실제 삭제 동작으로 변경 — 세은님 확인 필요 (TODO).
+// [2026-10-16] QA-012 원본 공고 변경 알림(reason=JOB_FEED_CHANGED) 반영:
+// - 알림 종류는 reason으로 구분(백엔드 안내). D-Day 배지는 마감일 알림에만 표시.
+//   변경 알림용 배지 디자인은 Figma 확인 전이라 배지 없이 표시 — 진영님 확인 필요 (TODO).
+// - 변경 알림 description은 "공고 정보\n변경 내용" 형태라 줄바꿈을 그대로 보여줌.
 export function NotificationItem({ item, onDelete }: NotificationItemProps) {
+  const showDDayBadge = item.reason === 'DEADLINE_REMINDER' && item.dDayLabel;
+
   return (
     <div className="flex w-full flex-col items-start border-b border-line-secondary bg-base-white">
       <div className="flex w-full flex-col items-start gap-2 px-8 py-4">
         <div className="flex w-full items-center justify-between">
           <div className="flex items-center gap-2">
             {!item.isRead && <span className="size-[6px] shrink-0 rounded-max bg-status-negative" />}
-            <Badge type="primary">{item.dDayLabel}</Badge>
+            {showDDayBadge && <Badge type="primary">{item.dDayLabel}</Badge>}
           </div>
           <button
             type="button"
@@ -45,7 +51,9 @@ export function NotificationItem({ item, onDelete }: NotificationItemProps) {
         </div>
         <div className="flex w-full flex-col items-start gap-1">
           <p className="w-full text-3 font-semibold leading-[1.6] text-label-base">{item.title}</p>
-          <p className="w-full text-2 font-medium leading-[1.6] text-label-body">{item.description}</p>
+          <p className="w-full whitespace-pre-line text-2 font-medium leading-[1.6] text-label-body">
+            {item.description}
+          </p>
         </div>
         <p className="text-1 font-medium text-label-description">
           {formatNotificationDate(item.createdAt)}
