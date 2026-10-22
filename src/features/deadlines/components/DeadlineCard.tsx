@@ -2,11 +2,11 @@
 
 import { EditIcon, TrashIcon } from '@/components/ui/icons';
 import { formatDeadlineText } from '@/features/kanban/utils/formatDeadline';
-import type { DeadlineCardEntry } from '../utils/groupByDeadline';
+import type { DeadlineCardEntry, DeadlineTone } from '../utils/groupByDeadline';
 
 interface DeadlineCardProps {
   entry: DeadlineCardEntry;
-  isUrgent: boolean;
+  tone: DeadlineTone;
   isSelected: boolean;
   onClick: () => void;
   onEdit: () => void;
@@ -22,7 +22,14 @@ function CalendarSmallIcon() {
   );
 }
 
-export function DeadlineCard({ entry, isUrgent, isSelected, onClick, onEdit, onDelete }: DeadlineCardProps) {
+// HT-005: 카드 왼쪽 Divider도 그룹 헤더와 같은 단계로 색을 맞춤 (임박 빨간색, 지난 마감 회색)
+const DIVIDER_TONE_CLASS: Record<DeadlineTone, string> = {
+  urgent: 'bg-status-negative',
+  past: 'bg-neutral-400',
+  default: 'bg-[var(--color-label-base)]',
+};
+
+export function DeadlineCard({ entry, tone, isSelected, onClick, onEdit, onDelete }: DeadlineCardProps) {
   const { card, stageName } = entry;
 
   return (
@@ -40,11 +47,7 @@ export function DeadlineCard({ entry, isUrgent, isSelected, onClick, onEdit, onD
       }`}
     >
       <div className="flex flex-1 items-center gap-5">
-        <div
-          className={`w-2 shrink-0 self-stretch rounded-max ${
-            isUrgent ? 'bg-fill-primary' : 'bg-[var(--color-label-base)]'
-          }`}
-        />
+        <div className={`w-2 shrink-0 self-stretch rounded-max ${DIVIDER_TONE_CLASS[tone]}`} />
 
         <div className="flex flex-1 flex-col gap-3 py-1">
           <div className="flex flex-col gap-2">
