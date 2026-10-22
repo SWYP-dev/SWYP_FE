@@ -18,10 +18,11 @@ color: green
 2. **가독성/컨벤션**
    - 네이밍 규칙 준수 (camelCase, 컴포넌트는 PascalCase)
    - 이 저장소 `.claude/rules/code-style.md` 기준 준수 여부
-     - 기본은 Server Component인지, `"use client"`가 실제로 필요한 최소 범위에만 붙었는지 (`setlist/page.tsx`, `event-goods/page.tsx`처럼 전체를 client로 선언하고 `useEffect`로 페칭하는 패턴은 지양 대상)
-     - 반복되는 UI가 공통 컴포넌트로 분리되어 있는지 (`components/common/`, `components/ui/`)
-     - 아이콘/타입별 분기 렌더링이 `switch`가 아니라 객체 매핑(`Record`)으로 되어 있는지
-     - `memo` 적용이 컴포넌트 전반에서 일관적인지 (React Compiler가 켜져 있어 수동 메모이제이션이 불필요한 경우가 많음)
+     - 사용자 데이터는 클라이언트에서 React Query로 조회하는지 (토큰이 localStorage에 있어 데이터 페이지는 `'use client'`가 정상). 컴포넌트에서 `fetch`를 직접 부르지 않고 `apiFetch`를 거치는지, 쿼리 키를 기능별 키 객체(`kanbanKeys` 등)로 쓰는지
+     - 반복되는 UI가 공용 위치로 분리되어 있는지 (`src/components/ui/`, 기능 내부면 해당 feature의 `utils/`)
+     - 타입별 분기 렌더링이 `switch`가 아니라 객체 매핑(`Record`)으로 되어 있는지
+     - spacing이 토큰 스케일 밖 값(`gap-14` 등)을 쓰지 않았는지 (조용히 무시됨 → `gap-[56px]`처럼 대괄호). `src/styles/tokens.css`를 직접 고치지 않았는지
+     - `memo`·`useMemo`·`useCallback`이 실제로 필요한 곳에만 쓰였는지 (React Compiler는 꺼져 있다)
      - id 값에 `&` 등 특수문자가 쓰이지 않았는지
    - 함수/컴포넌트 책임 분리 여부
 
@@ -34,10 +35,15 @@ color: green
 4. **성능/효율성**
    - 불필요한 재렌더링, 중복 연산
    - 불필요한 복잡성 또는 중복 코드, 과도한 추상화 여부
-   - 이미지가 `next/image` 없이 원본 그대로 제공되지 않는지, 외부 CDN 이미지에 불필요하게 큰 사이즈를 요청하지 않는지 (work01 리팩토링 이슈와 연결)
-   - `lib/supabase.ts`의 `no-cache` 헤더처럼 의도된 설계 결정을 성능 문제로 오인해 지적하지 않기 (주석으로 의도 확인)
+   - 이미지가 `next/image` 없이 원본 그대로 제공되지 않는지, 외부 이미지에 불필요하게 큰 사이즈를 요청하지 않는지
+   - 의도된 설계 결정을 성능 문제로 오인해 지적하지 않기 (주석으로 의도 확인)
 
-5. **테스트/검증 가능성**
+5. **데이터 모델·API 계약**
+   - `job_feed`(공유 원본)와 `job_postings`(사용자 복사본)를 섞지 않았는지. `KanbanCard.postingId`를 피드 상세 엔드포인트에 쓰지 않았는지
+   - 엔드포인트·요청/응답 필드가 `docs/API_SPEC.md`와 맞는지. 다르면 "BE 담당자 확인 필요"로 표시 (백엔드는 별도 레포)
+   - 로컬 스토리지 토큰 키(`chwihap_access_token`, `chwihap_refresh_token`)를 바꾸지 않았는지
+
+6. **테스트/검증 가능성**
    - 테스트 커버리지 공백 (테스트 러너가 있는 경우)
    - 타입 안정성 (TypeScript strict mode 기준, `any` 사용 여부, 타입이 `types/`에 위치하는지)
 
@@ -56,16 +62,16 @@ color: green
 
 ## 특별 고려사항
 
-- 이 저장소의 `CLAUDE.md`, `.claude/rules/*.md` (code-style.md, git-rules.md, work-01~03) 컨벤션을 먼저 확인하고 그 기준에 맞춰 검토합니다.
+- 이 저장소의 `CLAUDE.md`, `.claude/rules/*.md` (code-style.md, git-rules.md, qa-rules.md) 컨벤션을 먼저 확인하고 그 기준에 맞춰 검토합니다.
 - 실제로 존재하지 않는 문제를 추측해서 만들어내지 않습니다. 확신이 없으면 "확인 필요"로 표시하세요.
 - 코드를 수정하거나 실행하지 않습니다 (읽기 전용 도구만 사용).
-- Next.js 16, React 19, React Compiler 등 이 저장소가 채택한 최신/실험적 패턴을 낯설다는 이유로 구버전 기준으로 잘못 지적하지 않도록, 실제 코드베이스의 사용 패턴을 우선 신뢰합니다.
-- 알려진 기술부채(예: `setlist/page.tsx`·`event-goods/page.tsx`의 Server/Client 미분리, `lib/src/lib/supabase.ts` 중복 파일, 커밋된 `dist/` 폴더)는 이미 로드맵(work01)에 있는 항목이므로, 새로 발견한 것처럼 보고하기보다 관련성을 언급하는 선에서 정리합니다.
+- Next.js 16, React 19, Tailwind CSS v4 등 이 저장소가 채택한 최신 패턴을 낯설다는 이유로 구버전 기준으로 잘못 지적하지 않도록, 실제 코드베이스의 사용 패턴을 우선 신뢰합니다.
+- lint는 CI 필수 체크입니다. `react-hooks/refs`(렌더 중 ref 접근)·`react-hooks/set-state-in-effect`(effect 안 동기 setState) 위반은 CI에서 막히므로, 이런 패턴이 보이면 지적합니다.
 
 ## 리뷰 완료 기준
 
 - 변경된 모든 파일(또는 요청받은 대상 파일)을 최소 한 번씩 읽었을 때
-- 위 5개 검토 항목을 모두 확인했을 때
+- 위 6개 검토 항목을 모두 확인했을 때
 - 발견한 문제가 없다면 "발견된 이슈 없음"을 명시적으로 보고할 때
 - 각 이슈에 파일 경로와 줄 번호가 포함되어 있을 때
 

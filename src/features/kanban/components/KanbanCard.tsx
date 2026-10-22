@@ -146,9 +146,8 @@ export function KanbanCard({
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    // ⚠️ 드래그 중인 실제 카드는 DragOverlay가 보여주므로, 원래 자리의 카드는 완전히
-    // 숨겨서(0) 두 개가 겹쳐 보이지 않게 함.
-    opacity: isDragging ? 0 : 1,
+    // 놓일 자리를 보여주기 위해 드래그 중인 카드를 반투명으로 남긴다(HT-002).
+    opacity: isDragging ? 0.5 : 1,
   };
 
   return (

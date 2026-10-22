@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useKanbanBoard } from '@/features/kanban/api/useKanbanQuery';
 import {
@@ -47,8 +47,8 @@ export function DeadlineList() {
 
   // 이메일 알림의 "카드 보기" 링크(/deadlines?cardId=123)로 진입 시 해당 카드의
   // 상세 Drawer를 자동으로 연다. 데이터 로드 후 1회만 적용.
-  useEffect(() => {
-    if (hasAppliedCardIdParam || !data) return;
+  // effect의 추가 렌더 없이 데이터가 준비된 렌더에서 딥링크를 적용한다.
+  if (!hasAppliedCardIdParam && data) {
     const cardIdParam = searchParams.get('cardId');
     if (cardIdParam) {
       const cardId = Number(cardIdParam);
@@ -57,7 +57,7 @@ export function DeadlineList() {
       }
     }
     setHasAppliedCardIdParam(true);
-  }, [hasAppliedCardIdParam, data, searchParams, entries]);
+  }
 
   function handleEditCard(cardId: number) {
     const entry = findEntry(cardId);

@@ -7,6 +7,9 @@ export interface DeadlineCardEntry {
   stageName: string;
 }
 
+/** 그룹 강조 단계 — urgent: 오늘·내일(빨간색), past: 마감 지남(회색), default: 그 외 */
+export type DeadlineTone = 'urgent' | 'past' | 'default';
+
 export interface DeadlineGroupData {
   /** 그룹 키 — 마감일(YYYY-MM-DD) 기준 */
   key: string;
@@ -14,8 +17,8 @@ export interface DeadlineGroupData {
   label: string;
   /** 그룹 헤더 우측 D-day 라벨: "D-Day" | "D-1" | "D-10" */
   ddayLabel: string;
-  /** 오늘(D-Day)·내일(D-1) 여부 — true면 파란색 강조(헤더 텍스트, 카드 Divider) */
-  isUrgent: boolean;
+  /** 헤더 텍스트·카드 Divider 색상 단계 */
+  tone: DeadlineTone;
   cards: DeadlineCardEntry[];
 }
 
@@ -86,9 +89,10 @@ export function groupCardsByDeadline(entries: DeadlineCardEntry[]): DeadlineGrou
         key: dateKey,
         label,
         ddayLabel,
-        // 오늘(D-Day)·내일(D-1) 여부 — true면 파란색 강조(헤더 텍스트, 카드 Divider).
         // Figma "지원 마감일 메인"(node 101:17608) 확인 완료 — 오늘/내일만 강조, 그 외는 검정/회색.
-        isUrgent: diffDays <= 1,
+        // HT-005(사용성 개선): 강조색을 파란색 → 빨간색으로 바꾸면서, 기존 조건(diffDays <= 1)에
+        // 섞여 같이 강조되던 마감 지난 그룹은 임박 공고와 구분되도록 회색(past)으로 분리.
+        tone: diffDays < 0 ? 'past' : diffDays <= 1 ? 'urgent' : 'default',
         cards: [],
       });
     }
@@ -102,7 +106,7 @@ export function groupCardsByDeadline(entries: DeadlineCardEntry[]): DeadlineGrou
       key: 'always-hiring',
       label: '상시채용',
       ddayLabel: '',
-      isUrgent: false,
+      tone: 'default',
       cards: alwaysHiringEntries,
     });
   }

@@ -35,6 +35,7 @@ export function ScrapCard({ data, onRemoveScrap, onAddToKanban }: ScrapCardProps
       isExpired={isExpired}
       onToggleScrap={() => onRemoveScrap(data.jobPostingId)}
       onAddToKanban={() => onAddToKanban?.(data.jobPostingId)}
+      isKanbanRegistered={data.isKanbanRegistered}
     />
   );
 }

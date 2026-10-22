@@ -159,6 +159,27 @@ html:has(.landing-root) {
   }
 }
 
+/* 토스트 등장 (src/components/ui/toast.tsx, HT-009) — 아래에서 살짝 올라오며 페이드 인.
+   부모가 -translate-x-1/2로 가운데 정렬하므로, 애니메이션은 안쪽 요소의 Y축에만 건다. */
+@keyframes toast-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-toast-in {
+  animation: toast-slide-up 240ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-toast-in {
+    animation: none;
+  }
+}
+
 /* 카카오 로그인 로딩 스피너 (src/components/ui/spinner.tsx) */
 @keyframes spinner-dot {
   0%,

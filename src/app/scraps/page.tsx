@@ -99,6 +99,8 @@ const ScrapsPage: NextPage = () => {
   async function handleAddToKanban(jobPostingId: number) {
     try {
       await registerKanbanCard(jobPostingId);
+      // HT-001: 목록의 isKanbanRegistered를 다시 받아와 '지원 완료' 버튼으로 바꿈
+      refetch();
       queryClient.invalidateQueries({ queryKey: kanbanKeys.board() });
       setToastType('success');
       setToastMessage('지원 현황에 추가되었어요.');
@@ -108,6 +110,7 @@ const ScrapsPage: NextPage = () => {
         err instanceof ApiClientError &&
         (err.code === 'K003' || err.code === 'DUPLICATE_KANBAN_CARD')
       ) {
+        refetch();
         setToastMessage('이미 등록된 공고예요.');
       } else {
         console.error('칸반 등록 실패', err);

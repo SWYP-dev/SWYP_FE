@@ -21,6 +21,8 @@ interface JobCardProps {
   isScrapped: boolean;
   onToggleScrap?: () => void;
   onAddToKanban?: () => void;
+  /** 이미 지원 현황에 추가된 공고 — '지원 완료'로 표시하고 버튼을 비활성화 (HT-001) */
+  isKanbanRegistered?: boolean;
   /** 스크랩 카드에서 원본 공고가 마감/삭제된 경우 (PRD 5.3) — jobCategory 대신 안내 문구를 표시하고 흐리게 처리 */
   isExpired?: boolean;
 }
@@ -42,6 +44,7 @@ export function JobCard({
   isScrapped,
   onToggleScrap,
   onAddToKanban,
+  isKanbanRegistered = false,
   isExpired = false,
 }: JobCardProps) {
   const [imgError, setImgError] = useState(false);
@@ -140,13 +143,16 @@ export function JobCard({
               원본 링크 없음
             </Button>
           )}
+          {/* HT-001: 이미 추가한 공고인지 구분이 안 돼 중복 클릭이 생겨서, 추가된 공고는
+              '원본 링크 없음'과 같은 비활성 outline 버튼으로 바꿔 상태를 바로 보이게 함 */}
           <Button
             variant="outline"
             size="sm"
             className="w-full whitespace-nowrap"
             onClick={onAddToKanban}
+            disabled={isKanbanRegistered}
           >
-            지원 현황 추가
+            {isKanbanRegistered ? '지원 완료' : '지원 현황 추가'}
           </Button>
         </div>
       </div>

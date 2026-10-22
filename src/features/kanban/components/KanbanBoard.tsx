@@ -109,6 +109,8 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
   // 밖으로 나가도 잘리지 않게 하려는 목적 — KanbanCard.tsx 상단 주석 참고)
   const [activeDragCard, setActiveDragCard] = useState<KanbanCard | null>(null);
   const [activeDragWidth, setActiveDragWidth] = useState<number | null>(null);
+  // 카드 위에 있어도 놓일 컬럼을 강조하기 위해 별도로 추적한다(HT-002).
+  const [dragOverStageId, setDragOverStageId] = useState<number | null>(null);
 
   // fix: initialStages 변경 시 stages 동기화 — 컬럼 너비 변형 버그 수정 (버그2)
   // useEffect에서 setState를 호출하면 리렌더링이 한 번 더 발생해 깜빡임(컬럼 너비
@@ -154,6 +156,10 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
 
   function handleDragOver(event: DragOverEvent) {
     const { active, over } = event;
+    // 같은 컬럼 안에서 정렬하거나 대상 영역을 벗어날 때도 강조를 갱신한다(HT-002).
+    if (active.data.current?.type === 'card') {
+      setDragOverStageId(over?.data.current?.stageId ?? null);
+    }
     if (!over) return;
     if (active.data.current?.type === 'stage') return;
 
@@ -193,6 +199,7 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
 
   function handleDragEnd(event: DragEndEvent) {
     setActiveDragCard(null);
+    setDragOverStageId(null);
     setActiveDragWidth(null);
 
     const { active, over } = event;
@@ -456,6 +463,7 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
       onDragEnd={handleDragEnd}
       onDragCancel={() => {
         setActiveDragCard(null);
+        setDragOverStageId(null);
         setActiveDragWidth(null);
       }}
     >
@@ -469,6 +477,7 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
               <KanbanColumn
                 key={stage.id}
                 stage={stage}
+                isCardDropTarget={activeDragCard !== null && dragOverStageId === stage.id}
                 onRenameStage={(stageId, newName, position) => {
                   updateStageMutation.mutate(
                     { stageId, name: newName, position },

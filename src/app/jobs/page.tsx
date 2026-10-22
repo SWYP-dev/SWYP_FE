@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { Header } from '@/components/layout/header';
@@ -59,6 +59,10 @@ export default function FeedPage() {
   // 로드/갱신될 때마다 서버가 내려준 jobPostingId로 맵을 채워둠.
   const [scrapOverrides, setScrapOverrides] = useState<Record<number, boolean>>({});
   const [jobPostingIdMap, setJobPostingIdMap] = useState<Record<number, number>>({});
+  // HT-001: 지원 현황에 추가된 공고(feed id). 피드 응답(2.1)에 칸반 등록 여부 필드가 없어서
+  // 이 화면에서 추가에 성공했거나 '이미 등록됨' 응답을 받은 공고만 기억함 — 새로고침하면 초기화됨.
+  // TODO: 백엔드가 FeedItem에 isKanbanRegistered를 추가하면 응답값으로 교체.
+  const [registeredFeedIds, setRegisteredFeedIds] = useState<Set<number>>(new Set());
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
 
@@ -73,16 +77,21 @@ export default function FeedPage() {
     career: buildCareerParam(careerTags),
   });
 
-  useEffect(() => {
-    if (!data) return;
-    setJobPostingIdMap((prev) => {
-      const next = { ...prev };
-      data.items.forEach((item) => {
-        if (item.jobPostingId != null) next[item.id] = item.jobPostingId;
+  const [syncedData, setSyncedData] = useState<typeof data>(undefined);
+
+  // effect의 추가 렌더 없이 캐시된 첫 데이터와 이후 변경을 맵에 누적한다.
+  if (data !== syncedData) {
+    setSyncedData(data);
+    if (data) {
+      setJobPostingIdMap((prev) => {
+        const next = { ...prev };
+        data.items.forEach((item) => {
+          if (item.jobPostingId != null) next[item.id] = item.jobPostingId;
+        });
+        return next;
       });
-      return next;
-    });
-  }, [data]);
+    }
+  }
 
   async function handleToggleScrap(feedId: number, currentlyScrapped: boolean) {
     // ⚠️ [QA 반영] 비로그인 상태면 아이콘을 낙관적으로 채우지 않고 로그인 모달만 띄움.
@@ -136,6 +145,7 @@ export default function FeedPage() {
         // ⚠️ [QA 반영] 스크랩 처리 없이 바로 등록 (2.6) — 스크랩 탭에 노출되지 않음
         await registerKanbanCardDirect(feedId);
       }
+      setRegisteredFeedIds((prev) => new Set(prev).add(feedId));
       queryClient.invalidateQueries({ queryKey: kanbanKeys.board() });
       setToastType('success');
       setToastMessage('지원 현황에 추가되었어요.');
@@ -148,6 +158,7 @@ export default function FeedPage() {
         err instanceof ApiClientError &&
         (err.code === 'K003' || err.code === 'DUPLICATE_KANBAN_CARD')
       ) {
+        setRegisteredFeedIds((prev) => new Set(prev).add(feedId));
         setToastMessage('이미 등록된 공고예요.');
       } else {
         console.error('지원 현황 추가 실패', err);
@@ -265,6 +276,7 @@ export default function FeedPage() {
                         isScrapped={isScrapped}
                         onToggleScrap={() => handleToggleScrap(job.id, isScrapped)}
                         onAddToKanban={() => handleAddToKanban(job.id)}
+                        isKanbanRegistered={registeredFeedIds.has(job.id)}
                       />
                     );
                   })}
