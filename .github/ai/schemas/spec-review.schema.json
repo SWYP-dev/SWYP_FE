@@ -1,0 +1,77 @@
+{
+  "title": "spec-review",
+  "description": "구현 PR의 명세 대조 리뷰 결과 (docs/workflow/claude-codex-plan.md 10.1)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "verdict",
+    "spec_id",
+    "spec_merge_sha",
+    "reviewed_head_sha",
+    "criteria",
+    "blocking_issues",
+    "summary"
+  ],
+  "properties": {
+    "verdict": {
+      "type": "string",
+      "enum": ["pass", "fail"],
+      "description": "pass는 manual·ci가 아닌 모든 수용 기준이 met이고 blocking_issues가 비어 있을 때만"
+    },
+    "spec_id": { "type": "string" },
+    "spec_merge_sha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "reviewed_head_sha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "criteria": {
+      "type": "array",
+      "description": "명세에 정의된 수용 기준 전부, 정의된 순서대로 하나씩",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "status", "evidence"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^AC-[0-9]{2,}$" },
+          "status": {
+            "type": "string",
+            "enum": ["met", "not_met", "cannot_determine", "manual", "ci"],
+            "description": "manual은 명세에 [manual]로 표시된 기준에만, ci는 프롬프트의 CI 기준 목록에 있는 기준에만 쓴다"
+          },
+          "evidence": {
+            "type": "string",
+            "description": "판정 근거. 파일 경로와 줄 번호를 포함한다"
+          }
+        }
+      }
+    },
+    "blocking_issues": {
+      "type": "array",
+      "description": "머지를 막아야 하는 문제. 사소한 스타일 의견은 넣지 않는다",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["category", "file", "line", "description"],
+        "properties": {
+          "category": {
+            "type": "string",
+            "enum": [
+              "spec_mismatch",
+              "out_of_scope",
+              "bug",
+              "error_handling",
+              "security",
+              "compatibility",
+              "other"
+            ]
+          },
+          "file": { "type": "string" },
+          "line": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "줄 번호. 특정할 수 없으면 0"
+          },
+          "description": { "type": "string" }
+        }
+      }
+    },
+    "summary": { "type": "string", "description": "한국어 한두 문장 요약" }
+  }
+}
