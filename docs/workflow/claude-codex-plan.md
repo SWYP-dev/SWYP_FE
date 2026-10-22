@@ -165,14 +165,14 @@ OpenAI 공식 가이드: Astra = 가장 강력(고비용), GPT-6.1 Sol = 시간�
 | H-1  | OAuth 토큰 발급·Secret 등록 (0-4) | **별도 터미널**에서 `claude setup-token` → Settings → Secrets and variables → Actions. `!` 접두어로 실행하지 않는다(출력이 대화에 남는다) | `gh secret list -R SWYP-dev/SWYP_FE`에 `CLAUDE_CODE_OAUTH_TOKEN`만 보임                               | Step 2 전        | 🧑 ✅ (2026-10-22) |
 | H-2  | 공개 여부·플랜 (0-1)              | `gh repo view`, org 멤버십                                                                                                                | Public + org Free + org admin, ruleset 생성 가능                                                      | —                | ✅                 |
 | H-3  | Actions 설정                      | Settings → Actions → General                                                                                                              | Actions 켜짐, 모든 액션 허용, 기본 토큰 권한 `read`                                                   | —                | ✅                 |
-| H-4  | `develop` ruleset (10.4)          | Settings → Rules → Rulesets → `develop-protection`                                                                                        | Active, Bypass 비움, 삭제·강제 push 금지, PR 필수(승인 0), `pr-gate` 필수 + 최신화 요구               | Step 1 머지 직후 | 🧑                 |
-| H-5  | 차단 테스트 (0-2)                 | 🤖 `spec/bad-name` 브랜치에 `docs/specs/` 파일 1개로 PR → 🧑 머지 버튼 확인                                                               | `unknown`으로 `pr-gate` 실패, `mergeStateStatus` = `BLOCKED`, 우회 옵션 없음. 머지 없이 닫음          | H-4 직후         | 🧑🤖               |
-| H-6  | 워크플로우 동작 (0-3)             | Step 1 PR Checks 탭                                                                                                                       | `classify`·`ci`·`pr-gate` 실행 (`review`는 skipped. classify 실패는 0장 세팅 순서 주의 참고)          | Step 1 PR        | 🧑                 |
+| H-4  | `develop` ruleset (10.4)          | Settings → Rules → Rulesets → `develop-protection`                                                                                        | Active, Bypass 비움, 삭제·강제 push 금지, PR 필수(승인 0), `pr-gate` 필수 + 최신화 요구               | Step 1 머지 직후 | 🧑 ✅ (2026-10-22) |
+| H-5  | 차단 테스트 (0-2)                 | 🤖 `spec/bad-name` 브랜치에 `docs/specs/` 파일 1개로 PR → 🧑 머지 버튼 확인                                                               | `unknown`으로 `pr-gate` 실패, `mergeStateStatus` = `BLOCKED`, 우회 옵션 없음. 머지 없이 닫음          | H-4 직후         | 🧑🤖 ✅ (#201)     |
+| H-6  | 워크플로우 동작 (0-3)             | Step 1 PR Checks 탭                                                                                                                       | `classify`·`ci`·`pr-gate` 실행 (`review`는 skipped. classify 실패는 0장 세팅 순서 주의 참고)          | Step 1 PR        | 🧑 ✅ (#200)       |
 | H-7  | 로컬 `gh` 신원 (0-5)              | `gh auth status`, `gh api user --jq .login`                                                                                               | `xodudgks`, `GH_TOKEN`·`GITHUB_TOKEN` 비어 있음. 파일럿에서 `create-impl-pr`의 "실행 신원"으로 재확인 | —                | ✅                 |
 | H-8  | Codex 패널 (0-6)                  | Cursor의 Codex 패널 → 계정 표시, 입력창 방패 메뉴                                                                                         | ChatGPT 계정 표시, 로컬 실행, `on-request`, 네트워크 명령에 승인 창이 뜸                              | Step 3 전        | 🧑                 |
 | H-9  | OS와 스크립트 (0-7)               | 로컬                                                                                                                                      | Node v24.12.0(CI 24.x), git 2.55, gh 2.92. `.mjs`라 PowerShell에서 실행                               | —                | ✅                 |
 | H-10 | Claude 전용 worktree              | `git worktree add --detach C:\Users\PC\worktrees\swyp-claude origin/develop` → `npm ci`                                                   | `git worktree list`에 표시                                                                            | Step 1 전        | 🤖 ✅ (2026-10-22) |
-| H-11 | 라벨 `spec`·`impl`·`risk-high`    | 🤖 `gh label create`                                                                                                                      | `gh label list`에 3개                                                                                 | Step 1           | 🤖                 |
+| H-11 | 라벨 `spec`·`impl`·`risk-high`    | 🤖 `gh label create`                                                                                                                      | `gh label list`에 3개                                                                                 | Step 1           | 🤖 ✅ (2026-10-22) |
 
 ---
 
@@ -597,10 +597,10 @@ review:
 
 | 시나리오                                 | 기대 결과                                       | 이 저장소 확인 위치                                                     |
 | ---------------------------------------- | ----------------------------------------------- | ----------------------------------------------------------------------- |
-| 필수 체크가 실패한 PR 머지 시도          | 머지 차단 (Phase 0)                             | H-5                                                                     |
-| 예약 접두사 형식이 틀린 브랜치 PR        | `unknown`으로 실패 (일반 브랜치는 CI만)         | H-5 (`spec/bad-name`)                                                   |
+| 필수 체크가 실패한 PR 머지 시도          | 머지 차단 (Phase 0)                             | ✅ #201 `BLOCKED`, 우회 옵션 없음                                       |
+| 예약 접두사 형식이 틀린 브랜치 PR        | `unknown`으로 실패 (일반 브랜치는 CI만)         | ✅ #201 (`unknown` → `pr-gate` 실패)                                    |
 | 일반 브랜치 PR                           | CI만으로 통과                                   | Step 2 PR (base 스크립트로 처음 정상 판정)                              |
-| lint 오류가 있어도 `ci` 성공             | `lint` 잡만 실패 표시, `ci`·`pr-gate` 통과      | Step 1·2 PR (develop 기존 오류 7건) — `workflow_call` 동작 [미확인]     |
+| lint 오류가 있어도 `ci` 성공             | `lint` 잡만 실패 표시, `ci`·`pr-gate` 통과      | ✅ #200 (pr-gate 로그 `ci: success`)                                    |
 | 정상 `spec` PR 머지                      | Codex 프롬프트 코멘트 게시                      | 파일럿 spec PR                                                          |
 | 같은 워크플로우 재실행                   | 코멘트 중복 없이 갱신                           | 파일럿 후 `spec-merged-notify` 수동 실행                                |
 | `spec` PR을 머지 없이 닫음               | 코멘트 없음                                     | Step 3 이후 테스트 spec PR 1건 (닫기만)                                 |
@@ -630,34 +630,36 @@ review:
 
 ### 13.3 채울 값
 
-| 항목                  | 값 (2026-10-22 확인)                                                                                                                                              |
-| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 저장소 플랜·보호 규칙 | `SWYP-dev/SWYP_FE`, Public, org Free. 기존 ruleset은 `main` 1개(disabled). `develop-protection`은 Step 1 머지 후 설정(H-4)                                        |
-| 협업자                | `xodudgks`(admin), BE·디자인 3명. FE PR·머지는 `xodudgks` 단독                                                                                                    |
-| 명세 경로·정책 경로   | 명세 `docs/specs/**`, 정책 경로는 10.3 표 그대로                                                                                                                  |
-| 기존 Claude 커맨드    | `.claude/commands/git/commit.md`, `.claude/commands/git/push.md` (설계 커맨드는 Step 3에서 `design-pr.md` 추가)                                                   |
-| Claude 인증 방식      | OAuth 토큰 (`CLAUDE_CODE_OAUTH_TOKEN`, Claude 구독). 2026-10-22 등록                                                                                              |
-| 테스트 명령           | 테스트 러너 없음. CI 필수: `npm run typecheck`(`tsc --noEmit`, Step 1에서 스크립트 추가)·`npm run build`. 현황 표시: `npm run lint`                               |
-| `CI_COMMANDS`         | `{ root: ['npm run typecheck', 'npm run build'] }` — `ci.yml`의 필수 잡과 `spec-check.test.mjs`가 대조(`continue-on-error` 잡 제외)                               |
-| 월 예산               | 추가 과금 없음 (구독 한도 사용). 비용 통제는 `--max-turns`·`timeout-minutes`·리뷰 입력 축소                                                                       |
-| 스크립트 형식         | Node(`.mjs`). 로컬 Windows와 CI ubuntu에서 같은 규칙 모듈 공유                                                                                                    |
-| 기본 브랜치·기존 CI   | 기본 브랜치 `develop`(로컬 `origin/HEAD`는 `git remote set-head origin -a`로 갱신). 기존 워크플로우는 `build-tokens.yml`(`chore/design-system` push용, 충돌 없음) |
-| `gh` 신원 (0-5)       | `xodudgks`, `GH_TOKEN`·`GITHUB_TOKEN` 비어 있음 — 통과                                                                                                            |
-| Actions 설정          | 켜짐, 모든 액션 허용, 기본 토큰 권한 `read`, SHA 고정 강제 없음                                                                                                   |
-| 작업 공간             | Codex·사용자: `C:\Users\PC\OneDrive\Dokumen\swyp` / Claude: `C:\Users\PC\worktrees\swyp-claude`                                                                   |
+| 항목                  | 값 (2026-10-22 확인)                                                                                                                                               |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 저장소 플랜·보호 규칙 | `SWYP-dev/SWYP_FE`, Public, org Free. 기존 ruleset은 `main` 1개(disabled). `develop-protection` 2026-10-22 설정(H-4, `pr-gate` 출처 GitHub Actions)                |
+| 협업자                | `xodudgks`(admin), BE·디자인 3명. FE PR·머지는 `xodudgks` 단독                                                                                                     |
+| 명세 경로·정책 경로   | 명세 `docs/specs/**`, 정책 경로는 10.3 표 그대로                                                                                                                   |
+| 기존 Claude 커맨드    | `.claude/commands/git/commit.md`, `.claude/commands/git/push.md` (설계 커맨드는 Step 3에서 `design-pr.md` 추가)                                                    |
+| Claude 인증 방식      | OAuth 토큰 (`CLAUDE_CODE_OAUTH_TOKEN`, Claude 구독). 2026-10-22 등록                                                                                               |
+| 테스트 명령           | 테스트 러너 없음. CI 필수: `npm run typecheck`(`tsc --noEmit`, Step 1에서 스크립트 추가)·`npm run build`. 현황 표시: `npm run lint`                                |
+| `CI_COMMANDS`         | `{ root: ['npm run typecheck', 'npm run build'] }` — `ci.yml`의 필수 잡과 `spec-check.test.mjs`가 대조(`continue-on-error` 잡 제외)                                |
+| 월 예산               | 추가 과금 없음 (구독 한도 사용). 비용 통제는 `--max-turns`·`timeout-minutes`·리뷰 입력 축소                                                                        |
+| 스크립트 형식         | Node(`.mjs`). 로컬 Windows와 CI ubuntu에서 같은 규칙 모듈 공유                                                                                                     |
+| npm                   | CI(Node 24.21)와 로컬 모두 npm 11.19.0. 2026-10-22 `package-lock.json`을 11.19 기준으로 동기화(#200, 버전 변경 없음). 로컬 npm을 바꾸면 lock이 다시 어긋날 수 있다 |
+| 기본 브랜치·기존 CI   | 기본 브랜치 `develop`(로컬 `origin/HEAD`는 `git remote set-head origin -a`로 갱신). 기존 워크플로우는 `build-tokens.yml`(`chore/design-system` push용, 충돌 없음)  |
+| `gh` 신원 (0-5)       | `xodudgks`, `GH_TOKEN`·`GITHUB_TOKEN` 비어 있음 — 통과                                                                                                             |
+| Actions 설정          | 켜짐, 모든 액션 허용, 기본 토큰 권한 `read`, SHA 고정 강제 없음                                                                                                    |
+| 작업 공간             | Codex·사용자: `C:\Users\PC\OneDrive\Dokumen\swyp` / Claude: `C:\Users\PC\worktrees\swyp-claude`                                                                    |
 
 ### 13.4 확인하지 못한 항목 [미확인]
 
-| 항목                                                                                                 | 확인 방법                                                            |
-| ---------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| `workflow_call`로 부른 `ci.yml`의 `continue-on-error` 잡이 실패해도 호출 잡(`ci`) 결과가 success인지 | Step 1 PR의 `ci` 결과 (lint 오류 7건으로 자연히 시험됨)              |
-| `NEXT_PUBLIC_*` 없이 CI build가 통과하는지                                                           | Step 1 PR. 실패하면 `ci.yml`에 더미 값 추가                          |
-| Vercel이 `SWYP-dev/SWYP_FE` PR에 프리뷰를 만드는지                                                   | Vercel 대시보드 → swyp-fe → Settings → Git → Connected Repository    |
-| org 단위 Actions 정책                                                                                | org Settings → Actions → General (`gh` 토큰에 `admin:org` 권한 없음) |
-| 패널 Codex의 로컬 실행과 PR 작성자                                                                   | 파일럿 후 `gh pr view --json author`                                 |
-| ChatGPT 구독별 Codex 사용 한도, 패널 모델 선택 UI                                                    | 패널 설정과 구독 안내                                                |
-| 요금표(Claude 구독 한도, GitHub Actions Public 저장소)                                               | 도입 시점의 공식 안내                                                |
-| PR 생성 직후 라벨이 이벤트에 실리는지                                                                | 분류가 브랜치명·경로 기준이라 영향 작음. 참고용 확인                 |
+| 항목                                                                                                                       | 확인 방법                                                            |
+| -------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| `workflow_call`로 부른 `ci.yml`의 `continue-on-error` 잡이 실패해도 호출 잡(`ci`) 결과가 success인지                       | ✅ 확인 (#200): lint 실패에도 `ci` success                           |
+| `NEXT_PUBLIC_*` 없이 CI build가 통과하는지                                                                                 | ✅ 확인 (#200): 더미 env 없이 통과                                   |
+| Vercel이 `SWYP-dev/SWYP_FE` PR에 프리뷰를 만드는지                                                                         | ✅ 확인 (#200): PR마다 Vercel 프리뷰 생성                            |
+| org 단위 Actions 정책                                                                                                      | org Settings → Actions → General (`gh` 토큰에 `admin:org` 권한 없음) |
+| 패널 Codex의 로컬 실행과 PR 작성자                                                                                         | 파일럿 후 `gh pr view --json author`                                 |
+| ChatGPT 구독별 Codex 사용 한도, 패널 모델 선택 UI                                                                          | 패널 설정과 구독 안내                                                |
+| 요금표(Claude 구독 한도, GitHub Actions Public 저장소)                                                                     | 도입 시점의 공식 안내                                                |
+| PR 생성 직후 라벨이 이벤트에 실리는지                                                                                      | 분류가 브랜치명·경로 기준이라 영향 작음. 참고용 확인                 |
+| ruleset의 `require_extra_approval_for_unattributed_changes: true`(API에 보이는 기본값)가 단독 운영 PR 머지에 영향을 주는지 | Step 2 PR 머지와 파일럿 impl PR 머지에서 확인                        |
 
 실제 YAML을 배포할 때는 선택한 Action 커밋의 정의와 다시 대조한다.
 
@@ -685,20 +687,20 @@ review:
 
 상태 칸은 진행하면서 직접 갱신한다. ⬜ 대기 · ◐ 진행 중 · ✅ 완료
 
-| Phase | 작업                                                                                                                                                                         | 완료 기준                                                                                     | 담당      | 상태            |
-| ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | --------- | --------------- |
-| 0     | 4.1 H-1~H-3·H-7·H-9·H-10                                                                                                                                                     | 통과 기준 충족                                                                                | 사람      | ✅ (2026-10-22) |
-| 0     | 4.1 H-8 Codex 패널                                                                                                                                                           | ChatGPT 로그인·로컬·`on-request` 확인                                                         | 사람      | ⬜              |
-| 1     | Step 1 `chore/ai-pr-validation` + 라벨(H-11)                                                                                                                                 | PR에서 `classify`·`ci`·`pr-gate` 실행 (H-6), 머지                                             | 구현+사람 | ⬜              |
-| 0     | `develop` ruleset (H-4)                                                                                                                                                      | 10.4 표대로 설정                                                                              | 사람      | ⬜              |
-| 0     | 필수 체크 차단 테스트 (H-5)                                                                                                                                                  | `spec/bad-name` PR이 `BLOCKED`, 우회 옵션 없음                                                | 사람+구현 | ⬜              |
-| 1     | Step 2 `chore/ai-claude-review`                                                                                                                                              | 이 PR의 `pr-gate`가 base 스크립트로 통과, 머지                                                | 구현+사람 | ⬜              |
-| 2     | Step 3 `chore/ai-spec-flow`                                                                                                                                                  | `pr-gate` 통과, develop의 `AGENTS.md`·`CLAUDE.md`가 새 흐름                                   | 구현+사람 | ⬜              |
-| 2     | OneDrive 체크아웃 정리                                                                                                                                                       | 복사해 둔 파이프라인 파일 제거, `AGENTS.md` 되돌림 후 develop 최신화                          | 사람+구현 | ⬜              |
-| 2     | 파일럿 `CLEANUP-0001` (`tatus` 삭제) end-to-end                                                                                                                              | 13.2 파일럿 항목 통과, PR 작성자 확인, 리뷰 실측 기록                                         | 사람+구현 | ⬜              |
-| 3     | 비용 실측 후 `--max-turns`·`timeout-minutes` 조정                                                                                                                            | 구독 한도 안에서 운영                                                                         | 사람      | ⬜              |
-| 3     | **lint 필수화**: 기존 lint 오류 7건 정리 후 `ci.yml`의 `continue-on-error` 제거 + `CI_COMMANDS`에 `npm run lint` 추가 + `spec-check.test.mjs` 대조 확인 — **한 PR에서 함께** | 세 곳이 일치하고 `pr-gate` 통과. 명세 템플릿의 "lint 통과를 AC로 쓰지 말 것" 문구도 함께 제거 | 사람+구현 | ⬜              |
-| 3     | 첫 실제 기능에 새 흐름 적용                                                                                                                                                  | 대상 결정 후 기록                                                                             | 사람      | ⬜ (대상 미정)  |
+| Phase | 작업                                                                                                                                                                         | 완료 기준                                                                                     | 담당      | 상태                        |
+| ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | --------- | --------------------------- |
+| 0     | 4.1 H-1~H-3·H-7·H-9·H-10                                                                                                                                                     | 통과 기준 충족                                                                                | 사람      | ✅ (2026-10-22)             |
+| 0     | 4.1 H-8 Codex 패널                                                                                                                                                           | ChatGPT 로그인·로컬·`on-request` 확인                                                         | 사람      | ⬜                          |
+| 1     | Step 1 `chore/ai-pr-validation` + 라벨(H-11)                                                                                                                                 | PR에서 `classify`·`ci`·`pr-gate` 실행 (H-6), 머지                                             | 구현+사람 | ✅ (#200, lock 동기화 포함) |
+| 0     | `develop` ruleset (H-4)                                                                                                                                                      | 10.4 표대로 설정                                                                              | 사람      | ✅ (2026-10-22)             |
+| 0     | 필수 체크 차단 테스트 (H-5)                                                                                                                                                  | `spec/bad-name` PR이 `BLOCKED`, 우회 옵션 없음                                                | 사람+구현 | ✅ (#201 `BLOCKED`)         |
+| 1     | Step 2 `chore/ai-claude-review`                                                                                                                                              | 이 PR의 `pr-gate`가 base 스크립트로 통과, 머지                                                | 구현+사람 | ⬜                          |
+| 2     | Step 3 `chore/ai-spec-flow`                                                                                                                                                  | `pr-gate` 통과, develop의 `AGENTS.md`·`CLAUDE.md`가 새 흐름                                   | 구현+사람 | ⬜                          |
+| 2     | OneDrive 체크아웃 정리                                                                                                                                                       | 복사해 둔 파이프라인 파일 제거, `AGENTS.md` 되돌림 후 develop 최신화                          | 사람+구현 | ⬜                          |
+| 2     | 파일럿 `CLEANUP-0001` (`tatus` 삭제) end-to-end                                                                                                                              | 13.2 파일럿 항목 통과, PR 작성자 확인, 리뷰 실측 기록                                         | 사람+구현 | ⬜                          |
+| 3     | 비용 실측 후 `--max-turns`·`timeout-minutes` 조정                                                                                                                            | 구독 한도 안에서 운영                                                                         | 사람      | ⬜                          |
+| 3     | **lint 필수화**: 기존 lint 오류 7건 정리 후 `ci.yml`의 `continue-on-error` 제거 + `CI_COMMANDS`에 `npm run lint` 추가 + `spec-check.test.mjs` 대조 확인 — **한 PR에서 함께** | 세 곳이 일치하고 `pr-gate` 통과. 명세 템플릿의 "lint 통과를 AC로 쓰지 말 것" 문구도 함께 제거 | 사람+구현 | ⬜                          |
+| 3     | 첫 실제 기능에 새 흐름 적용                                                                                                                                                  | 대상 결정 후 기록                                                                             | 사람      | ⬜ (대상 미정)              |
 
 ### 파일럿 결과
 
