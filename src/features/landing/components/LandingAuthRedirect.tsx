@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/features/auth/store/authStore';
+import { track } from '@/lib/posthog';
 
 /**
  * 로그인 상태로 랜딩(/)에 들어오면 서비스 화면(/jobs)으로 돌려보낸다.
@@ -18,10 +19,18 @@ export default function LandingAuthRedirect({ children }: { children: ReactNode 
   const router = useRouter();
   const hasHydrated = useAuthStore((s) => s.hasHydrated);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const hasTrackedLandingRef = useRef(false);
 
   useEffect(() => {
     if (hasHydrated && isAuthenticated) router.replace('/jobs');
   }, [hasHydrated, isAuthenticated, router]);
+
+  // 실제 비로그인 랜딩 노출만 세고, StrictMode의 effect 재실행은 중복 집계하지 않는다.
+  useEffect(() => {
+    if (!hasHydrated || isAuthenticated || hasTrackedLandingRef.current) return;
+    hasTrackedLandingRef.current = true;
+    track('landing_viewed');
+  }, [hasHydrated, isAuthenticated]);
 
   // hydration 전이거나 이미 로그인이면 랜딩 콘텐츠를 그리지 않음 (블랭크)
   if (!hasHydrated || isAuthenticated) return null;
