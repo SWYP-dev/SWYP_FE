@@ -1,0 +1,87 @@
+# 명세 머지 알림 (docs/workflow/claude-codex-plan.md 6.4 · 8.2)
+#
+# spec/ 브랜치 PR이 develop에 머지되면, 그 PR에 Codex용 프롬프트 코멘트를 게시·갱신한다.
+# - AI 호출·비밀값 없음. 코멘트에는 검증한 명세 ID·경로·PR 번호·merge SHA·revision만 넣는다 (scripts/ai/spec-notify.mjs)
+# - 머지 없이 닫힌 spec PR은 if 조건에서 걸러져 아무것도 하지 않는다
+# - 스크립트·템플릿은 실행 커밋(develop 쪽)에서, 명세 내용은 merge SHA에서 읽는다
+# - 수동 실행(workflow_dispatch)으로 이미 머지된 spec PR의 코멘트를 다시 게시·갱신할 수 있다 (같은 마커면 갱신, 중복 없음)
+name: Spec Merged Notify
+
+on:
+  pull_request:
+    branches: [develop]
+    types: [closed]
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: 머지된 spec PR 번호
+        required: true
+        type: number
+
+permissions:
+  contents: read
+
+jobs:
+  notify:
+    name: notify
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'spec/'))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: write
+    concurrency:
+      group: spec-notify-${{ github.event.pull_request.number || inputs.pr }}
+      cancel-in-progress: false
+    steps:
+      # PR 이벤트면 이벤트 값을, 수동 실행이면 GitHub에서 조회한 값을 쓴다. 형식 검증은 스크립트가 한다
+      - name: 대상 PR 확인
+        id: target
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_PR: ${{ inputs.pr }}
+          EVENT_PR: ${{ github.event.pull_request.number }}
+          EVENT_BRANCH: ${{ github.event.pull_request.head.ref }}
+          EVENT_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+        run: |
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            info=$(gh pr view "$INPUT_PR" --repo "$GITHUB_REPOSITORY" --json state,baseRefName,headRefName,mergeCommit)
+            [ "$(jq -r .state <<<"$info")" = "MERGED" ] || { echo "::error::PR #$INPUT_PR은 머지되지 않았다"; exit 1; }
+            [ "$(jq -r .baseRefName <<<"$info")" = "develop" ] || { echo "::error::PR #$INPUT_PR의 base가 develop이 아니다"; exit 1; }
+            {
+              echo "pr=$INPUT_PR"
+              echo "branch=$(jq -r .headRefName <<<"$info")"
+              echo "sha=$(jq -r .mergeCommit.oid <<<"$info")"
+            } >> "$GITHUB_OUTPUT"
+          else
+            {
+              echo "pr=$EVENT_PR"
+              echo "branch=$EVENT_BRANCH"
+              echo "sha=$EVENT_SHA"
+            } >> "$GITHUB_OUTPUT"
+          fi
+
+      # 스크립트·템플릿은 실행 시점의 커밋(PR 이벤트면 머지 커밋, 수동 실행이면 develop)에서 쓰고,
+      # 명세는 merge SHA에서 git show로 읽는다 — 이 워크플로우보다 먼저 머지된 spec PR도 다룰 수 있게
+      - name: 체크아웃
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Node 설정
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24.x
+
+      # 브랜치명은 PR 작성자가 정하는 값이라 쉘에 직접 끼워 넣지 않고 env로 넘긴다
+      - name: Codex 프롬프트 코멘트 게시·갱신
+        env:
+          BRANCH: ${{ steps.target.outputs.branch }}
+          PR_NUMBER: ${{ steps.target.outputs.pr }}
+          MERGE_SHA: ${{ steps.target.outputs.sha }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/ai/spec-notify.mjs --branch "$BRANCH" --pr "$PR_NUMBER" --merge-sha "$MERGE_SHA"
