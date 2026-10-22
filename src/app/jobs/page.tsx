@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { Header } from '@/components/layout/header';
@@ -73,16 +73,21 @@ export default function FeedPage() {
     career: buildCareerParam(careerTags),
   });
 
-  useEffect(() => {
-    if (!data) return;
-    setJobPostingIdMap((prev) => {
-      const next = { ...prev };
-      data.items.forEach((item) => {
-        if (item.jobPostingId != null) next[item.id] = item.jobPostingId;
+  const [syncedData, setSyncedData] = useState<typeof data>(undefined);
+
+  // effect의 추가 렌더 없이 캐시된 첫 데이터와 이후 변경을 맵에 누적한다.
+  if (data !== syncedData) {
+    setSyncedData(data);
+    if (data) {
+      setJobPostingIdMap((prev) => {
+        const next = { ...prev };
+        data.items.forEach((item) => {
+          if (item.jobPostingId != null) next[item.id] = item.jobPostingId;
+        });
+        return next;
       });
-      return next;
-    });
-  }, [data]);
+    }
+  }
 
   async function handleToggleScrap(feedId: number, currentlyScrapped: boolean) {
     // ⚠️ [QA 반영] 비로그인 상태면 아이콘을 낙관적으로 채우지 않고 로그인 모달만 띄움.
