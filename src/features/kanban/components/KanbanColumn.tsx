@@ -42,6 +42,7 @@ function validateStageName(trimmed: string): string | undefined {
 interface KanbanColumnProps {
   stage: KanbanStage;
   isDraft?: boolean;
+  isCardDropTarget?: boolean;
   draftName?: string;
   onDraftNameChange?: (name: string) => void;
   onRenameStage?: (stageId: number, newName: string, position: number) => void;
@@ -57,6 +58,7 @@ interface KanbanColumnProps {
 export function KanbanColumn({
   stage,
   isDraft = false,
+  isCardDropTarget = false,
   draftName: draftNameProp,
   onDraftNameChange,
   onRenameStage,
@@ -186,7 +188,8 @@ export function KanbanColumn({
       ref={setColumnRef}
       style={stageDragStyle}
       className={`flex h-full min-w-[296px] flex-1 flex-col items-start rounded-2xl transition-colors ${
-        isOver ? 'bg-fill-primary-light' : 'bg-surface-card'
+        // 카드가 충돌 대상일 때도 놓일 컬럼을 강조한다(HT-002).
+        isOver || isCardDropTarget ? 'bg-fill-primary-light' : 'bg-surface-card'
       }`}
     >
       {/* Header */}
@@ -265,7 +268,12 @@ export function KanbanColumn({
             >
               <MoreHorizontalIcon size={20} />
             </button>
-            <Popover isOpen={isMenuOpen} onClose={closeMenu} triggerRef={menuTriggerRef} align="end">
+            <Popover
+              isOpen={isMenuOpen}
+              onClose={closeMenu}
+              triggerRef={menuTriggerRef}
+              align="end"
+            >
               <DropdownMenu
                 items={[
                   { label: '이름 수정', disabled: isLocked },
