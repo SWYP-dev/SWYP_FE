@@ -169,7 +169,7 @@ OpenAI 공식 가이드: Astra = 가장 강력(고비용), GPT-6.1 Sol = 시간�
 | H-5  | 차단 테스트 (0-2)                 | 🤖 `spec/bad-name` 브랜치에 `docs/specs/` 파일 1개로 PR → 🧑 머지 버튼 확인                                                               | `unknown`으로 `pr-gate` 실패, `mergeStateStatus` = `BLOCKED`, 우회 옵션 없음. 머지 없이 닫음          | H-4 직후         | 🧑🤖 ✅ (#201)     |
 | H-6  | 워크플로우 동작 (0-3)             | Step 1 PR Checks 탭                                                                                                                       | `classify`·`ci`·`pr-gate` 실행 (`review`는 skipped. classify 실패는 0장 세팅 순서 주의 참고)          | Step 1 PR        | 🧑 ✅ (#200)       |
 | H-7  | 로컬 `gh` 신원 (0-5)              | `gh auth status`, `gh api user --jq .login`                                                                                               | `xodudgks`, `GH_TOKEN`·`GITHUB_TOKEN` 비어 있음. 파일럿에서 `create-impl-pr`의 "실행 신원"으로 재확인 | —                | ✅                 |
-| H-8  | Codex 패널 (0-6)                  | Cursor의 Codex 패널 → 계정 표시, 입력창 방패 메뉴                                                                                         | ChatGPT 계정 표시, 로컬 실행, `on-request`, 네트워크 명령에 승인 창이 뜸                              | Step 3 전        | 🧑                 |
+| H-8  | Codex 패널 (0-6)                  | Cursor의 Codex 패널 → 계정 표시, 입력창 방패 메뉴                                                                                         | ChatGPT 계정 표시, 로컬 실행, `on-request`, 네트워크 명령에 승인 창이 뜸                              | Step 3 전        | 🧑 ✅ (파일럿)     |
 | H-9  | OS와 스크립트 (0-7)               | 로컬                                                                                                                                      | Node v24.12.0(CI 24.x), git 2.55, gh 2.92. `.mjs`라 PowerShell에서 실행                               | —                | ✅                 |
 | H-10 | Claude 전용 worktree              | `git worktree add --detach C:\Users\PC\worktrees\swyp-claude origin/develop` → `npm ci`                                                   | `git worktree list`에 표시                                                                            | Step 1 전        | 🤖 ✅ (2026-10-22) |
 | H-11 | 라벨 `spec`·`impl`·`risk-high`    | 🤖 `gh label create`                                                                                                                      | `gh label list`에 3개                                                                                 | Step 1           | 🤖 ✅ (2026-10-22) |
@@ -599,17 +599,17 @@ review:
 | ---------------------------------------- | ----------------------------------------------- | ----------------------------------------------------------------------- |
 | 필수 체크가 실패한 PR 머지 시도          | 머지 차단 (Phase 0)                             | ✅ #201 `BLOCKED`, 우회 옵션 없음                                       |
 | 예약 접두사 형식이 틀린 브랜치 PR        | `unknown`으로 실패 (일반 브랜치는 CI만)         | ✅ #201 (`unknown` → `pr-gate` 실패)                                    |
-| 일반 브랜치 PR                           | CI만으로 통과                                   | Step 2 PR (base 스크립트로 처음 정상 판정)                              |
+| 일반 브랜치 PR                           | CI만으로 통과                                   | ✅ #202·#203 (`general`)                                                |
 | lint 오류가 있어도 `ci` 성공             | `lint` 잡만 실패 표시, `ci`·`pr-gate` 통과      | ✅ #200 (pr-gate 로그 `ci: success`)                                    |
-| 정상 `spec` PR 머지                      | Codex 프롬프트 코멘트 게시                      | 파일럿 spec PR                                                          |
-| 같은 워크플로우 재실행                   | 코멘트 중복 없이 갱신                           | 파일럿 후 `spec-merged-notify` 수동 실행                                |
+| 정상 `spec` PR 머지                      | Codex 프롬프트 코멘트 게시                      | ✅ #204 (머지 6초 뒤 `github-actions[bot]` 코멘트 1건)                  |
+| 같은 워크플로우 재실행                   | 코멘트 중복 없이 갱신                           | 파일럿에서는 하지 않음. 다음 spec PR에서 선택 확인                      |
 | `spec` PR을 머지 없이 닫음               | 코멘트 없음                                     | Step 3 이후 테스트 spec PR 1건 (닫기만)                                 |
-| `ready` 판정 후 구현                     | `impl/` 브랜치 PR 생성                          | 파일럿                                                                  |
-| `[manual]` 기준에서 Codex 멈춤           | 확인 요청 출력 후 대기                          | 파일럿 AC-04                                                            |
-| 패널에서 만든 `impl` PR                  | 승인 대기 없이 CI·리뷰 자동 실행, 작성자가 본인 | 파일럿 (`gh pr view --json author`)                                     |
-| 정상 Claude 리뷰                         | `review` 성공 → `pr-gate` 통과                  | 파일럿 impl PR (턴 수·시간 기록)                                        |
-| Claude 출력 취소                         | `pr-gate` 실패, `BLOCKED`                       | 파일럿 impl PR 첫 실행을 취소 → 닫고 다시 열어 재실행                   |
-| merge SHA 대조 (머지 방식 미지정)        | 평소 방식으로 spec PR을 머지해도 대조 통과      | 파일럿 impl PR                                                          |
+| `ready` 판정 후 구현                     | `impl/` 브랜치 PR 생성                          | ✅ #205 (`impl/CLEANUP-0001-spec-204`)                                  |
+| `[manual]` 기준에서 Codex 멈춤           | 확인 요청 출력 후 대기                          | 파일럿 AC-04는 명세가 "PR 생성 후 확인"으로 정해 PR 체크박스로 처리     |
+| 패널에서 만든 `impl` PR                  | 승인 대기 없이 CI·리뷰 자동 실행, 작성자가 본인 | ✅ #205 (작성자 `xodudgks`, 자동 실행)                                  |
+| 정상 Claude 리뷰                         | `review` 성공 → `pr-gate` 통과                  | ✅ #205 (sonnet, 리뷰 스텝 약 21초·잡 32초, 턴 수는 로그에 없음)        |
+| Claude 출력 취소                         | `pr-gate` 실패, `BLOCKED`                       | 파일럿에서는 하지 않음. 다음 impl PR에서 선택 확인                      |
+| merge SHA 대조 (머지 방식 미지정)        | 평소 방식으로 spec PR을 머지해도 대조 통과      | ✅ #205 (#204를 merge commit으로 머지, `7ce84fd` 대조 통과)             |
 | `needs_spec_revision` (revision 0·1)     | 구현 없이 Claude용 요청문                       | 파일럿에서 발생하면 기록 (일부러 만들지 않음)                           |
 | 같은 revision으로 보완 PR (이전 +1 아님) | `spec` PR 검사 실패                             | 단위 테스트                                                             |
 | `spec/` PR에 코드 파일 포함              | `pr-gate` 실패                                  | 단위 테스트                                                             |
@@ -649,17 +649,17 @@ review:
 
 ### 13.4 확인하지 못한 항목 [미확인]
 
-| 항목                                                                                                                       | 확인 방법                                                               |
-| -------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| `workflow_call`로 부른 `ci.yml`의 `continue-on-error` 잡이 실패해도 호출 잡(`ci`) 결과가 success인지                       | ✅ 확인 (#200): lint 실패에도 `ci` success                              |
-| `NEXT_PUBLIC_*` 없이 CI build가 통과하는지                                                                                 | ✅ 확인 (#200): 더미 env 없이 통과                                      |
-| Vercel이 `SWYP-dev/SWYP_FE` PR에 프리뷰를 만드는지                                                                         | ✅ 확인 (#200): PR마다 Vercel 프리뷰 생성                               |
-| org 단위 Actions 정책                                                                                                      | org Settings → Actions → General (`gh` 토큰에 `admin:org` 권한 없음)    |
-| 패널 Codex의 로컬 실행과 PR 작성자                                                                                         | 파일럿 후 `gh pr view --json author`                                    |
-| ChatGPT 구독별 Codex 사용 한도, 패널 모델 선택 UI                                                                          | 패널 설정과 구독 안내                                                   |
-| 요금표(Claude 구독 한도, GitHub Actions Public 저장소)                                                                     | 도입 시점의 공식 안내                                                   |
-| PR 생성 직후 라벨이 이벤트에 실리는지                                                                                      | 분류가 브랜치명·경로 기준이라 영향 작음. 참고용 확인                    |
-| ruleset의 `require_extra_approval_for_unattributed_changes: true`(API에 보이는 기본값)가 단독 운영 PR 머지에 영향을 주는지 | 일반 PR은 영향 없음 확인 (#202 머지). 파일럿 impl PR 머지에서 다시 확인 |
+| 항목                                                                                                                       | 확인 방법                                                            |
+| -------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| `workflow_call`로 부른 `ci.yml`의 `continue-on-error` 잡이 실패해도 호출 잡(`ci`) 결과가 success인지                       | ✅ 확인 (#200): lint 실패에도 `ci` success                           |
+| `NEXT_PUBLIC_*` 없이 CI build가 통과하는지                                                                                 | ✅ 확인 (#200): 더미 env 없이 통과                                   |
+| Vercel이 `SWYP-dev/SWYP_FE` PR에 프리뷰를 만드는지                                                                         | ✅ 확인 (#200): PR마다 Vercel 프리뷰 생성                            |
+| org 단위 Actions 정책                                                                                                      | org Settings → Actions → General (`gh` 토큰에 `admin:org` 권한 없음) |
+| 패널 Codex의 로컬 실행과 PR 작성자                                                                                         | ✅ 확인 (#205): 로컬 실행, 작성자 `xodudgks`                         |
+| ChatGPT 구독별 Codex 사용 한도, 패널 모델 선택 UI                                                                          | 패널 설정과 구독 안내                                                |
+| 요금표(Claude 구독 한도, GitHub Actions Public 저장소)                                                                     | 도입 시점의 공식 안내                                                |
+| PR 생성 직후 라벨이 이벤트에 실리는지                                                                                      | 분류가 브랜치명·경로 기준이라 영향 작음. 참고용 확인                 |
+| ruleset의 `require_extra_approval_for_unattributed_changes: true`(API에 보이는 기본값)가 단독 운영 PR 머지에 영향을 주는지 | ✅ 확인: 일반 PR(#202)·impl PR(#205) 모두 머지에 영향 없음           |
 
 실제 YAML을 배포할 때는 선택한 Action 커밋의 정의와 다시 대조한다.
 
@@ -690,18 +690,35 @@ review:
 | Phase | 작업                                                                                                                                                                         | 완료 기준                                                                                     | 담당      | 상태                        |
 | ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | --------- | --------------------------- |
 | 0     | 4.1 H-1~H-3·H-7·H-9·H-10                                                                                                                                                     | 통과 기준 충족                                                                                | 사람      | ✅ (2026-10-22)             |
-| 0     | 4.1 H-8 Codex 패널                                                                                                                                                           | ChatGPT 로그인·로컬·`on-request` 확인                                                         | 사람      | ⬜                          |
+| 0     | 4.1 H-8 Codex 패널                                                                                                                                                           | ChatGPT 로그인·로컬·`on-request` 확인                                                         | 사람      | ✅ (파일럿)                 |
 | 1     | Step 1 `chore/ai-pr-validation` + 라벨(H-11)                                                                                                                                 | PR에서 `classify`·`ci`·`pr-gate` 실행 (H-6), 머지                                             | 구현+사람 | ✅ (#200, lock 동기화 포함) |
 | 0     | `develop` ruleset (H-4)                                                                                                                                                      | 10.4 표대로 설정                                                                              | 사람      | ✅ (2026-10-22)             |
 | 0     | 필수 체크 차단 테스트 (H-5)                                                                                                                                                  | `spec/bad-name` PR이 `BLOCKED`, 우회 옵션 없음                                                | 사람+구현 | ✅ (#201 `BLOCKED`)         |
 | 1     | Step 2 `chore/ai-claude-review`                                                                                                                                              | 이 PR의 `pr-gate`가 base 스크립트로 통과, 머지                                                | 구현+사람 | ✅ (#202, `general` 통과)   |
-| 2     | Step 3 `chore/ai-spec-flow`                                                                                                                                                  | `pr-gate` 통과, develop의 `AGENTS.md`·`CLAUDE.md`가 새 흐름                                   | 구현+사람 | ⬜                          |
-| 2     | OneDrive 체크아웃 정리                                                                                                                                                       | 복사해 둔 파이프라인 파일 제거, `AGENTS.md` 되돌림 후 develop 최신화                          | 사람+구현 | ⬜                          |
-| 2     | 파일럿 `CLEANUP-0001` (`tatus` 삭제) end-to-end                                                                                                                              | 13.2 파일럿 항목 통과, PR 작성자 확인, 리뷰 실측 기록                                         | 사람+구현 | ⬜                          |
+| 2     | Step 3 `chore/ai-spec-flow`                                                                                                                                                  | `pr-gate` 통과, develop의 `AGENTS.md`·`CLAUDE.md`가 새 흐름                                   | 구현+사람 | ✅ (#203)                   |
+| 2     | OneDrive 체크아웃 정리                                                                                                                                                       | 복사해 둔 파이프라인 파일 제거, `AGENTS.md` 되돌림 후 develop 최신화                          | 사람+구현 | ✅ (2026-10-22)             |
+| 2     | 파일럿 `CLEANUP-0001` (`tatus` 삭제) end-to-end                                                                                                                              | 13.2 파일럿 항목 통과, PR 작성자 확인, 리뷰 실측 기록                                         | 사람+구현 | ✅ (#204·#205)              |
 | 3     | 비용 실측 후 `--max-turns`·`timeout-minutes` 조정                                                                                                                            | 구독 한도 안에서 운영                                                                         | 사람      | ⬜                          |
 | 3     | **lint 필수화**: 기존 lint 오류 7건 정리 후 `ci.yml`의 `continue-on-error` 제거 + `CI_COMMANDS`에 `npm run lint` 추가 + `spec-check.test.mjs` 대조 확인 — **한 PR에서 함께** | 세 곳이 일치하고 `pr-gate` 통과. 명세 템플릿의 "lint 통과를 AC로 쓰지 말 것" 문구도 함께 제거 | 사람+구현 | ⬜                          |
 | 3     | 첫 실제 기능에 새 흐름 적용                                                                                                                                                  | 대상 결정 후 기록                                                                             | 사람      | ⬜ (대상 미정)              |
 
+lint 필수화 전까지 PR의 "PR Validation" 체크는 `lint` 잡 실패로 전체가 X로 표시된다. 머지 가능 여부는 `pr-gate`만 보면 된다 (mergeState `UNSTABLE`은 머지 가능).
+
 ### 파일럿 결과
 
-파일럿을 마친 뒤 단계별 결과(명세 PR 번호, Codex 판정, 구현 PR, 리뷰 턴 수·시간, 배운 점)를 이 절에 기록한다.
+`CLEANUP-0001` (`tatus` 삭제, 2026-10-22). 수정 지시 없이 한 번에 끝났다.
+
+| 단계          | 결과                                                                                                                                   |
+| ------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| 명세 PR       | #204 `spec/CLEANUP-0001-r0`, `pr-gate` 통과(`spec`). merge commit으로 머지(`7ce84fd`)                                                  |
+| 프롬프트 게시 | `spec-merged-notify` 성공, 머지 6초 뒤 코멘트 1건                                                                                      |
+| Codex         | Cursor 패널, 로컬 실행, 승인 정책 "승인 요청"(`on-request`), GPT-6.1 Sol Medium. 판정 `ready` → 커밋 1개 → `create-impl-pr` 승인 후 PR |
+| 구현 PR       | #205 `impl/CLEANUP-0001-spec-204`, 작성자 `xodudgks`, 변경 `tatus` 삭제 1건                                                            |
+| Claude 리뷰   | sonnet, `pass` (AC-01·02 met, AC-03 ci, AC-04 manual). 리뷰 스텝 약 21초, 잡 32초. 턴 수는 로그에 나오지 않음                          |
+| `pr-gate`     | `분류: impl / classify: success / ci: success / review: success`. 사용자가 AC-04 확인 후 머지(`146f6a6`)                               |
+
+배운 점
+
+1. Codex 샌드박스는 전역 ignore(`~/.config/git/ignore`)를 읽지 못한다. 그래서 거기에만 등록된 `.claude/settings.local.json`이 "만들지 않은 untracked 파일"로 보여 준비 1단계에서 멈췄다. 로컬 전용 파일은 레포 `.gitignore`에 넣는다 (이 기록과 같은 PR에서 추가)
+2. 테스트 계획에는 실행 시점("구현 후, 커밋 전")을 적는다. 기대값이 구현 후 기준이라 시점이 없으면 읽는 사람이 헷갈린다
+3. 리뷰 1회가 30초 안팎이라 지금의 `--max-turns`·`timeout-minutes`는 조정할 필요가 없다. 비용 실측(Phase 3)은 실제 기능 몇 건 뒤에 다시 본다

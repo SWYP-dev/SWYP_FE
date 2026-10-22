@@ -51,3 +51,6 @@ next-env.d.ts
 
 # Codex PR 본문 초안 등 파이프라인 임시 파일
 .ai-tmp/
+
+# Claude Code 로컬 권한 설정 (Codex 샌드박스는 전역 ignore를 읽지 못한다)
+.claude/settings.local.json
