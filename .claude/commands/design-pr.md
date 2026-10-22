@@ -30,8 +30,8 @@ argument-hint: <요구사항 설명 | Codex 보완 요청문 | 명세 ID>
    - 목록 형식 `- AC-01 ...`, 번호 두 자리 이상, 중복 없음. 줄 맨 앞의 `- AC-xx`만 정의로 센다
    - 코드를 읽거나 명령을 실행해 참·거짓을 가릴 수 있게 쓴다
    - 사람이 직접 확인해야 하면 `[manual]`을 붙이고, 무엇을 어떻게 확인하는지 테스트 계획에 적는다
-   - 빌드·타입 검사 통과는 **CI 기준** 형식 한 줄로 쓴다: `- AC-xx \`npm run typecheck\`·\`npm run build\`가 통과한다`. 명령은 CI 필수 잡이 실행하는 것만(`scripts/ai/spec-file.mjs`의 `CI_COMMANDS`). 이 기준은 같은 head의 ci 잡이 판정하고 Claude 리뷰는 판정하지 않는다. 다른 주장을 섞거나 CI가 실행하지 않는 명령을 넣으면 일반 기준이 되어 정적 리뷰가 판단 불가로 남긴다
-   - **lint 통과·`npm test`는 수용 기준으로 쓰지 않는다** (lint는 기존 오류 때문에 CI 필수가 아니고, 테스트 러너는 없다)
+   - 빌드·타입 검사·lint 통과는 **CI 기준** 형식 한 줄로 쓴다: `- AC-xx \`npm run typecheck\`·\`npm run build\`·\`npm run lint\`가 통과한다`. 명령은 CI 필수 잡이 실행하는 것만(`scripts/ai/spec-file.mjs`의 `CI_COMMANDS`). 이 기준은 같은 head의 ci 잡이 판정하고 Claude 리뷰는 판정하지 않는다. 다른 주장을 섞거나 CI가 실행하지 않는 명령을 넣으면 일반 기준이 되어 정적 리뷰가 판단 불가로 남긴다
+   - **`npm test`는 수용 기준으로 쓰지 않는다** (테스트 러너가 없다)
    - API는 `docs/API_SPEC.md`에 있는 엔드포인트·필드만 쓴다. API가 없거나 바뀔 예정이면 설계 결정에 "BE 의존"과 mock 위치를 적고 수용 기준은 mock 기준으로 쓴다
    - `[manual]`의 확인 방법은 "Vercel 프리뷰 또는 로컬 `npm run dev`"에서 어느 화면의 무엇을 보는지로 쓴다
    - 테스트 계획의 명령은 Codex가 **커밋하기 전에** 실행한다. 커밋 후에만 결과가 나오는 명령(`git diff develop...HEAD` 등)은 쓰지 않고, 인덱스·작업 트리 기준(`git diff --cached --name-status origin/develop`, `git status --short`)으로 쓴다. 비교 기준은 로컬 `develop`이 아니라 `origin/develop`

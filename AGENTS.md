@@ -72,6 +72,6 @@ This version has breaking changes — APIs, conventions, and file structure may 
 | 프론트엔드 (Next.js 16.2) | 루트 `src/` | `npm run dev` (3000) | `npm run typecheck`, `npm run build`, `npm run lint` |
 
 - 경로 별칭: `@/*` → `src/*`
-- 테스트 러너가 없다. `npm run typecheck`·`npm run build`와 로컬 실행(`npm run dev`)으로 검증한다
-- `npm run lint`는 develop에 기존 오류가 있어 CI에서 필수가 아니다. 그래도 실행해서 **내가 바꾼 파일에 새 오류를 더하지 않는다**
+- 테스트 러너가 없다. `npm run typecheck`·`npm run build`·`npm run lint`와 로컬 실행(`npm run dev`)으로 검증한다
+- `npm run lint`도 CI 필수 체크다. 오류가 하나라도 있으면 `pr-gate`가 실패한다. 규칙을 끄거나 `eslint-disable`로 우회하지 않는다
 - 기능 코드는 `src/features/<기능>/` 아래에 둔다 (구조는 `.claude/rules/code-style.md`)

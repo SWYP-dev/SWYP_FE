@@ -14,7 +14,7 @@
 //
 // CI 기준: 문장 전체가 "(루트에서) <CI가 실행하는 명령들>이 통과한다" 한 가지뿐인 기준이다.
 //   예) - AC-03 `npm run typecheck`·`npm run build`가 통과한다
-// 이 저장소는 단일 앱이라 범위는 루트뿐이다. lint는 CI 필수가 아니라서(현황 표시만) CI 기준이 될 수 없다.
+// 이 저장소는 단일 앱이라 범위는 루트뿐이다. 테스트 러너가 없어 `npm test`는 CI 기준이 될 수 없다.
 // 같은 head의 ci 잡이 실제로 실행해 판정하므로, 읽기 전용 Claude 리뷰는 판정하지 않는다(status "ci").
 // 형식이 조금이라도 다르거나(다른 주장이 섞임) CI가 실행하지 않는 명령이 있으면 일반 기준으로 남는다.
 
@@ -28,9 +28,9 @@ const AC_DEFINITION =
   /^[ \t]*(?:#{1,6}[ \t]+\**|[-*+][ \t]+(?:\[[ xX]\][ \t]+)?\**|\|[ \t]*\**|\*\*)(AC-[0-9]{2,})(?=[ \t*|:.]|$)(.*)$/gm;
 
 // .github/workflows/ci.yml의 필수 잡 npm 명령 (범위 → 명령). ci.yml을 바꾸면 함께 고친다 — spec-check.test.mjs가 대조한다
-// continue-on-error 잡(lint)은 게이트를 막지 않으므로 넣지 않는다. lint를 필수로 올릴 때 여기·ci.yml·테스트를 함께 고친다
+// continue-on-error 잡은 게이트를 막지 않으므로 넣지 않는다 (지금은 해당 잡 없음)
 export const CI_COMMANDS = {
-  root: ['npm run typecheck', 'npm run build'],
+  root: ['npm run typecheck', 'npm run build', 'npm run lint'],
 };
 const CI_CRITERION =
   /^\s*(?:루트\s*(?:에서|폴더에서)?\s*)?((?:`npm (?:run [a-z:-]+|test)`\s*(?:[·,]|와|과)?\s*)+)(?:이|가)?\s*(?:모두\s*)?통과한다\.?\s*$/;

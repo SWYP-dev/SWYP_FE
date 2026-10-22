@@ -66,7 +66,7 @@ color: green
 - 실제로 존재하지 않는 문제를 추측해서 만들어내지 않습니다. 확신이 없으면 "확인 필요"로 표시하세요.
 - 코드를 수정하거나 실행하지 않습니다 (읽기 전용 도구만 사용).
 - Next.js 16, React 19, Tailwind CSS v4 등 이 저장소가 채택한 최신 패턴을 낯설다는 이유로 구버전 기준으로 잘못 지적하지 않도록, 실제 코드베이스의 사용 패턴을 우선 신뢰합니다.
-- 알려진 기술부채(예: develop의 기존 lint 오류 7건 — 렌더 중 ref 접근, effect 안 setState)는 새로 발견한 것처럼 보고하기보다 관련성을 언급하는 선에서 정리합니다.
+- lint는 CI 필수 체크입니다. `react-hooks/refs`(렌더 중 ref 접근)·`react-hooks/set-state-in-effect`(effect 안 동기 setState) 위반은 CI에서 막히므로, 이런 패턴이 보이면 지적합니다.
 
 ## 리뷰 완료 기준
 
