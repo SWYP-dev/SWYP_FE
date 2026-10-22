@@ -4,7 +4,7 @@
 #   classify — 브랜치명 + 실제 변경 경로로 분류 (scripts/ai/classify-pr.mjs)
 #              spec/·impl/ = 파이프라인 예약 접두사(형식이 틀리면 unknown), 그 외 = general
 #              spec이면 명세 형식·revision 검사(spec-check.mjs), impl이면 본문 메타데이터 대조(impl-meta.mjs)까지
-#   ci       — ci.yml을 workflow_call로 호출 (typecheck · build 필수, lint는 현황 표시)
+#   ci       — ci.yml을 workflow_call로 호출 (typecheck · build · lint 필수)
 #   review   — impl이고 메타데이터 대조를 통과했을 때만 Claude 명세 대조 리뷰 (claude-code-action, 읽기 전용)
 #   pr-gate  — 위 결과를 분류별 규칙으로 최종 판정. if: always() 라서 앞 잡이 실패·취소돼도 반드시 실행되고 실패로 끝난다
 #

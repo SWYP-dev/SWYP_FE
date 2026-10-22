@@ -17,7 +17,7 @@
 - **패키지 매니저**: `npm`
 - **구조**: 단일 앱(루트 `src/`). 백엔드는 별도 레포(`https://api.chwihap.com`)이며 이 레포에는 없다
 - **명령어**: `npm run dev`, `npm run build`, `npm run typecheck`, `npm run lint`, `npm run format:check`
-- **CI 필수 체크**: `pr-gate` (typecheck·build 포함). lint는 기존 오류 정리 전까지 현황 표시만 한다 (`docs/workflow/claude-codex-plan.md` 진행 표)
+- **CI 필수 체크**: `pr-gate` (typecheck·build·lint 포함). lint 규칙을 끄거나 `eslint-disable`로 우회하지 않는다
 - **쓰지 않는 라이브러리**: 이 프로젝트는 shadcn/ui·zod·react-hook-form을 쓰지 않는다. 명세에 명시된 경우에만 도입한다 (글로벌 CLAUDE.md의 기술 스택 목록보다 이 줄이 우선한다)
 
 ## 🎨 코딩 컨벤션

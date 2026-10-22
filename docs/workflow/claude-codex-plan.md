@@ -18,23 +18,23 @@
 
 계획 검토 후 사용자가 확정한 값이다. 아래 본문과 다르면 이 절이 우선한다.
 
-| #   | 항목                | 확정                                                                                                                                                                                                                                   |
-| --- | ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | 협업 형태           | FE 레포는 `xodudgks` 단독으로 PR을 올리고 머지한다. 승인 필수·CODEOWNERS를 쓰지 않는다. 다른 협업자(BE·디자인)도 ruleset의 적용을 받는다                                                                                               |
-| 2   | 저장소 구조         | 단일 Next.js 앱(루트 `src/`). 백엔드는 별도 레포(`https://api.chwihap.com`)라 이 레포에서 API 계약을 바꿀 수 없다                                                                                                                      |
-| 3   | 명세 경로           | `docs/specs/`. 단위 명세는 `docs/specs/<SPEC_ID>.md`(대문자 ID, frontmatter 검사 대상), 그 외 파일(`README.md` 등)은 관련 문서로 취급                                                                                                  |
-| 4   | 브랜치 접두사       | `spec/`·`impl/`만 파이프라인 예약 접두사. 그 외 브랜치는 기존 관행(`feature/ fix/ design/ docs/ chore/ refactor/ hotfix/`)을 유지하고 `general`로 분류해 CI만 요구                                                                     |
-| 5   | CI 구조             | `ci.yml`을 새로 만든다(`workflow_call` + `develop` push). 잡은 `typecheck`·`build`가 필수, `lint`는 `continue-on-error: true`로 현황만 표시한다. `pr-validation.yml`이 호출한다. 비밀값은 `review` 잡에만 준다                         |
-| 6   | lint                | develop에 기존 오류 7건(렌더 중 ref 접근·effect 안 setState)이 있어 필수 체크에서 뺀다. `CI_COMMANDS`에도 넣지 않고, 명세 템플릿은 lint 통과를 수용 기준으로 쓰지 못하게 한다. 필수로 올릴 때는 15장 해당 행대로 한 PR에서 함께 바꾼다 |
-| 7   | build               | CI에서 실행한다. `NEXT_PUBLIC_*` 없이 빌드가 실패하면 더미 값을 `env:`로 준다(시크릿 아님)                                                                                                                                             |
-| 8   | 사람 작업 수용 기준 | 명세에 `AC-xx [manual]`로 표기. 확인 방법은 "Vercel 프리뷰 또는 로컬 `npm run dev`". Codex는 그 지점에서 멈추고 확인 요청을 출력한다. Claude 리뷰는 `[manual]`을 판정에서 빼고 PR 체크리스트로 남긴다                                  |
-| 9   | BE 의존 기능        | API가 없거나 바뀔 예정이면 명세에 "BE 의존"을 적고 수용 기준은 mock 기준으로 쓴다. API 계약 변경이 필요하면 PR 본문에 "BE 담당자 확인 필요"로 남긴다                                                                                   |
-| 10  | Codex 범위          | 구현 → 커밋 → `create-impl-pr`로 **PR 생성까지**. PR 체크 확인과 머지는 사용자가 한다. impl PR 본문은 `.github/PULL_REQUEST_TEMPLATE.md` 섹션 + `## 수용 기준`·`## 테스트`                                                             |
-| 11  | PR 생성·머지        | 머지는 항상 사용자. Claude는 `/design-pr`의 spec PR만 연다. 일반 PR은 사용자(`/git:push` 포함), 구현 PR은 `create-impl-pr`(사용자 승인). 머지 방식은 정하지 않고 파일럿에서 merge SHA 대조가 통과하는지만 확인한다                     |
-| 12  | Claude 작업 공간    | 별도 `git worktree` `C:\Users\PC\worktrees\swyp-claude` (OneDrive 밖). Codex·사용자는 OneDrive 체크아웃을 쓴다                                                                                                                         |
-| 13  | Claude 리뷰 인증    | `CLAUDE_CODE_OAUTH_TOKEN` (`claude setup-token`을 별도 터미널에서 실행해 사용자가 직접 발급·등록, 2026-10-22 등록). 구독 한도를 쓰므로 추가 API 과금 없음. `ANTHROPIC_API_KEY`는 쓰지 않는다                                           |
-| 14  | Codex 환경          | Cursor의 Codex 패널(`openai.chatgpt` 확장), ChatGPT 로그인, 로컬 실행, 승인 정책 「요청 시」(`on-request`), 승인은 사용자 직접(`auto_review` 사용 금지). `gh`·`git push`에는 "항상 허용"을 주지 않는다                                 |
-| 15  | 전환 시점           | Step 1~4(파이프라인 구축 + 파일럿)를 먼저 끝낸다. 이후 첫 실제 기능은 미정(15장)                                                                                                                                                       |
+| #   | 항목                | 확정                                                                                                                                                                                                                                                                          |
+| --- | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | 협업 형태           | FE 레포는 `xodudgks` 단독으로 PR을 올리고 머지한다. 승인 필수·CODEOWNERS를 쓰지 않는다. 다른 협업자(BE·디자인)도 ruleset의 적용을 받는다                                                                                                                                      |
+| 2   | 저장소 구조         | 단일 Next.js 앱(루트 `src/`). 백엔드는 별도 레포(`https://api.chwihap.com`)라 이 레포에서 API 계약을 바꿀 수 없다                                                                                                                                                             |
+| 3   | 명세 경로           | `docs/specs/`. 단위 명세는 `docs/specs/<SPEC_ID>.md`(대문자 ID, frontmatter 검사 대상), 그 외 파일(`README.md` 등)은 관련 문서로 취급                                                                                                                                         |
+| 4   | 브랜치 접두사       | `spec/`·`impl/`만 파이프라인 예약 접두사. 그 외 브랜치는 기존 관행(`feature/ fix/ design/ docs/ chore/ refactor/ hotfix/`)을 유지하고 `general`로 분류해 CI만 요구                                                                                                            |
+| 5   | CI 구조             | `ci.yml`을 새로 만든다(`workflow_call` + `develop` push). 잡은 `typecheck`·`build`·`lint` 모두 필수다(lint는 #208 이후 필수, 0장 #6). `pr-validation.yml`이 호출한다. 비밀값은 `review` 잡에만 준다                                                                           |
+| 6   | lint                | 처음에는 develop의 기존 오류 7건(렌더 중 ref 접근·effect 안 setState) 때문에 현황 표시만 했다. `LINT-0001`(#207·#208)로 오류를 0건으로 만든 뒤 필수로 올렸다: `ci.yml` `continue-on-error` 제거, `CI_COMMANDS`에 `npm run lint` 추가, 명세 템플릿에서 lint를 CI 기준으로 허용 |
+| 7   | build               | CI에서 실행한다. `NEXT_PUBLIC_*` 없이 빌드가 실패하면 더미 값을 `env:`로 준다(시크릿 아님)                                                                                                                                                                                    |
+| 8   | 사람 작업 수용 기준 | 명세에 `AC-xx [manual]`로 표기. 확인 방법은 "Vercel 프리뷰 또는 로컬 `npm run dev`". Codex는 그 지점에서 멈추고 확인 요청을 출력한다. Claude 리뷰는 `[manual]`을 판정에서 빼고 PR 체크리스트로 남긴다                                                                         |
+| 9   | BE 의존 기능        | API가 없거나 바뀔 예정이면 명세에 "BE 의존"을 적고 수용 기준은 mock 기준으로 쓴다. API 계약 변경이 필요하면 PR 본문에 "BE 담당자 확인 필요"로 남긴다                                                                                                                          |
+| 10  | Codex 범위          | 구현 → 커밋 → `create-impl-pr`로 **PR 생성까지**. PR 체크 확인과 머지는 사용자가 한다. impl PR 본문은 `.github/PULL_REQUEST_TEMPLATE.md` 섹션 + `## 수용 기준`·`## 테스트`                                                                                                    |
+| 11  | PR 생성·머지        | 머지는 항상 사용자. Claude는 `/design-pr`의 spec PR만 연다. 일반 PR은 사용자(`/git:push` 포함), 구현 PR은 `create-impl-pr`(사용자 승인). 머지 방식은 정하지 않고 파일럿에서 merge SHA 대조가 통과하는지만 확인한다                                                            |
+| 12  | Claude 작업 공간    | 별도 `git worktree` `C:\Users\PC\worktrees\swyp-claude` (OneDrive 밖). Codex·사용자는 OneDrive 체크아웃을 쓴다                                                                                                                                                                |
+| 13  | Claude 리뷰 인증    | `CLAUDE_CODE_OAUTH_TOKEN` (`claude setup-token`을 별도 터미널에서 실행해 사용자가 직접 발급·등록, 2026-10-22 등록). 구독 한도를 쓰므로 추가 API 과금 없음. `ANTHROPIC_API_KEY`는 쓰지 않는다                                                                                  |
+| 14  | Codex 환경          | Cursor의 Codex 패널(`openai.chatgpt` 확장), ChatGPT 로그인, 로컬 실행, 승인 정책 「요청 시」(`on-request`), 승인은 사용자 직접(`auto_review` 사용 금지). `gh`·`git push`에는 "항상 허용"을 주지 않는다                                                                        |
+| 15  | 전환 시점           | Step 1~4(파이프라인 구축 + 파일럿)를 먼저 끝낸다. 이후 첫 실제 기능은 미정(15장)                                                                                                                                                                                              |
 
 ### 세팅 순서
 
@@ -344,7 +344,7 @@ permissions:
 | 작업       | 내용                                                                                                    |
 | ---------- | ------------------------------------------------------------------------------------------------------- |
 | `classify` | 브랜치 접두사와 변경 파일 경로로 분류 (`spec` / `impl` / `general` / 예약 접두사 형식 위반)             |
-| `ci`       | `ci.yml` 호출. `typecheck`·`build` 필수, `lint`는 현황 표시(0장 #6). 테스트 러너 없음. 모든 대상 PR     |
+| `ci`       | `ci.yml` 호출. `typecheck`·`build`·`lint` 필수(0장 #6). 테스트 러너 없음. 모든 대상 PR                  |
 | `review`   | `classify`가 `impl`일 때만 Claude 명세 대조 리뷰 (10.1). **실행되면 매번 새로 수행** (결과 재사용 없음) |
 | `pr-gate`  | `needs: [classify, ci, review]`, `if: always()`. 분류별 규칙으로 최종 판정 (10.2)                       |
 
@@ -587,7 +587,7 @@ review:
 1. **Phase 0**: 4장·4.1 점검. H-5(필수 체크 차단)를 통과하기 전에는 Step 2로 넘어가지 않는다.
 2. **Phase 1: 검증 파이프라인** (Step 1·2) — `classify`·`ci`·`pr-gate`를 먼저 넣고(Step 1) ruleset·차단 테스트로 실패 체크가 머지를 막는지 확인 → 리뷰 프롬프트·스키마·검증 스크립트(Step 2). 리뷰의 실제 실행 확인은 Step 4로 미룬다(0장 세팅 순서 주의).
 3. **Phase 2: 명세·구현 연결** (Step 3·4) — `/design-pr`, `spec-merged-notify.yml`, 프롬프트 템플릿, `create-impl-pr`, `AGENTS.md`·`CLAUDE.md` → 파일럿 `CLEANUP-0001`로 끝까지 실행.
-4. **Phase 3 (선택)**: lint 필수화, `develop` 푸시 시 통합 점검, 리뷰 결과 재사용 캐시, 보완 루프 빈도가 높으면 명세 템플릿 개선.
+4. **Phase 3 (선택)**: lint 필수화(✅ #207~), `develop` 푸시 시 통합 점검, 리뷰 결과 재사용 캐시, 보완 루프 빈도가 높으면 명세 템플릿 개선.
 
 각 Step의 PR은 일반 브랜치(`chore/ai-*`)라 `general`로 분류되어 CI만 필수다. 정책 경로라서 내용은 사람이 직접 검토한다.
 
@@ -600,9 +600,9 @@ review:
 | 필수 체크가 실패한 PR 머지 시도          | 머지 차단 (Phase 0)                             | ✅ #201 `BLOCKED`, 우회 옵션 없음                                       |
 | 예약 접두사 형식이 틀린 브랜치 PR        | `unknown`으로 실패 (일반 브랜치는 CI만)         | ✅ #201 (`unknown` → `pr-gate` 실패)                                    |
 | 일반 브랜치 PR                           | CI만으로 통과                                   | ✅ #202·#203 (`general`)                                                |
-| lint 오류가 있어도 `ci` 성공             | `lint` 잡만 실패 표시, `ci`·`pr-gate` 통과      | ✅ #200 (pr-gate 로그 `ci: success`)                                    |
+| lint 오류가 있어도 `ci` 성공             | `lint` 잡만 실패 표시, `ci`·`pr-gate` 통과      | ✅ #200 (pr-gate 로그 `ci: success`). lint 필수화 후에는 해당 없음      |
 | 정상 `spec` PR 머지                      | Codex 프롬프트 코멘트 게시                      | ✅ #204 (머지 6초 뒤 `github-actions[bot]` 코멘트 1건)                  |
-| 같은 워크플로우 재실행                   | 코멘트 중복 없이 갱신                           | 파일럿에서는 하지 않음. 다음 spec PR에서 선택 확인                      |
+| 같은 워크플로우 재실행                   | 코멘트 중복 없이 갱신                           | ✅ #207 (재실행 attempt 2 성공, 코멘트 1건 유지·수정 시각만 갱신)       |
 | `spec` PR을 머지 없이 닫음               | 코멘트 없음                                     | Step 3 이후 테스트 spec PR 1건 (닫기만)                                 |
 | `ready` 판정 후 구현                     | `impl/` 브랜치 PR 생성                          | ✅ #205 (`impl/CLEANUP-0001-spec-204`)                                  |
 | `[manual]` 기준에서 Codex 멈춤           | 확인 요청 출력 후 대기                          | 파일럿 AC-04는 명세가 "PR 생성 후 확인"으로 정해 PR 체크박스로 처리     |
@@ -637,7 +637,7 @@ review:
 | 명세 경로·정책 경로   | 명세 `docs/specs/**`, 정책 경로는 10.3 표 그대로                                                                                                                   |
 | 기존 Claude 커맨드    | `.claude/commands/git/commit.md`, `.claude/commands/git/push.md` (설계 커맨드는 Step 3에서 `design-pr.md` 추가)                                                    |
 | Claude 인증 방식      | OAuth 토큰 (`CLAUDE_CODE_OAUTH_TOKEN`, Claude 구독). 2026-10-22 등록                                                                                               |
-| 테스트 명령           | 테스트 러너 없음. CI 필수: `npm run typecheck`(`tsc --noEmit`, Step 1에서 스크립트 추가)·`npm run build`. 현황 표시: `npm run lint`                                |
+| 테스트 명령           | 테스트 러너 없음. CI 필수: `npm run typecheck`(`tsc --noEmit`, Step 1에서 스크립트 추가)·`npm run build`·`npm run lint`                                            |
 | `CI_COMMANDS`         | `{ root: ['npm run typecheck', 'npm run build'] }` — `ci.yml`의 필수 잡과 `spec-check.test.mjs`가 대조(`continue-on-error` 잡 제외)                                |
 | 월 예산               | 추가 과금 없음 (구독 한도 사용). 비용 통제는 `--max-turns`·`timeout-minutes`·리뷰 입력 축소                                                                        |
 | 스크립트 형식         | Node(`.mjs`). 로컬 Windows와 CI ubuntu에서 같은 규칙 모듈 공유                                                                                                     |
@@ -699,10 +699,8 @@ review:
 | 2     | OneDrive 체크아웃 정리                                                                                                                                                       | 복사해 둔 파이프라인 파일 제거, `AGENTS.md` 되돌림 후 develop 최신화                          | 사람+구현 | ✅ (2026-10-22)             |
 | 2     | 파일럿 `CLEANUP-0001` (`tatus` 삭제) end-to-end                                                                                                                              | 13.2 파일럿 항목 통과, PR 작성자 확인, 리뷰 실측 기록                                         | 사람+구현 | ✅ (#204·#205)              |
 | 3     | 비용 실측 후 `--max-turns`·`timeout-minutes` 조정                                                                                                                            | 구독 한도 안에서 운영                                                                         | 사람      | ⬜                          |
-| 3     | **lint 필수화**: 기존 lint 오류 7건 정리 후 `ci.yml`의 `continue-on-error` 제거 + `CI_COMMANDS`에 `npm run lint` 추가 + `spec-check.test.mjs` 대조 확인 — **한 PR에서 함께** | 세 곳이 일치하고 `pr-gate` 통과. 명세 템플릿의 "lint 통과를 AC로 쓰지 말 것" 문구도 함께 제거 | 사람+구현 | ⬜                          |
+| 3     | **lint 필수화**: 기존 lint 오류 7건 정리 후 `ci.yml`의 `continue-on-error` 제거 + `CI_COMMANDS`에 `npm run lint` 추가 + `spec-check.test.mjs` 대조 확인 — **한 PR에서 함께** | 세 곳이 일치하고 `pr-gate` 통과. 명세 템플릿의 "lint 통과를 AC로 쓰지 말 것" 문구도 함께 제거 | 사람+구현 | ✅ (#207·#208 + 이 PR)      |
 | 3     | 첫 실제 기능에 새 흐름 적용                                                                                                                                                  | 대상 결정 후 기록                                                                             | 사람      | ⬜ (대상 미정)              |
-
-lint 필수화 전까지 PR의 "PR Validation" 체크는 `lint` 잡 실패로 전체가 X로 표시된다. 머지 가능 여부는 `pr-gate`만 보면 된다 (mergeState `UNSTABLE`은 머지 가능).
 
 ### 파일럿 결과
 
@@ -722,3 +720,16 @@ lint 필수화 전까지 PR의 "PR Validation" 체크는 `lint` 잡 실패로 �
 1. Codex 샌드박스는 전역 ignore(`~/.config/git/ignore`)를 읽지 못한다. 그래서 거기에만 등록된 `.claude/settings.local.json`이 "만들지 않은 untracked 파일"로 보여 준비 1단계에서 멈췄다. 로컬 전용 파일은 레포 `.gitignore`에 넣는다 (이 기록과 같은 PR에서 추가)
 2. 테스트 계획에는 실행 시점("구현 후, 커밋 전")을 적는다. 기대값이 구현 후 기준이라 시점이 없으면 읽는 사람이 헷갈린다
 3. 리뷰 1회가 30초 안팎이라 지금의 `--max-turns`·`timeout-minutes`는 조정할 필요가 없다. 비용 실측(Phase 3)은 실제 기능 몇 건 뒤에 다시 본다
+
+### LINT-0001 결과
+
+develop의 기존 lint 오류 7건 정리 (2026-10-22). 두 번째 파이프라인 실행이며, 이것으로 lint를 필수로 올렸다.
+
+| 단계          | 결과                                                                                                                 |
+| ------------- | -------------------------------------------------------------------------------------------------------------------- |
+| 명세 PR       | #207 `spec/LINT-0001-r0`. 설계 결정(렌더 중 비교 패턴, 구조 분해)은 Claude가 워크트리에 시험 적용해 확인한 뒤 되돌림 |
+| 프롬프트 게시 | 머지 9초 뒤 코멘트 1건. 수동 재실행에도 1건 유지 (13.2 "같은 워크플로우 재실행" ✅)                                  |
+| 구현 PR       | #208 `impl/LINT-0001-spec-207`, 3개 파일, 커밋 1개. `review` pass, `ci / lint` 첫 통과. 머지 후 develop lint 0건     |
+| 남은 확인     | 13.2 "Claude 출력 취소"(리뷰 취소 시 `BLOCKED`)는 이번에도 하지 못함. 다음 impl PR에서 확인                          |
+
+배운 점: 명세 테스트 계획 아래의 설명 줄도 `- AC-06 ...`처럼 시작하면 수용 기준 정의로 중복 인식된다. 테스트 계획에서는 `(AC-06)`처럼 괄호로 쓴다 (템플릿 형식 규칙에 이미 있음).

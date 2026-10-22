@@ -117,12 +117,13 @@ test('CI 기준: CI 필수 잡이 실행하는 명령만 있는 문장', () => {
     ' 루트에서 `npm run build`, `npm run typecheck`가 모두 통과한다.',
     ' `npm run typecheck`가 통과한다',
     '** `npm run build`가 통과한다',
+    ' `npm run lint`가 통과한다', // LINT-0001 이후 lint도 CI 필수 잡이다
+    ' `npm run typecheck`·`npm run build`·`npm run lint`가 통과한다',
   ];
   for (const text of yes) assert.equal(isCiCriterion(text), true, text);
 
   const no = [
-    ' `npm run lint`가 통과한다', // lint는 continue-on-error라 CI 기준이 아니다
-    ' `npm run typecheck`·`npm run lint`가 통과한다',
+    ' `npm run format:check`가 통과한다', // CI가 실행하지 않는 명령
     ' `npm test`가 통과한다', // 테스트 러너 없음
     ' `npx tsc --noEmit`가 성공한다',
     ' `npm run build`가 통과하고 칸반 보드가 표시된다', // 다른 주장이 섞임

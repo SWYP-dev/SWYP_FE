@@ -15,11 +15,11 @@ revision: 0
 - 사람이 직접 확인해야 하는 기준은 ID 뒤에 [manual]을 붙인다. Codex는 그 지점에서 멈추고 사용자에게 확인을 요청하고,
   Claude 리뷰는 판정하지 않고 PR 체크리스트로 남긴다
 - 수용 기준은 코드를 읽거나 명령을 실행해 참·거짓을 가릴 수 있게 쓴다 ("잘 동작한다" 대신 "X를 저장하면 Y가 반환된다")
-- 빌드·타입 검사 통과는 **CI 기준**으로 따로 한 줄에 쓴다: "- AC-xx `npm run typecheck`·`npm run build`가 통과한다"
+- 빌드·타입 검사·lint 통과는 **CI 기준**으로 따로 한 줄에 쓴다: "- AC-xx `npm run typecheck`·`npm run build`·`npm run lint`가 통과한다"
   (명령은 CI 필수 잡이 실행하는 것만 — scripts/ai/spec-file.mjs CI_COMMANDS)
   이 형식이면 Claude 리뷰는 판정하지 않고 같은 head의 ci 잡 성공으로 판정한다. 다른 주장을 같은 줄에 섞으면 CI 기준이 아니게 되어
   읽기 전용 리뷰가 판정 불가(cannot_determine)로 남겨 게이트가 실패한다
-- **lint 통과를 수용 기준으로 쓰지 않는다.** develop에 기존 lint 오류가 있어 CI에서 필수가 아니다(현황 표시만). 테스트 러너도 없으므로 `npm test`도 쓰지 않는다
+- 테스트 러너가 없으므로 `npm test`는 수용 기준으로 쓰지 않는다
 - BE 의존 기능(API가 아직 없거나 바뀔 예정)은 설계 결정에 "BE 의존"과 mock 위치를 적고, 수용 기준은 mock 기준으로 쓴다
 - [manual] 기준의 확인 방법은 "Vercel 프리뷰 또는 로컬 `npm run dev`"에서 어느 화면의 무엇을 보는지로 쓴다
 
@@ -59,7 +59,7 @@ revision: 0
 # 예) 저장소 루트에서
 npm run typecheck
 npm run build
-npm run lint   # 참고용 — 바꾼 파일에 새 오류가 없는지만 본다 (기존 오류는 수용 기준 아님)
+npm run lint
 git diff --cached --name-status origin/develop
 ```
 
