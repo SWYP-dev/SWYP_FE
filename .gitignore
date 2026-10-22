@@ -45,3 +45,9 @@ next-env.d.ts
 
 # shrimp-task-manager 로컬 작업 데이터
 .shrimp-data/
+
+# playwright-mcp 확인용 스크린샷/로그/스냅샷
+.playwright-mcp/
+
+# Codex PR 본문 초안 등 파이프라인 임시 파일
+.ai-tmp/

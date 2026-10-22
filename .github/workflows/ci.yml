@@ -1,0 +1,64 @@
+# CI (docs/workflow/claude-codex-plan.md 0장 #5·#6)
+#
+# pr-validation.yml이 workflow_call로 호출하고, develop push에서도 실행해 통합 상태를 본다.
+# - typecheck·build: 필수. 실패하면 ci 잡이 실패하고 pr-gate가 막는다
+# - lint: develop에 기존 오류가 있어 continue-on-error로 현황만 표시한다
+#
+# 필수 잡의 npm 명령은 scripts/ai/spec-file.mjs의 CI_COMMANDS와 같아야 한다 (spec-check.test.mjs가 대조한다).
+# lint를 필수로 올릴 때는 continue-on-error 제거 · CI_COMMANDS에 lint 추가 · 대조 테스트 확인을 한 PR에서 함께 한다.
+name: CI
+
+on:
+  workflow_call:
+  push:
+    branches: [develop]
+
+permissions:
+  contents: read
+
+jobs:
+  typecheck:
+    name: typecheck
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24.x
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+
+  build:
+    name: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24.x
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+
+  lint:
+    name: lint (현황 표시)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24.x
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
