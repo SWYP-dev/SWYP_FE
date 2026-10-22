@@ -1,12 +1,17 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { KanbanCard as KanbanCardType, KanbanStage } from '@/types/api';
 import { KanbanCard } from './KanbanCard';
-import { DragHandleIcon, MoreHorizontalIcon, PlusSmallIcon } from '@/components/ui/icons';
+import {
+  CloseIcon,
+  DragHandleIcon,
+  MoreHorizontalIcon,
+  PlusSmallIcon,
+} from '@/components/ui/icons';
 import { DropdownMenu } from '@/components/ui/dropdown-menu';
 import { Popover, usePopoverTrigger } from '@/components/ui/popover';
 import { pushDataLayerEvent } from '@/lib/gtm';
@@ -106,6 +111,8 @@ export function KanbanColumn({
   const [isEditingName, setIsEditingName] = useState(isDraft);
   const [localDraftName, setLocalDraftName] = useState(isDraft ? '' : stage.name);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  // 취소 뒤 이어지는 blur가 단계 생성을 요청하지 않도록 기록한다(HT-004).
+  const isDraftCancelledRef = useRef(false);
 
   const isLocked = stage.isDefault || DEFAULT_STAGE_NAMES.includes(stage.name);
 
@@ -166,6 +173,7 @@ export function KanbanColumn({
   // 새 전형 단계 추가 중 텍스트 없이 외부를 클릭하면 에러를 띄우지 않고 draft 컬럼을 바로 취소한다.
   // 텍스트가 있으면 기존대로 생성(commit)을 확정한다.
   function handleBlur() {
+    if (isDraftCancelledRef.current) return;
     if (isDraft && draftName.trim() === '') {
       onCancelDraft?.();
       return;
@@ -175,6 +183,7 @@ export function KanbanColumn({
 
   function cancel() {
     if (isDraft) {
+      isDraftCancelledRef.current = true;
       onCancelDraft?.();
       return;
     }
@@ -242,51 +251,69 @@ export function KanbanColumn({
             )}
           </div>
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              aria-label="지원 현황 추가"
-              disabled={isDraft}
-              onClick={() => onAddCard?.(stage.id)}
-              className={`flex size-5 items-center justify-center ${
-                isDraft ? 'cursor-not-allowed opacity-30' : 'text-icon-gray'
-              }`}
-            >
-              <PlusSmallIcon size={20} />
-            </button>
-            {/* QA-007: 이름 수정·삭제를 더보기(···) 케밥 메뉴로 통합. 카드 추가(+)는 헤더에 유지.
-                기본 3개 단계(isLocked)는 항목을 회색(비활성)으로 노출해 누를 수 없음을 보여준다. */}
-            <button
-              ref={menuTriggerRef}
-              type="button"
-              aria-label="스테이지 더보기"
-              aria-expanded={isMenuOpen}
-              disabled={isDraft}
-              onClick={toggleMenu}
-              className={`flex size-5 items-center justify-center ${
-                isDraft ? 'cursor-not-allowed opacity-30' : 'text-icon-gray'
-              }`}
-            >
-              <MoreHorizontalIcon size={20} />
-            </button>
-            <Popover
-              isOpen={isMenuOpen}
-              onClose={closeMenu}
-              triggerRef={menuTriggerRef}
-              align="end"
-            >
-              <DropdownMenu
-                items={[
-                  { label: '이름 수정', disabled: isLocked },
-                  { label: '삭제', disabled: isLocked },
-                ]}
-                className="w-[140px]"
-                onSelect={(item) => {
-                  closeMenu();
-                  if (item.label === '이름 수정') startEditing('button');
-                  if (item.label === '삭제') onDeleteStage?.(stage.id);
+            {isDraft ? (
+              <button
+                type="button"
+                aria-label="단계 추가 취소"
+                className="flex size-5 items-center justify-center text-icon-gray"
+                // 입력란 blur로 유효한 이름이 먼저 저장되는 것을 막는다(HT-004).
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => {
+                  isDraftCancelledRef.current = true;
+                  onCancelDraft?.();
                 }}
-              />
-            </Popover>
+              >
+                <CloseIcon size={20} />
+              </button>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  aria-label="지원 현황 추가"
+                  disabled={isDraft}
+                  onClick={() => onAddCard?.(stage.id)}
+                  className={`flex size-5 items-center justify-center ${
+                    isDraft ? 'cursor-not-allowed opacity-30' : 'text-icon-gray'
+                  }`}
+                >
+                  <PlusSmallIcon size={20} />
+                </button>
+                {/* QA-007: 이름 수정·삭제를 더보기(···) 케밥 메뉴로 통합. 카드 추가(+)는 헤더에 유지.
+                기본 3개 단계(isLocked)는 항목을 회색(비활성)으로 노출해 누를 수 없음을 보여준다. */}
+                <button
+                  ref={menuTriggerRef}
+                  type="button"
+                  aria-label="스테이지 더보기"
+                  aria-expanded={isMenuOpen}
+                  disabled={isDraft}
+                  onClick={toggleMenu}
+                  className={`flex size-5 items-center justify-center ${
+                    isDraft ? 'cursor-not-allowed opacity-30' : 'text-icon-gray'
+                  }`}
+                >
+                  <MoreHorizontalIcon size={20} />
+                </button>
+                <Popover
+                  isOpen={isMenuOpen}
+                  onClose={closeMenu}
+                  triggerRef={menuTriggerRef}
+                  align="end"
+                >
+                  <DropdownMenu
+                    items={[
+                      { label: '이름 수정', disabled: isLocked },
+                      { label: '삭제', disabled: isLocked },
+                    ]}
+                    className="w-[140px]"
+                    onSelect={(item) => {
+                      closeMenu();
+                      if (item.label === '이름 수정') startEditing('button');
+                      if (item.label === '삭제') onDeleteStage?.(stage.id);
+                    }}
+                  />
+                </Popover>
+              </>
+            )}
           </div>
         </div>
       </div>
