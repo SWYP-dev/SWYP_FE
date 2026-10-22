@@ -649,17 +649,17 @@ review:
 
 ### 13.4 확인하지 못한 항목 [미확인]
 
-| 항목                                                                                                                       | 확인 방법                                                            |
-| -------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| `workflow_call`로 부른 `ci.yml`의 `continue-on-error` 잡이 실패해도 호출 잡(`ci`) 결과가 success인지                       | ✅ 확인 (#200): lint 실패에도 `ci` success                           |
-| `NEXT_PUBLIC_*` 없이 CI build가 통과하는지                                                                                 | ✅ 확인 (#200): 더미 env 없이 통과                                   |
-| Vercel이 `SWYP-dev/SWYP_FE` PR에 프리뷰를 만드는지                                                                         | ✅ 확인 (#200): PR마다 Vercel 프리뷰 생성                            |
-| org 단위 Actions 정책                                                                                                      | org Settings → Actions → General (`gh` 토큰에 `admin:org` 권한 없음) |
-| 패널 Codex의 로컬 실행과 PR 작성자                                                                                         | 파일럿 후 `gh pr view --json author`                                 |
-| ChatGPT 구독별 Codex 사용 한도, 패널 모델 선택 UI                                                                          | 패널 설정과 구독 안내                                                |
-| 요금표(Claude 구독 한도, GitHub Actions Public 저장소)                                                                     | 도입 시점의 공식 안내                                                |
-| PR 생성 직후 라벨이 이벤트에 실리는지                                                                                      | 분류가 브랜치명·경로 기준이라 영향 작음. 참고용 확인                 |
-| ruleset의 `require_extra_approval_for_unattributed_changes: true`(API에 보이는 기본값)가 단독 운영 PR 머지에 영향을 주는지 | Step 2 PR 머지와 파일럿 impl PR 머지에서 확인                        |
+| 항목                                                                                                                       | 확인 방법                                                               |
+| -------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| `workflow_call`로 부른 `ci.yml`의 `continue-on-error` 잡이 실패해도 호출 잡(`ci`) 결과가 success인지                       | ✅ 확인 (#200): lint 실패에도 `ci` success                              |
+| `NEXT_PUBLIC_*` 없이 CI build가 통과하는지                                                                                 | ✅ 확인 (#200): 더미 env 없이 통과                                      |
+| Vercel이 `SWYP-dev/SWYP_FE` PR에 프리뷰를 만드는지                                                                         | ✅ 확인 (#200): PR마다 Vercel 프리뷰 생성                               |
+| org 단위 Actions 정책                                                                                                      | org Settings → Actions → General (`gh` 토큰에 `admin:org` 권한 없음)    |
+| 패널 Codex의 로컬 실행과 PR 작성자                                                                                         | 파일럿 후 `gh pr view --json author`                                    |
+| ChatGPT 구독별 Codex 사용 한도, 패널 모델 선택 UI                                                                          | 패널 설정과 구독 안내                                                   |
+| 요금표(Claude 구독 한도, GitHub Actions Public 저장소)                                                                     | 도입 시점의 공식 안내                                                   |
+| PR 생성 직후 라벨이 이벤트에 실리는지                                                                                      | 분류가 브랜치명·경로 기준이라 영향 작음. 참고용 확인                    |
+| ruleset의 `require_extra_approval_for_unattributed_changes: true`(API에 보이는 기본값)가 단독 운영 PR 머지에 영향을 주는지 | 일반 PR은 영향 없음 확인 (#202 머지). 파일럿 impl PR 머지에서 다시 확인 |
 
 실제 YAML을 배포할 때는 선택한 Action 커밋의 정의와 다시 대조한다.
 
@@ -694,7 +694,7 @@ review:
 | 1     | Step 1 `chore/ai-pr-validation` + 라벨(H-11)                                                                                                                                 | PR에서 `classify`·`ci`·`pr-gate` 실행 (H-6), 머지                                             | 구현+사람 | ✅ (#200, lock 동기화 포함) |
 | 0     | `develop` ruleset (H-4)                                                                                                                                                      | 10.4 표대로 설정                                                                              | 사람      | ✅ (2026-10-22)             |
 | 0     | 필수 체크 차단 테스트 (H-5)                                                                                                                                                  | `spec/bad-name` PR이 `BLOCKED`, 우회 옵션 없음                                                | 사람+구현 | ✅ (#201 `BLOCKED`)         |
-| 1     | Step 2 `chore/ai-claude-review`                                                                                                                                              | 이 PR의 `pr-gate`가 base 스크립트로 통과, 머지                                                | 구현+사람 | ⬜                          |
+| 1     | Step 2 `chore/ai-claude-review`                                                                                                                                              | 이 PR의 `pr-gate`가 base 스크립트로 통과, 머지                                                | 구현+사람 | ✅ (#202, `general` 통과)   |
 | 2     | Step 3 `chore/ai-spec-flow`                                                                                                                                                  | `pr-gate` 통과, develop의 `AGENTS.md`·`CLAUDE.md`가 새 흐름                                   | 구현+사람 | ⬜                          |
 | 2     | OneDrive 체크아웃 정리                                                                                                                                                       | 복사해 둔 파이프라인 파일 제거, `AGENTS.md` 되돌림 후 develop 최신화                          | 사람+구현 | ⬜                          |
 | 2     | 파일럿 `CLEANUP-0001` (`tatus` 삭제) end-to-end                                                                                                                              | 13.2 파일럿 항목 통과, PR 작성자 확인, 리뷰 실측 기록                                         | 사람+구현 | ⬜                          |

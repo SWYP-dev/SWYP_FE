@@ -44,7 +44,7 @@ test('정책 경로를 판별한다', () => {
     '.github/workflows/ci.yml',
     '.claude/rules/git-rules.md',
     '.codex/hooks.json',
-    '.agents/skills/source-command-git-push/SKILL.md',
+    '.agents/skills/git-commit/SKILL.md',
     'docs/ai/codex-prompt.template.md',
     'docs/workflow/claude-codex-plan.md',
     'scripts/ai/classify-pr.mjs',
