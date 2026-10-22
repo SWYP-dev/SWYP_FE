@@ -1,0 +1,265 @@
+# PR 검증 (docs/workflow/claude-codex-plan.md 8.3 · 10.1 · 10.2 · 10.3)
+#
+# develop 대상 PR의 필수 체크는 마지막 잡 `pr-gate` 하나다. 구성:
+#   classify — 브랜치명 + 실제 변경 경로로 분류 (scripts/ai/classify-pr.mjs)
+#              spec/·impl/ = 파이프라인 예약 접두사(형식이 틀리면 unknown), 그 외 = general
+#              spec이면 명세 형식·revision 검사(spec-check.mjs), impl이면 본문 메타데이터 대조(impl-meta.mjs)까지
+#   ci       — ci.yml을 workflow_call로 호출 (typecheck · build 필수, lint는 현황 표시)
+#   review   — impl이고 메타데이터 대조를 통과했을 때만 Claude 명세 대조 리뷰 (claude-code-action, 읽기 전용)
+#   pr-gate  — 위 결과를 분류별 규칙으로 최종 판정. if: always() 라서 앞 잡이 실패·취소돼도 반드시 실행되고 실패로 끝난다
+#
+# 원칙
+# - 비밀값(CLAUDE_CODE_OAUTH_TOKEN)은 review 잡의 Claude 스텝에만 준다
+# - 기본 권한은 읽기 전용. 액션은 커밋 SHA로 고정한다
+# - 이벤트 유형을 아래 4개로 제한한다. 라벨 변경·본문 수정으로는 어떤 잡도 다시 돌지 않는다
+#   (그래서 risk-high 라벨이나 본문 메타데이터를 나중에 고치면 리뷰를 수동으로 다시 실행한다)
+# - 경로 필터를 쓰지 않는다. 필터로 건너뛴 필수 체크는 Pending으로 남아 머지를 막는다
+#
+# 판정 스크립트·리뷰 프롬프트·스키마는 PR이 아니라 base(develop) 쪽 파일로 실행한다 — PR이 판정 기준을
+# 고쳐서 자기 자신을 통과시키지 못하게 하기 위함. 기준을 바꾸려면 일반 브랜치 PR로 먼저 머지한다.
+# 단, 이 워크플로우 파일 자체는 PR의 병합 결과로 실행되므로, 정책 경로 변경은 일반 브랜치 PR + 사람 검토가 실제 방어선이다 (10.3).
+name: PR Validation
+
+on:
+  pull_request:
+    branches: [develop]
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+
+# 같은 PR에 새 커밋이 오면 이전 실행을 취소한다 (취소된 실행의 pr-gate는 통과로 남지 않는다)
+concurrency:
+  group: pr-validation-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  classify:
+    name: classify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read # impl 메타데이터 대조에서 명세 PR을 조회한다
+    outputs:
+      kind: ${{ steps.classify.outputs.kind }}
+      ok: ${{ steps.classify.outputs.ok }}
+      reason: ${{ steps.classify.outputs.reason }}
+      spec_id: ${{ steps.classify.outputs.spec_id }}
+      spec_ok: ${{ steps.spec.outputs.ok }}
+      spec_reason: ${{ steps.spec.outputs.reason }}
+      meta_ok: ${{ steps.meta.outputs.ok }}
+      meta_reason: ${{ steps.meta.outputs.reason }}
+      spec_path: ${{ steps.meta.outputs.spec_path }}
+      spec_merge_sha: ${{ steps.meta.outputs.spec_merge_sha }}
+    steps:
+      # base...head 비교와 명세 이력 조회에 전체 이력이 필요하다
+      - name: PR 체크아웃
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: pr
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: base 판정 스크립트 체크아웃
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: trusted
+          sparse-checkout: scripts/ai
+          persist-credentials: false
+
+      - name: Node 설정
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24.x
+
+      # PR이 바꾼 판정 규칙이 깨지지 않았는지 확인한다 (일반 브랜치 PR에서 규칙을 고칠 때 의미가 있다)
+      - name: 판정 규칙 테스트
+        working-directory: pr
+        run: node --test "scripts/ai/*.test.mjs"
+
+      # 브랜치명·본문은 PR 작성자가 정하는 값이라 쉘에 직접 끼워 넣지 않고 env로 넘긴다
+      - name: 분류
+        id: classify
+        working-directory: pr
+        env:
+          BRANCH: ${{ github.event.pull_request.head.ref }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: node ../trusted/scripts/ai/classify-pr.mjs --branch "$BRANCH" --base "$BASE_SHA" --head "$HEAD_SHA"
+
+      - name: 명세 형식 검사 (spec)
+        id: spec
+        if: steps.classify.outputs.kind == 'spec' && steps.classify.outputs.ok == 'true'
+        working-directory: pr
+        env:
+          BRANCH: ${{ github.event.pull_request.head.ref }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: node ../trusted/scripts/ai/spec-check.mjs --branch "$BRANCH" --base "$BASE_SHA" --head "$HEAD_SHA"
+
+      - name: 메타데이터 대조 (impl)
+        id: meta
+        if: steps.classify.outputs.kind == 'impl' && steps.classify.outputs.ok == 'true'
+        working-directory: pr
+        env:
+          BRANCH: ${{ github.event.pull_request.head.ref }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node ../trusted/scripts/ai/impl-meta.mjs --branch "$BRANCH" --base "$BASE_SHA"
+
+  ci:
+    name: ci
+    uses: ./.github/workflows/ci.yml
+
+  review:
+    name: review
+    needs: classify
+    if: needs.classify.outputs.kind == 'impl' && needs.classify.outputs.ok == 'true' && needs.classify.outputs.meta_ok == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      ok: ${{ steps.verify.outputs.ok }}
+      reason: ${{ steps.verify.outputs.reason }}
+      ci_criteria: ${{ steps.verify.outputs.ci_criteria }}
+    steps:
+      # Claude가 Read·Grep·Glob으로 읽을 작업 트리. claude-code-action은 .claude/·CLAUDE.md 등을 base 버전으로 되돌린다
+      - name: PR 체크아웃
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: base 프롬프트·스키마·스크립트 체크아웃
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: .trusted
+          sparse-checkout: |
+            scripts/ai
+            .github/ai
+          persist-credentials: false
+
+      - name: Node 설정
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24.x
+
+      # 프롬프트에는 검증된 ID·경로·SHA만 넣고, diff는 파일로 두어 Claude가 읽게 한다
+      - name: 리뷰 입력 준비
+        id: prep
+        env:
+          SPEC_ID: ${{ needs.classify.outputs.spec_id }}
+          SPEC_PATH: ${{ needs.classify.outputs.spec_path }}
+          SPEC_MERGE_SHA: ${{ needs.classify.outputs.spec_merge_sha }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          HIGH_RISK: ${{ contains(github.event.pull_request.labels.*.name, 'risk-high') }}
+        run: |
+          node .trusted/scripts/ai/review.mjs prompt \
+            --template .trusted/.github/ai/prompts/spec-review.md \
+            --schema .trusted/.github/ai/schemas/spec-review.schema.json \
+            --out-dir .review \
+            --spec-id "$SPEC_ID" --spec-path "$SPEC_PATH" --spec-merge-sha "$SPEC_MERGE_SHA" \
+            --base "$BASE_SHA" --head "$HEAD_SHA"
+          if [ "$HIGH_RISK" = "true" ]; then model=claude-opus-5-5; else model=claude-sonnet-5-5; fi
+          echo "model=$model" >> "$GITHUB_OUTPUT"
+          echo "리뷰 모델: $model"
+
+      - name: Claude 명세 대조 리뷰
+        id: review
+        uses: anthropics/claude-code-action@58985842b834ed26087302ba27d07bc24ca8697a # v1.0.244
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ github.token }}
+          base_branch: develop
+          prompt: ${{ steps.prep.outputs.prompt }}
+          claude_args: |
+            --model ${{ steps.prep.outputs.model }}
+            --max-turns 20
+            --tools Read,Glob,Grep
+            --allowedTools Read,Glob,Grep
+            --disallowedTools Bash,Edit,Write,NotebookEdit,WebFetch,WebSearch
+            --json-schema '${{ steps.prep.outputs.schema }}'
+
+      # 리뷰 스텝이 실패·취소되면 이 스텝도 건너뛰어 ok가 비고, pr-gate가 실패로 판정한다
+      - name: 리뷰 결과 검증
+        id: verify
+        env:
+          STRUCTURED_OUTPUT: ${{ steps.review.outputs.structured_output }}
+          SPEC_ID: ${{ needs.classify.outputs.spec_id }}
+          SPEC_PATH: ${{ needs.classify.outputs.spec_path }}
+          SPEC_MERGE_SHA: ${{ needs.classify.outputs.spec_merge_sha }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          node .trusted/scripts/ai/review.mjs verify \
+            --spec-path "$SPEC_PATH" --spec-id "$SPEC_ID" --spec-merge-sha "$SPEC_MERGE_SHA" \
+            --base "$BASE_SHA" --head "$HEAD_SHA"
+
+  pr-gate:
+    name: pr-gate
+    needs: [classify, ci, review]
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: 최종 판정
+        env:
+          CLASSIFY_RESULT: ${{ needs.classify.result }}
+          CI_RESULT: ${{ needs.ci.result }}
+          REVIEW_RESULT: ${{ needs.review.result }}
+          KIND: ${{ needs.classify.outputs.kind }}
+          OK: ${{ needs.classify.outputs.ok }}
+          REASON: ${{ needs.classify.outputs.reason }}
+          SPEC_OK: ${{ needs.classify.outputs.spec_ok }}
+          SPEC_REASON: ${{ needs.classify.outputs.spec_reason }}
+          META_OK: ${{ needs.classify.outputs.meta_ok }}
+          META_REASON: ${{ needs.classify.outputs.meta_reason }}
+          REVIEW_OK: ${{ needs.review.outputs.ok }}
+          REVIEW_REASON: ${{ needs.review.outputs.reason }}
+          CI_CRITERIA: ${{ needs.review.outputs.ci_criteria }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          fail() {
+            echo "::error::$1"
+            echo "### ❌ pr-gate 실패" >> "$GITHUB_STEP_SUMMARY"
+            echo "$1" >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          }
+
+          echo "분류: ${KIND:-없음} / classify: $CLASSIFY_RESULT / ci: $CI_RESULT / review: $REVIEW_RESULT"
+
+          [ "$CLASSIFY_RESULT" = "success" ] || fail "classify 잡이 성공하지 않았다 ($CLASSIFY_RESULT)"
+          [ "$OK" = "true" ] || fail "분류 규칙 위반 ($KIND): $REASON"
+          [ "$CI_RESULT" = "success" ] || fail "ci 잡이 성공하지 않았다 ($CI_RESULT)"
+
+          case "$KIND" in
+            general)
+              # 파이프라인 밖의 일반 브랜치는 CI만 필수, 내용(특히 정책 경로 변경)은 사람이 직접 검토하고 머지한다
+              ;;
+            spec)
+              [ "$SPEC_OK" = "true" ] || fail "명세 형식 검사 실패: ${SPEC_REASON:-결과 없음}"
+              ;;
+            impl)
+              [ "$META_OK" = "true" ] || fail "메타데이터 대조 실패: ${META_REASON:-결과 없음}"
+              # 빈 출력·스킵·실패·취소는 모두 여기서 걸린다
+              [ "$REVIEW_RESULT" = "success" ] || fail "review 잡이 성공하지 않았다 ($REVIEW_RESULT)"
+              [ "$REVIEW_OK" = "true" ] || fail "Claude 리뷰 미통과: ${REVIEW_REASON:-결과 없음}"
+              # CI 기준(리뷰가 status ci로 넘긴 기준)은 이 실행의 ci 잡이 같은 head에서 판정한다.
+              # 위에서 ci 잡 success를 이미 요구했으므로 여기서는 판정 근거만 남긴다
+              if [ -n "$CI_CRITERIA" ] && [ "$CI_CRITERIA" != "없음" ]; then
+                echo "CI 기준 ${CI_CRITERIA}: ci 잡 ${CI_RESULT} (head ${HEAD_SHA})" | tee -a "$GITHUB_STEP_SUMMARY"
+              fi
+              ;;
+            *)
+              fail "알 수 없는 분류: ${KIND:-없음}"
+              ;;
+          esac
+
+          echo "### ✅ pr-gate 통과 ($KIND)" >> "$GITHUB_STEP_SUMMARY"
