@@ -67,7 +67,12 @@ export function EditDeadlineCardModal({
     isAlwaysHiring: card?.deadline === null,
   });
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const stageDropdown = usePopoverTrigger<HTMLButtonElement>();
+  const {
+    isOpen: isStageOpen,
+    triggerRef: stageTriggerRef,
+    toggle: toggleStage,
+    close: closeStage,
+  } = usePopoverTrigger<HTMLButtonElement>();
 
   useEscapeKey(isOpen, () => {
     setShowDatePicker(false);
@@ -196,18 +201,18 @@ export function EditDeadlineCardModal({
               <p className="text-3 font-bold text-status-negative">*</p>
             </div>
             <button
-              ref={stageDropdown.triggerRef}
+              ref={stageTriggerRef}
               type="button"
-              onClick={stageDropdown.toggle}
+              onClick={toggleStage}
               className={`${FIELD_TRIGGER_CLASS} border-line-secondary text-label-base`}
             >
               <span>{selectedStageName}</span>
               <ChevronDownIcon />
             </button>
             <Popover
-              isOpen={stageDropdown.isOpen}
-              onClose={stageDropdown.close}
-              triggerRef={stageDropdown.triggerRef}
+              isOpen={isStageOpen}
+              onClose={closeStage}
+              triggerRef={stageTriggerRef}
               align="start"
             >
               <DropdownMenu
@@ -216,7 +221,7 @@ export function EditDeadlineCardModal({
                 className="w-[330px]"
                 onSelect={(_, index) => {
                   setForm((prev) => ({ ...prev, stageId: stages[index].id }));
-                  stageDropdown.close();
+                  closeStage();
                 }}
               />
             </Popover>
