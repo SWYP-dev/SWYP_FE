@@ -1,17 +1,23 @@
 import posthog from 'posthog-js';
+import type { AccountType, AnalyticsEventMap, AnalyticsEventName } from './analytics/events';
 
 export const POSTHOG_KEY = process.env.NEXT_PUBLIC_POSTHOG_KEY;
 export const POSTHOG_HOST = process.env.NEXT_PUBLIC_POSTHOG_HOST;
 
 let isInitialized = false;
 
+function getAppEnv(): 'production' | 'preview' | 'development' {
+  const appEnv = process.env.NEXT_PUBLIC_VERCEL_ENV;
+  return appEnv === 'production' || appEnv === 'preview' || appEnv === 'development'
+    ? appEnv
+    : 'development';
+}
+
 /**
- * PostHog 클라이언트를 초기화한다. 앱 전체에서 한 번만 호출되어야 하며
- * PostHogProvider(src/providers/posthog-provider.tsx)에서만 호출한다.
+ * PostHog 클라이언트는 한 번만 초기화하고, Provider보다 먼저 실행되는 계측에서도 호출한다.
  *
- * autocapture / capture_pageview를 끄는 이유: PostHog_이벤트_설계_문서.md에서
- * 의도적으로 설계한 커스텀 이벤트만 수집하기 위함. 자동 수집(Autocapture)을 켜두면
- * 설계한 이벤트와 별개로 $autocapture 이벤트가 같이 쌓여 대시보드가 지저분해진다.
+ * docs/analytics/posthog-events.md 2.4에 따라 클라이언트 이동의 페이지뷰도 자동 수집한다.
+ * 클릭 자동 수집은 설계한 이벤트와 별개로 $autocapture가 쌓이지 않도록 계속 끈다.
  */
 export function initPostHog() {
   if (isInitialized || typeof window === 'undefined' || !POSTHOG_KEY) return;
@@ -19,9 +25,10 @@ export function initPostHog() {
   posthog.init(POSTHOG_KEY, {
     api_host: POSTHOG_HOST,
     autocapture: false,
-    capture_pageview: false,
+    capture_pageview: 'history_change',
     person_profiles: 'identified_only',
   });
+  posthog.register({ app_env: getAppEnv() });
   isInitialized = true;
 }
 
@@ -31,9 +38,34 @@ export function initPostHog() {
  * GA4는 PM 관점 지표, PostHog는 개발 관점 퍼널·실험 전용이라 이벤트를 섞지 않는다.
  *
  * @example
- * capturePostHogEvent('kakao_login_completed', { isNewUser: true });
+ * track('kakao_login_completed', { is_new_user: true });
  */
-export function capturePostHogEvent(event: string, properties: Record<string, unknown> = {}) {
-  if (typeof window === 'undefined') return;
-  posthog.capture(event, properties);
+export function track<E extends AnalyticsEventName>(
+  event: E,
+  ...args: AnalyticsEventMap[E] extends Record<string, never>
+    ? [properties?: AnalyticsEventMap[E]]
+    : [properties: AnalyticsEventMap[E]]
+) {
+  // 자식 컴포넌트 effect가 먼저 실행돼도 초기화 전에 이벤트가 유실되지 않게 한다.
+  initPostHog();
+  if (!isInitialized) return;
+  posthog.capture(event, args[0]);
+}
+
+export function identifyUser(userId: number, accountType?: AccountType) {
+  initPostHog();
+  if (!isInitialized) return;
+
+  posthog.identify(String(userId), accountType ? { account_type: accountType } : undefined);
+  // 앱 시작 시에는 저장된 계정 구분을 유지하고, 로그인 성공 시에만 갱신한다.
+  if (accountType) posthog.register({ account_type: accountType });
+}
+
+export function resetAnalytics() {
+  initPostHog();
+  if (!isInitialized) return;
+
+  posthog.reset();
+  // reset으로 지워진 환경 속성을 복원해 익명 이벤트도 환경별로 구분한다.
+  posthog.register({ app_env: getAppEnv() });
 }

@@ -6,7 +6,7 @@ import { loginWithKakao, logoutRequest, deleteAccount, createTestSession } from 
 import { useAuthStore } from '../store/authStore';
 import { setTokens, clearTokens } from '@/lib/api/token';
 import { queryClient } from '@/lib/api/query-client';
-import { capturePostHogEvent } from '@/lib/posthog';
+import { identifyUser, resetAnalytics, track } from '@/lib/posthog';
 
 export function useKakaoLoginMutation() {
   const setUser = useAuthStore((s) => s.setUser);
@@ -21,8 +21,9 @@ export function useKakaoLoginMutation() {
       // ⚠️ 현재 스웨거엔 email 필드가 아직 없어서, 반영 전까지는 사이드바 이메일이
       // 빈 값으로 보일 수 있음(정상 — 백엔드 반영 후 자동으로 채워짐).
       setUser(data.user);
-      // PostHog 퍼널 1단계: 로그인 완료. isNewUser를 이후 모든 이벤트의 코호트 축으로 재사용.
-      capturePostHogEvent('kakao_login_completed', { isNewUser: data.isNewUser });
+      // 로그인 완료 이벤트가 해당 사용자에게 연결되도록 먼저 식별한다.
+      identifyUser(data.user.id, 'kakao');
+      track('kakao_login_completed', { is_new_user: data.isNewUser });
       // ⚠️ [QA 반영] 로그인 성공 시, 비로그인 상태로 캐시된 "빈 데이터"가 남아있을 수
       // 있으니 전체 쿼리를 무효화해서 로그인된 사용자 기준으로 다시 불러오도록 함.
       queryClient.invalidateQueries();
@@ -48,6 +49,8 @@ export function useTestSessionMutation() {
     onSuccess: (data) => {
       setTokens(data.accessToken, data.refreshToken);
       setUser(data.user);
+      // 테스트 계정의 이후 이벤트를 실사용자와 구분한다.
+      identifyUser(data.user.id, 'test');
       queryClient.invalidateQueries();
       router.replace('/jobs');
     },
@@ -64,6 +67,8 @@ export function useDeleteAccountMutation() {
     onSuccess: () => {
       clearTokens();
       clearUser();
+      // 탈퇴 후 랜딩에서 이전 사용자 식별 정보가 이어지지 않게 한다.
+      resetAnalytics();
       queryClient.clear();
       router.push('/');
     },
@@ -81,6 +86,8 @@ export function useLogoutMutation() {
     onSettled: () => {
       clearTokens();
       clearUser();
+      // 로그아웃 후 이벤트는 계정 구분 없이 익명으로 수집한다.
+      resetAnalytics();
       // ⚠️ [QA 반영] 기존엔 토큰/로그인 상태만 지우고 React Query 캐시는 그대로 둬서,
       // 로그아웃 후에도 이전에 불러온 보호된 데이터(칸반/마감일 등)가 캐시에 남아
       // 화면에 계속 보이는 문제가 있었음. 로그아웃 시 캐시를 완전히 비워서 방지.
