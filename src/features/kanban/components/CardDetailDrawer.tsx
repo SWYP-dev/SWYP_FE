@@ -457,12 +457,14 @@ export function CardDetailDrawer({
                 <div className="flex flex-col gap-3">
                   <p className="text-3 font-medium text-label-body">메모</p>
                   <div className="flex flex-col gap-3">
+                    {/* HT-006: 메모 영역을 입력 공간으로 인식하지 못하는 문제가 있어, 눌러서 입력할 수
+                        있다는 행동 안내가 드러나도록 플레이스홀더 문구를 변경 */}
                     <textarea
                       value={memoDraft}
                       onChange={(e) => setMemoDraft(e.target.value)}
                       onFocus={() => setIsMemoFocused(true)}
                       onBlur={() => setIsMemoFocused(false)}
-                      placeholder="메모할 내용을 입력해주세요."
+                      placeholder="여기를 눌러 공고에 대한 메모를 남겨보세요."
                       maxLength={1000}
                       className={`h-[156px] w-full resize-none rounded-xl border-2 p-5 text-4 leading-[1.6] text-label-base outline-none placeholder:text-label-placeholder ${
                         isMemoFocused
