@@ -54,7 +54,12 @@ export function useTestSessionMutation() {
       setUser(data.user);
       // 테스트 계정의 이후 이벤트를 실사용자와 구분한다.
       identifyUser(data.user.id, 'test');
+      track('test_session_login_completed');
       queryClient.invalidateQueries();
+      router.replace('/jobs');
+    },
+    onError: () => {
+      // 세션 발급이 실패해도 비로그인 상태로 공고를 둘러볼 수 있게 한다.
       router.replace('/jobs');
     },
   });
