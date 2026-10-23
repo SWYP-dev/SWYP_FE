@@ -1,6 +1,6 @@
 ---
 spec_id: ANALYTICS-0005
-revision: 0
+revision: 1
 ---
 
 # ANALYTICS-0005 — PostHog 알림·설정 이벤트: 이메일 알림 토글, 로그아웃·탈퇴, 알림 벨·알림함
@@ -18,7 +18,9 @@ revision: 0
   - `src/features/notification/components/NotificationModal.tsx`
     - `handleDelete(id)` → `deleteMutation.mutate(id)`, `handleDeleteAll()` → `items.length === 0`이면 return, 아니면 `deleteAllMutation.mutate()`. 두 mutation 모두 `onSuccess`가 훅 안에만 있다(`useNotificationMutations.ts`, 쿼리 무효화)
     - `items`는 불러온 페이지를 모두 펼친 `InAppNotificationItem[]`이고, 각 항목에 `reason: 'DEADLINE_REMINDER' | 'JOB_FEED_CHANGED'`(`InAppNotificationReason`, `src/types/api.ts`)가 있다
-    - 빈 알림함의 "공고 둘러보기" 버튼이 `router.push('/jobs')`를 부른다
+    - 빈 알림함의 "공고 둘러보기" 버튼이 `router.push('/jobs')`를 부른다. 알림함(`Popover`)은 닫지 않아서, 이미 `/jobs`에 있으면 버튼을 눌러도 알림함이 공고 목록을 가린 채 남는다
+    - `NotificationModal`은 props가 없고, `NotificationBell`의 `<Popover isOpen onClose={close} ...>` 안에서만 렌더링된다
+- r1 보완 이유: r0 구현 PR #230에서 사용자 요청으로 "공고 둘러보기" 클릭 시 알림함을 닫는 동작이 추가됐고, Claude 리뷰가 이를 r0 범위 밖(out_of_scope)으로 판정했다. 사용자가 로컬에서 동작을 확인했으므로 범위에 포함한다. 같은 PR의 카카오톡 비활성 토글 줄바꿈 변경은 기능 변경이 아니며 범위에 넣지 않는다(원복)
   - 알림 단건·전체 삭제 API(코드 주석상 5.6·5.7, 2026-08-04 백엔드 공유)는 `notificationApi.ts`에 이미 연동돼 있지만 `docs/API_SPEC.md`에는 아직 섹션이 없다. 이 스펙은 기존 호출을 그대로 쓰고 새 API를 추가하지 않는다
 
 ## 범위
@@ -26,13 +28,15 @@ revision: 0
 **포함**
 
 - 이벤트 7종 추가: `notification_setting_changed`, `logged_out`, `account_deleted`, `notification_bell_opened`, `notification_deleted`, `notification_all_cleared`, `notification_empty_cta_clicked`
+- 빈 알림함 "공고 둘러보기"를 누르면 알림함을 닫고 `/jobs`로 이동하도록 동작 변경 (`NotificationModal`에 `onClose` prop 추가)
 
 **제외**
 
 - Feature Flag와 `test_session_login_completed`는 ANALYTICS-0006에서 한다
 - 카카오톡 리마인드 토글(비활성, API 없음)과 알림 항목 클릭(클릭할 수 없음)은 계측하지 않는다 (설계 문서 3.6·3.7)
 - 비로그인 상태의 벨 클릭은 기존 `login_prompt_shown(notification_bell)`만 보내고 `notification_bell_opened`는 보내지 않는다
-- 기존 로그아웃·탈퇴·알림 설정·알림 삭제·벨 동작은 바꾸지 않는다. `src/features/notification/api/`, `src/lib/posthog.ts`는 바꾸지 않는다
+- 위 "공고 둘러보기" 닫기 외의 기존 로그아웃·탈퇴·알림 설정·알림 삭제·벨 동작은 바꾸지 않는다. `src/features/notification/api/`, `src/lib/posthog.ts`는 바꾸지 않는다
+- 계측·동작 변경과 무관한 코드 포맷 변경(예: 카카오톡 비활성 `ToggleSwitch` 줄바꿈)은 하지 않는다
 - 이벤트 이름·속성 설계(설계 문서 3.6·3.7)는 바꾸지 않는다. 설계를 바꿔야 한다고 판단되면 구현하지 말고 보고한다
 - 새 패키지 추가·버전 변경은 하지 않는다. `package.json`·`package-lock.json`은 바뀌지 않는다
 - 정책 경로(`.github/`, `.claude/`, `.codex/`, `.agents/`, `docs/ai/`, `docs/workflow/`, `scripts/ai/`, `AGENTS.md`, `CLAUDE.md`)와 `docs/specs/`, 설계 문서 `docs/analytics/posthog-events.md`는 바꾸지 않는다
@@ -80,7 +84,10 @@ revision: 0
 - `notification_deleted`: `handleDelete(id)`에서 클릭 시점의 `items`에서 `id`가 같은 항목을 찾아 `reason`을 정해 두고, `deleteMutation.mutate(id, { onSuccess })`의 `onSuccess`에서 `track('notification_deleted', { reason })`을 보낸다. 항목을 못 찾으면 이벤트는 보내지 않고 삭제는 기존대로 진행한다
 - `notification_all_cleared`: `handleDeleteAll()`에서 기존 `items.length === 0` return 뒤, 클릭 시점의 `items.length`를 정해 두고 `deleteAllMutation.mutate(undefined, { onSuccess })`의 `onSuccess`에서 `track('notification_all_cleared', { item_count })`을 보낸다. `item_count`는 화면에 불러온 개수다(설계 문서 3.7: "불러온 개수")
 - 훅(`useNotificationMutations.ts`)에 있는 기존 `onSuccess`(쿼리 무효화)는 그대로 실행된다. 호출부 `mutate`의 두 번째 인자로 넘긴 콜백은 훅의 `onSuccess` 뒤에 추가로 실행된다 (TanStack Query 동작)
-- `notification_empty_cta_clicked`: 빈 알림함 "공고 둘러보기" 버튼의 `onClick`에서 `router.push('/jobs')` **전에** `track('notification_empty_cta_clicked')`
+- `notification_empty_cta_clicked`와 알림함 닫기: 빈 알림함 "공고 둘러보기" 버튼의 `onClick`에서 `track('notification_empty_cta_clicked')` → `onClose()` → `router.push('/jobs')` 순서로 실행한다
+  - `NotificationModal`에 필수 prop `onClose: () => void`를 추가하고, `NotificationBell`은 `<NotificationModal onClose={close} />`로 `usePopoverTrigger`의 `close`를 넘긴다
+  - 이미 `/jobs`에 있어도 알림함이 닫혀 공고 목록이 보이게 하기 위함이다. 이동 경로(`/jobs`)는 바꾸지 않는다
+  - `onClose`는 이 버튼에서만 부른다. 삭제·모두 삭제·더보기 후에는 기존처럼 알림함을 열어 둔다
 
 ### 공통
 
@@ -94,13 +101,13 @@ revision: 0
 - AC-03 `settings/notifications/page.tsx`는 이메일 토글의 `updateMutation.mutate` 성공 콜백에서만 `notification_setting_changed`(`channel: 'email'`, `enabled: next`)를 보내고, 요청 본문과 카카오톡 토글은 그대로다
 - AC-04 `NotificationBell.tsx`는 로그인 상태에서 알림함을 여는 경우(`!isOpen`)에만 `toggle()` 전에 `notification_bell_opened`(`unread_count: data?.unreadCount ?? 0`)를 보내고, 닫을 때와 비로그인 분기에서는 보내지 않는다
 - AC-05 `NotificationModal.tsx`는 단건 삭제 성공 시 클릭 시점 항목의 `reason`으로 `notification_deleted`를, 모두 삭제 성공 시 클릭 시점 `items.length`로 `notification_all_cleared`를 보낸다. 두 이벤트 모두 호출부 `mutate`의 `onSuccess`에서 보내고 실패 시에는 보내지 않는다
-- AC-06 빈 알림함 "공고 둘러보기" 버튼은 `router.push('/jobs')` 전에 `notification_empty_cta_clicked`를 보낸다
-- AC-07 변경 파일은 아래 5개뿐이다: `src/lib/analytics/events.ts`, `src/features/auth/hooks/useAuthMutations.ts`, `src/app/settings/notifications/page.tsx`, `src/features/notification/components/NotificationBell.tsx`, `src/features/notification/components/NotificationModal.tsx`. `package.json`·`package-lock.json`·`src/lib/posthog.ts`·`src/features/notification/api/`는 바뀌지 않는다
+- AC-06 `NotificationModal`은 필수 prop `onClose: () => void`를 받고, `NotificationBell`은 `usePopoverTrigger`의 `close`를 `onClose`로 넘긴다. 빈 알림함 "공고 둘러보기" 버튼은 `notification_empty_cta_clicked` → `onClose()` → `router.push('/jobs')` 순서로 실행하고, `onClose`는 이 버튼에서만 호출한다
+- AC-07 변경 파일은 아래 5개뿐이다: `src/lib/analytics/events.ts`, `src/features/auth/hooks/useAuthMutations.ts`, `src/app/settings/notifications/page.tsx`, `src/features/notification/components/NotificationBell.tsx`, `src/features/notification/components/NotificationModal.tsx`. `package.json`·`package-lock.json`·`src/lib/posthog.ts`·`src/features/notification/api/`는 바뀌지 않고, `settings/notifications/page.tsx`의 카카오톡 토글 줄은 diff에 없다
 - AC-08 `npm run typecheck`·`npm run build`·`npm run lint`가 통과한다
 - AC-09 [manual] `NEXT_PUBLIC_POSTHOG_KEY`·`NEXT_PUBLIC_POSTHOG_HOST`가 설정된 Vercel 프리뷰 또는 로컬 `npm run dev`에서 로그인한 뒤 `posthog.debug()`를 켜거나 PostHog Activity 탭을 보며 아래가 모두 맞다
   - `/settings/notifications`에서 이메일 알림을 끄면 `notification_setting_changed`(`enabled: false`), 다시 켜면 `true`가 1번씩 온다
   - 헤더 알림 벨을 눌러 알림함을 열면 `notification_bell_opened`가 열 때의 `unread_count`와 함께 1번 오고, 같은 벨을 눌러 닫으면 오지 않는다. 로그아웃 상태에서 벨을 누르면 `login_prompt_shown`만 온다
-  - 알림 하나를 삭제하면 `notification_deleted`가 그 알림의 `reason`과 함께, "모두 삭제"를 누르면 `notification_all_cleared`가 화면에 있던 개수와 함께 온다. 알림이 없을 때 "공고 둘러보기"를 누르면 `notification_empty_cta_clicked`가 오고 `/jobs`로 이동한다
+  - 알림 하나를 삭제하면 `notification_deleted`가 그 알림의 `reason`과 함께, "모두 삭제"를 누르면 `notification_all_cleared`가 화면에 있던 개수와 함께 온다. 알림이 없을 때 "공고 둘러보기"를 누르면 `notification_empty_cta_clicked`가 오고 알림함이 닫히며 `/jobs`로 이동한다. 이미 `/jobs`에서 눌러도 알림함이 닫혀 공고 목록이 보인다. 알림 삭제·"모두 삭제" 후에는 알림함이 열린 채로 남는다
   - 프로필 메뉴 또는 설정 사이드바에서 로그아웃하면 `logged_out`이 오고, PostHog에서 그 이벤트가 로그아웃 전 사용자(person)에 연결되어 있다. 이후 이벤트는 익명이다
   - 회원 탈퇴를 완료하면 `account_deleted`가 탈퇴한 사용자에 연결되어 온다 (테스트 계정이나 지워도 되는 계정으로 확인한다)
 
@@ -123,6 +130,12 @@ git grep -n "track(\|resetAnalytics()" -- src/features/auth/hooks/useAuthMutatio
 # (AC-03~AC-06) 호출 위치가 나와야 한다
 git grep -n "track(\|mutate(\|toggle()\|router.push" -- src/app/settings/notifications/page.tsx src/features/notification/components/NotificationBell.tsx src/features/notification/components/NotificationModal.tsx
 
+# (AC-06) onClose prop 정의·전달·호출 위치가 나와야 한다 (호출은 "공고 둘러보기" onClick 한 곳)
+git grep -n "onClose" -- src/features/notification/components/NotificationBell.tsx src/features/notification/components/NotificationModal.tsx
+
+# (AC-07) 카카오톡 토글 줄을 건드리지 않았으면 출력이 없어야 한다 (r0 구현 브랜치에서는 파일명이 나온다)
+git diff --cached -G "카카오톡 리마인드 알림" --name-only origin/develop -- src/app/settings/notifications/page.tsx
+
 # (AC-07) 출력이 없어야 한다
 git diff --cached --name-only origin/develop -- src/lib/posthog.ts src/features/notification/api package.json package-lock.json
 
@@ -138,4 +151,5 @@ npm run lint
 
 - (AC-01) 속성 타입은 코드로 확인한다. 확인용으로 `notification_deleted`에 맵에 없는 `reason` 값을 넣은 호출을 임시로 추가해 `npm run typecheck`가 실패하는지 봐도 되지만, 그 임시 코드는 커밋하지 않는다
 - (AC-04, AC-05) `notification_bell_opened`가 `!isOpen` 조건 안에서 `toggle()`보다 앞에 있고, 삭제 이벤트가 `mutate`의 두 번째 인자 `onSuccess` 안에 있는지 diff로 확인한다
+- 이전 구현(r0, PR #230, 브랜치 `impl/ANALYTICS-0005-spec-229`)의 커밋을 이어 써도 된다. 새 구현 브랜치(`impl/ANALYTICS-0005-spec-<r1 명세 PR 번호>`)를 그 브랜치에서 만들어 커밋을 가져오고, 이 명세와 다른 부분(카카오톡 토글 줄바꿈 등)은 추가 커밋으로 고친다. PR은 `create-impl-pr`로 새로 연다. #230을 닫는 것은 사용자가 한다
 - (AC-09) [manual]: 사용자가 확인한다. Vercel 프리뷰에서 확인하려면 Preview 환경변수가 `NEXT_PUBLIC_POSTHOG_KEY`·`NEXT_PUBLIC_POSTHOG_HOST` 이름으로 등록돼 있고 그 뒤에 배포된 프리뷰여야 한다. 그렇지 않으면 로컬 `npm run dev`(`.env.local`에 두 키 설정)에서 확인한다. 알림이 없으면 알림함 삭제 항목은 확인할 수 없으니 "확인 못함"으로 남긴다. 회원 탈퇴는 되돌릴 수 없으므로 실사용 계정으로 확인하지 않는다
