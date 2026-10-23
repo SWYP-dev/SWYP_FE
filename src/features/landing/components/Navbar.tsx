@@ -5,6 +5,10 @@ import { useEffect, useState } from 'react';
 import { ChwihapWordmark } from '@/features/notification/components/icons';
 import KakaoLoginButton from './KakaoLoginButton';
 import { track } from '@/lib/posthog';
+import { FEATURE_FLAGS } from '@/lib/analytics/featureFlags';
+import { useFeatureFlagEnabled } from '@/lib/hooks/useFeatureFlagEnabled';
+import { useTestSessionMutation } from '@/features/auth/hooks/useAuthMutations';
+import { ButtonSpinnerIcon } from '@/components/ui/spinner';
 
 const links = [
   { label: '문제점', href: '#problem' },
@@ -25,6 +29,8 @@ interface NavbarProps {
 export default function Navbar({ variant = 'landing' }: NavbarProps) {
   const isDefault = variant === 'default';
   const [scrolled, setScrolled] = useState(false);
+  const testSessionEnabled = useFeatureFlagEnabled(FEATURE_FLAGS.testSessionLoginEntry);
+  const testSession = useTestSessionMutation();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
@@ -92,7 +98,21 @@ export default function Navbar({ variant = 'landing' }: NavbarProps) {
           >
             회원가입/로그인
           </KakaoLoginButton>
-          {isDefault ? null : (
+          {isDefault ? null : testSessionEnabled ? (
+            // 플래그 대상 방문자에게만 기존 테스트 세션 진입 버튼을 노출한다.
+            <button
+              type="button"
+              onClick={() => {
+                track('landing_cta_clicked', { cta_type: 'test_start', cta_location: 'navbar' });
+                testSession.mutate();
+              }}
+              disabled={testSession.isPending}
+              className="inline-flex h-[38px] items-center justify-center gap-[2px] rounded-lg bg-fill-primary px-4 text-3 font-semibold leading-[1.5] text-base-white transition-colors hover:bg-action-primary-hover disabled:bg-action-primary-disabled"
+            >
+              {testSession.isPending && <ButtonSpinnerIcon />}
+              {testSession.isPending ? '준비 중' : '테스트 시작하기'}
+            </button>
+          ) : (
             <Link
               href="/jobs"
               onClick={() =>

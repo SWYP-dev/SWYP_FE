@@ -14,7 +14,7 @@ export type FilterPage = 'jobs' | 'scraps';
 export interface AnalyticsEventMap {
   landing_viewed: Record<string, never>;
   landing_cta_clicked: {
-    cta_type: 'start_free' | 'signup_login';
+    cta_type: 'start_free' | 'signup_login' | 'test_start';
     cta_location: 'navbar' | 'hero';
   };
   login_prompt_shown: { trigger: LoginTrigger };
@@ -103,6 +103,7 @@ export interface AnalyticsEventMap {
   notification_deleted: { reason: InAppNotificationReason };
   notification_all_cleared: { item_count: number };
   notification_empty_cta_clicked: Record<string, never>;
+  test_session_login_completed: Record<string, never>;
 }
 
 export type AnalyticsEventName = keyof AnalyticsEventMap;

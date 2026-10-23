@@ -1,5 +1,6 @@
 import posthog from 'posthog-js';
 import type { AccountType, AnalyticsEventMap, AnalyticsEventName } from './analytics/events';
+import type { FeatureFlagKey } from './analytics/featureFlags';
 
 export const POSTHOG_KEY = process.env.NEXT_PUBLIC_POSTHOG_KEY;
 export const POSTHOG_HOST = process.env.NEXT_PUBLIC_POSTHOG_HOST;
@@ -29,7 +30,22 @@ export function initPostHog() {
     person_profiles: 'identified_only',
   });
   posthog.register({ app_env: getAppEnv() });
+  // 익명 방문자도 환경별 플래그 조건으로 평가할 수 있게 한다.
+  posthog.setPersonPropertiesForFlags({ app_env: getAppEnv() });
   isInitialized = true;
+}
+
+export function isFeatureFlagEnabled(key: FeatureFlagKey): boolean {
+  initPostHog();
+  // 키가 없거나 플래그가 로드되기 전에는 기존 CTA를 유지한다.
+  if (!isInitialized) return false;
+  return posthog.isFeatureEnabled(key) === true;
+}
+
+export function subscribeFeatureFlags(callback: () => void): () => void {
+  initPostHog();
+  if (!isInitialized) return () => {};
+  return posthog.onFeatureFlags(callback);
 }
 
 /**
@@ -68,4 +84,6 @@ export function resetAnalytics() {
   posthog.reset();
   // reset으로 지워진 환경 속성을 복원해 익명 이벤트도 환경별로 구분한다.
   posthog.register({ app_env: getAppEnv() });
+  // reset으로 지워진 플래그 평가용 환경 속성도 다시 전달한다.
+  posthog.setPersonPropertiesForFlags({ app_env: getAppEnv() });
 }
