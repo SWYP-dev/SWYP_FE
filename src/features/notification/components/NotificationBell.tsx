@@ -80,7 +80,7 @@ export function NotificationBell() {
       </button>
 
       <Popover isOpen={isOpen} onClose={close} triggerRef={triggerRef} align="end">
-        <NotificationModal />
+        <NotificationModal onClose={close} />
       </Popover>
 
       <LoginModal

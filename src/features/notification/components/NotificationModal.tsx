@@ -15,7 +15,7 @@ import { track } from '@/lib/posthog';
 // UX상 확인 절차가 필요한지 세은님 확인 필요 (TODO).
 // "더보기": v1.11 정정에 따라 5.3과 동일한 cursor/nextCursor/hasNext 커서 페이지네이션 —
 // 클릭 시 직전 응답의 nextCursor로 다음 페이지만 이어서 조회(재조회 아님).
-export function NotificationModal() {
+export function NotificationModal({ onClose }: { onClose: () => void }) {
   const router = useRouter();
   const { data, isLoading, hasNextPage, fetchNextPage, isFetchingNextPage } =
     useNotificationInboxInfinite();
@@ -82,6 +82,8 @@ export function NotificationModal() {
                   type="button"
                   onClick={() => {
                     track('notification_empty_cta_clicked');
+                    // 이미 /jobs에 있어도 알림함을 닫아 공고 목록을 바로 볼 수 있게 한다.
+                    onClose();
                     router.push('/jobs');
                   }}
                   className="flex items-center justify-center rounded-lg border border-line-primary bg-base-white px-4 py-2"
