@@ -7,6 +7,7 @@ import { useNotificationInbox } from '../api/useNotificationQuery';
 import { useMarkAllNotificationsRead } from '../api/useNotificationMutations';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { LoginModal } from '@/features/auth/components/LoginModal';
+import { track } from '@/lib/posthog';
 
 // public/icons/bell.svg(Figma node 101:17618) 경로 그대로 — currentColor로 icon/default 적용
 function BellIcon() {
@@ -49,6 +50,9 @@ export function NotificationBell() {
 
   function handleClick() {
     if (!isAuthenticated) {
+      // 알림을 보려다 로그인한 경로를 모달 노출당 한 번 기록한다.
+      if (isLoginModalOpen) return;
+      track('login_prompt_shown', { trigger: 'notification_bell' });
       setIsLoginModalOpen(true);
       return;
     }
@@ -67,7 +71,9 @@ export function NotificationBell() {
         aria-label="알림"
         className="relative flex size-7 items-center justify-center"
       >
-        {hasUnread && <span className="absolute left-6 top-0 size-2 rounded-max bg-status-negative" />}
+        {hasUnread && (
+          <span className="absolute left-6 top-0 size-2 rounded-max bg-status-negative" />
+        )}
         <BellIcon />
       </button>
 
@@ -75,7 +81,11 @@ export function NotificationBell() {
         <NotificationModal />
       </Popover>
 
-      <LoginModal isOpen={isLoginModalOpen} onClose={() => setIsLoginModalOpen(false)} />
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        trigger="notification_bell"
+      />
     </>
   );
 }

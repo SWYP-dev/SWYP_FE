@@ -7,6 +7,7 @@ import { useAuthStore } from '../store/authStore';
 import { setTokens, clearTokens } from '@/lib/api/token';
 import { queryClient } from '@/lib/api/query-client';
 import { identifyUser, resetAnalytics, track } from '@/lib/posthog';
+import { consumeLoginContext } from '../utils/loginContext';
 
 export function useKakaoLoginMutation() {
   const setUser = useAuthStore((s) => s.setUser);
@@ -23,7 +24,9 @@ export function useKakaoLoginMutation() {
       setUser(data.user);
       // 로그인 완료 이벤트가 해당 사용자에게 연결되도록 먼저 식별한다.
       identifyUser(data.user.id, 'kakao');
-      track('kakao_login_completed', { is_new_user: data.isNewUser });
+      // 저장된 맥락이 있을 때만 속성을 추가해 이전 로그인 시도와 섞이지 않게 한다.
+      const context = consumeLoginContext();
+      track('kakao_login_completed', { is_new_user: data.isNewUser, ...(context ?? {}) });
       // ⚠️ [QA 반영] 로그인 성공 시, 비로그인 상태로 캐시된 "빈 데이터"가 남아있을 수
       // 있으니 전체 쿼리를 무효화해서 로그인된 사용자 기준으로 다시 불러오도록 함.
       queryClient.invalidateQueries();

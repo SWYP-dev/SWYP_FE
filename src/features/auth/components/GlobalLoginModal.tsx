@@ -9,5 +9,7 @@ import { useLoginModalStore } from '../store/loginModalStore';
 export function GlobalLoginModal() {
   const isOpen = useLoginModalStore((s) => s.isOpen);
   const close = useLoginModalStore((s) => s.close);
-  return <LoginModal isOpen={isOpen} onClose={close} />;
+  // 처음 모달을 연 행동을 카카오 로그인 시작까지 전달한다.
+  const trigger = useLoginModalStore((s) => s.trigger);
+  return <LoginModal isOpen={isOpen} onClose={close} trigger={trigger} />;
 }

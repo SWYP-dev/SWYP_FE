@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRef, useState } from 'react';
 import { motion, type Variants } from 'framer-motion';
 import HeroMockup from './mockups/HeroMockup';
+import { track } from '@/lib/posthog';
 
 // custom={i}로 넘긴 순번만큼 등장이 지연된다.
 const rise: Variants = {
@@ -81,6 +82,10 @@ export default function Hero() {
                 색상만 토큰을 쓰고 치수는 이 파일 컨벤션대로 arbitrary px로 표기. */}
             <Link
               href="/jobs"
+              // 같은 무료 시작이라도 헤더와 본문의 진입 경로를 구분한다.
+              onClick={() =>
+                track('landing_cta_clicked', { cta_type: 'start_free', cta_location: 'hero' })
+              }
               className="inline-flex h-[48px] items-center justify-center gap-[2px] rounded-[12px] bg-fill-primary px-[28px] py-[12px] text-[16px] font-semibold leading-[1.5] text-base-white transition-colors hover:bg-action-primary-hover"
             >
               무료로 시작하기

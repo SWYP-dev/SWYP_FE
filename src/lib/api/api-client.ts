@@ -103,7 +103,8 @@ export async function apiFetch<T>(
       // 다시 통합 공고 탐색으로 튕기는 것처럼 보여 UX가 나빴음. 페이지 이동 대신
       // 전역 로그인 모달을 띄워서, 사용자가 현재 페이지에 머문 채로 로그인을
       // 유도받도록 변경.
-      openLoginModalOutsideReact();
+      // 보호된 API에서 발생한 로그인 유도를 별도 트리거로 구분한다.
+      openLoginModalOutsideReact('api_401');
       throw new AuthRequiredError();
     }
   }
