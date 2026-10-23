@@ -33,15 +33,17 @@ export function DeadlineList() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
   const [hasAppliedCardIdParam, setHasAppliedCardIdParam] = useState(false);
-  const [deeplinkOpenedCardId, setDeeplinkOpenedCardId] = useState<number | null>(null);
+  const [deeplinkCardFound, setDeeplinkCardFound] = useState<boolean | null>(null);
   const hasTrackedDeeplinkRef = useRef(false);
 
   // 렌더에서는 상태만 기록하고, StrictMode에서도 실제 진입 이벤트는 한 번만 보낸다.
   useEffect(() => {
-    if (deeplinkOpenedCardId === null || hasTrackedDeeplinkRef.current) return;
+    if (deeplinkCardFound === null || hasTrackedDeeplinkRef.current) return;
     hasTrackedDeeplinkRef.current = true;
-    track('kanban_card_opened', { source: 'email_deeplink' });
-  }, [deeplinkOpenedCardId]);
+    // 찾지 못한 딥링크도 기록하되 상세 열기는 실제 카드가 있을 때만 센다.
+    track('deadline_deeplink_opened', { card_found: deeplinkCardFound });
+    if (deeplinkCardFound) track('kanban_card_opened', { source: 'email_deeplink' });
+  }, [deeplinkCardFound]);
 
   const entries = useMemo(() => flattenKanbanCards(data?.stages ?? []), [data]);
   // 마감일이 지난 공고는 목록에서 숨긴다(오늘 마감·상시채용은 유지 — isDeadlinePassed 참고).
@@ -62,11 +64,12 @@ export function DeadlineList() {
   // effect의 추가 렌더 없이 데이터가 준비된 렌더에서 딥링크를 적용한다.
   if (!hasAppliedCardIdParam && data) {
     const cardIdParam = searchParams.get('cardId');
-    if (cardIdParam) {
+    if (cardIdParam !== null) {
       const cardId = Number(cardIdParam);
-      if (entries.some((e) => e.card.id === cardId)) {
+      const cardFound = entries.some((e) => e.card.id === cardId);
+      setDeeplinkCardFound(cardFound);
+      if (cardFound) {
         setViewingCardId(cardId);
-        setDeeplinkOpenedCardId(cardId);
       }
     }
     setHasAppliedCardIdParam(true);
@@ -92,6 +95,9 @@ export function DeadlineList() {
     const entry = findEntry(formData.cardId);
     if (!entry) return;
 
+    // 서버 날짜의 시간 부분은 제외하고 실제 마감일 변경 여부를 요청 전에 보존한다.
+    const deadlineChanged = (entry.card.deadline?.slice(0, 10) ?? null) !== formData.deadline;
+    const deadlineChangeProperties = { set_always_hiring: formData.deadline === null };
     // 수정 요청 전 출발·도착 단계 정보를 보존하고 마감일만 바꾼 경우는 제외한다.
     const fromStage = data?.stages.find((stage) => stage.id === entry.stageId);
     const toStage = data?.stages.find((stage) => stage.id === formData.stageId);
@@ -116,6 +122,7 @@ export function DeadlineList() {
       });
 
       if (stageChangeProperties) track('kanban_card_stage_changed', stageChangeProperties);
+      if (deadlineChanged) track('kanban_card_deadline_changed', deadlineChangeProperties);
       setEditingCard(null);
       setToastType('success');
       setToastMessage('수정 사항이 저장되었어요.');

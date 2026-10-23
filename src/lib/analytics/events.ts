@@ -9,6 +9,7 @@ export type DefaultStageName = '지원 전' | '면접' | '최종 결과';
 export type StageType = 'default' | 'custom';
 export type CardDetailSource = 'kanban' | 'deadlines';
 export type LinkCategory = 'RESUME' | 'PORTFOLIO' | 'PERSONAL_CHANNEL' | 'OTHER';
+export type FilterPage = 'jobs' | 'scraps';
 
 export interface AnalyticsEventMap {
   landing_viewed: Record<string, never>;
@@ -76,6 +77,25 @@ export interface AnalyticsEventMap {
   kanban_stage_deleted: { stage_count_after: number };
   kanban_stage_delete_blocked: { card_count: number };
   kanban_stage_delete_undone: Record<string, never>;
+  feed_searched: { keyword: string; result_count: number };
+  feed_filter_applied:
+    | {
+        page: FilterPage;
+        filter_type: 'job_category' | 'region' | 'career';
+        filter_value: string[];
+        active_filter_count: number;
+      }
+    | {
+        page: FilterPage;
+        filter_type: 'deadline_soon';
+        filter_value: boolean;
+        active_filter_count: number;
+      };
+  feed_filter_reset: { source: 'toolbar' | 'empty_state' };
+  feed_sort_changed: { sort: 'LATEST' | 'DEADLINE' };
+  toast_kanban_link_clicked: { source: 'feed' | 'scraps_page' };
+  deadline_deeplink_opened: { card_found: boolean };
+  kanban_card_deadline_changed: { set_always_hiring: boolean };
 }
 
 export type AnalyticsEventName = keyof AnalyticsEventMap;
