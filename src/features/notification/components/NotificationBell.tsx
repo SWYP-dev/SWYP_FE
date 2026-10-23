@@ -56,6 +56,8 @@ export function NotificationBell() {
       setIsLoginModalOpen(true);
       return;
     }
+    // 모두 읽음 처리로 개수가 바뀌기 전에 여는 시점의 미확인 개수를 기록한다.
+    if (!isOpen) track('notification_bell_opened', { unread_count: data?.unreadCount ?? 0 });
     // ⚠️ [QA-011] 알림창을 여는 시점에 안 읽은 알림을 모두 읽음 처리해 벨의 빨간 점을 제거.
     // 실패해도 알림창 열기는 막지 않고 빨간 점만 유지됨(다음에 열 때 다시 시도).
     if (!isOpen && hasUnread) markAllReadMutation.mutate();
@@ -78,7 +80,7 @@ export function NotificationBell() {
       </button>
 
       <Popover isOpen={isOpen} onClose={close} triggerRef={triggerRef} align="end">
-        <NotificationModal />
+        <NotificationModal onClose={close} />
       </Popover>
 
       <LoginModal

@@ -1,5 +1,5 @@
 // 이벤트 이름·속성은 docs/analytics/posthog-events.md와 일치시킨다.
-import type { Platform } from '@/types/api';
+import type { InAppNotificationReason, Platform } from '@/types/api';
 
 export type AccountType = 'kakao' | 'test';
 export type LoginTrigger = 'scrap' | 'notification_bell' | 'sidebar' | 'api_401';
@@ -96,6 +96,13 @@ export interface AnalyticsEventMap {
   toast_kanban_link_clicked: { source: 'feed' | 'scraps_page' };
   deadline_deeplink_opened: { card_found: boolean };
   kanban_card_deadline_changed: { set_always_hiring: boolean };
+  notification_setting_changed: { channel: 'email'; enabled: boolean };
+  logged_out: Record<string, never>;
+  account_deleted: Record<string, never>;
+  notification_bell_opened: { unread_count: number };
+  notification_deleted: { reason: InAppNotificationReason };
+  notification_all_cleared: { item_count: number };
+  notification_empty_cta_clicked: Record<string, never>;
 }
 
 export type AnalyticsEventName = keyof AnalyticsEventMap;
