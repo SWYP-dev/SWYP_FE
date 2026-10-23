@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useKanbanBoard } from '@/features/kanban/api/useKanbanQuery';
 import {
@@ -16,6 +16,9 @@ import { flattenKanbanCards, groupCardsByDeadline } from '../utils/groupByDeadli
 import { DeadlineGroup } from './DeadlineGroup';
 import { DeadlineListSkeleton } from './DeadlineListSkeleton';
 import { EditDeadlineCardModal } from './EditDeadlineCardModal';
+import { track } from '@/lib/posthog';
+import type { AnalyticsEventMap } from '@/lib/analytics/events';
+import { getStageType, getStageAnalyticsName } from '@/features/kanban/utils/stageAnalytics';
 
 // Figma "지원 마감일 메인"(node 101:17608) 스펙 반영.
 export function DeadlineList() {
@@ -30,6 +33,15 @@ export function DeadlineList() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
   const [hasAppliedCardIdParam, setHasAppliedCardIdParam] = useState(false);
+  const [deeplinkOpenedCardId, setDeeplinkOpenedCardId] = useState<number | null>(null);
+  const hasTrackedDeeplinkRef = useRef(false);
+
+  // 렌더에서는 상태만 기록하고, StrictMode에서도 실제 진입 이벤트는 한 번만 보낸다.
+  useEffect(() => {
+    if (deeplinkOpenedCardId === null || hasTrackedDeeplinkRef.current) return;
+    hasTrackedDeeplinkRef.current = true;
+    track('kanban_card_opened', { source: 'email_deeplink' });
+  }, [deeplinkOpenedCardId]);
 
   const entries = useMemo(() => flattenKanbanCards(data?.stages ?? []), [data]);
   // 마감일이 지난 공고는 목록에서 숨긴다(오늘 마감·상시채용은 유지 — isDeadlinePassed 참고).
@@ -54,6 +66,7 @@ export function DeadlineList() {
       const cardId = Number(cardIdParam);
       if (entries.some((e) => e.card.id === cardId)) {
         setViewingCardId(cardId);
+        setDeeplinkOpenedCardId(cardId);
       }
     }
     setHasAppliedCardIdParam(true);
@@ -79,6 +92,22 @@ export function DeadlineList() {
     const entry = findEntry(formData.cardId);
     if (!entry) return;
 
+    // 수정 요청 전 출발·도착 단계 정보를 보존하고 마감일만 바꾼 경우는 제외한다.
+    const fromStage = data?.stages.find((stage) => stage.id === entry.stageId);
+    const toStage = data?.stages.find((stage) => stage.id === formData.stageId);
+    const stageChangeProperties: AnalyticsEventMap['kanban_card_stage_changed'] | null =
+      fromStage && toStage && formData.stageId !== entry.stageId
+        ? {
+            method: 'deadline_edit_modal',
+            from_stage_type: getStageType(fromStage),
+            to_stage_type: getStageType(toStage),
+            from_stage_name: getStageAnalyticsName(fromStage),
+            to_stage_name: getStageAnalyticsName(toStage),
+            from_position: fromStage.position,
+            to_position: toStage.position,
+            stage_count: data?.stages.length ?? 0,
+          }
+        : null;
     try {
       await updateStageDeadlineMutation.mutateAsync({
         cardId: formData.cardId,
@@ -86,6 +115,7 @@ export function DeadlineList() {
         ...(formData.stageId !== entry.stageId ? { stageId: formData.stageId } : {}),
       });
 
+      if (stageChangeProperties) track('kanban_card_stage_changed', stageChangeProperties);
       setEditingCard(null);
       setToastType('success');
       setToastMessage('수정 사항이 저장되었어요.');
@@ -98,6 +128,7 @@ export function DeadlineList() {
   function handleConfirmDeleteCard(cardId: number) {
     deleteCardMutation.mutate(cardId, {
       onSuccess: () => {
+        track('kanban_card_deleted', { source: 'deadlines' });
         setDeletingCard(null);
         if (viewingCardId === cardId) setViewingCardId(null);
         setToastType('success');
@@ -135,7 +166,10 @@ export function DeadlineList() {
             key={group.key}
             group={group}
             selectedCardId={viewingCardId}
-            onCardClick={(cardId) => setViewingCardId(cardId)}
+            onCardClick={(cardId) => {
+              if (cardId !== viewingCardId) track('kanban_card_opened', { source: 'deadlines' });
+              setViewingCardId(cardId);
+            }}
             onEditCard={handleEditCard}
             onDeleteCard={handleDeleteCard}
           />
@@ -143,6 +177,7 @@ export function DeadlineList() {
       </div>
 
       <CardDetailDrawer
+        source="deadlines"
         isOpen={viewingCardId !== null}
         cardId={viewingCardId}
         onClose={() => setViewingCardId(null)}

@@ -23,6 +23,7 @@ import { UnsavedChangesModal } from './UnsavedChangesModal';
 import { ApiClientError } from '@/lib/api/api-client';
 import { isAlwaysHiring } from '@/lib/utils/deadline';
 import { track } from '@/lib/posthog';
+import type { CardDetailSource, LinkCategory } from '@/lib/analytics/events';
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB (API 명세서 4.4.2 정책)
 const ALLOWED_FILE_EXTENSIONS = ['.pdf', '.docx', '.pptx'];
@@ -120,6 +121,7 @@ function formatCareer(career: string | null): string {
 }
 
 interface CardDetailDrawerProps {
+  source: CardDetailSource;
   isOpen: boolean;
   cardId: number | null;
   onClose: () => void;
@@ -135,6 +137,7 @@ interface CardDetailDrawerProps {
 // 커밋 모델: 누적된 항목과 메모는 하단 "저장"에서 한 번에 서버로 간다.
 // 저장 전까지는 로컬 draft로만 존재하므로 저장하지 않고 새로고침하면 입력값이 남지 않는다.
 export function CardDetailDrawer({
+  source,
   isOpen,
   cardId,
   onClose,
@@ -267,12 +270,38 @@ export function CardDetailDrawer({
       deleted: deletedIds,
       ...(memoChanged ? { memo: memoDraft, previousMemo: detail?.memo ?? '' } : {}),
     };
+    // 저장 중 입력 상태가 바뀌어도 요청 payload와 같은 시점의 개수만 기록한다.
+    const linkCategoriesAdded = [
+      ...new Set(
+        createdLinks
+          .map((link) => link.category)
+          .filter((category): category is LinkCategory =>
+            URL_CATEGORIES.some((option) => option.value === category)
+          )
+      ),
+    ];
+    const saveProperties = {
+      memo_changed: memoChanged,
+      files_added: createdFiles.length,
+      links_added: createdLinks.length,
+      link_categories_changed: updatedLinkCategories.length,
+      documents_deleted: deletedIds.length,
+      link_categories_added: linkCategoriesAdded,
+      source,
+    };
     setFileError(null);
     try {
       await saveCardDetail.mutateAsync(payload);
+      track('card_detail_saved', saveProperties);
       setSyncRequest('all'); // 갱신된 상세 데이터로 draft 재동기화
       setToast({ message: '저장되었어요.', type: 'success' });
     } catch (err) {
+      track('card_detail_save_failed', {
+        error_code:
+          err instanceof ApiClientError && err.code === 'STORAGE_LIMIT_EXCEEDED'
+            ? 'STORAGE_LIMIT_EXCEEDED'
+            : 'unknown',
+      });
       // 실패하면 서버는 저장 이전 상태로 되돌아가 있고(보상 요청), 화면의 입력값은 그대로 둔다.
       // 파일을 다시 고르지 않고 용량만 줄여서 바로 재시도할 수 있게 하기 위함 —
       // 새로고침하면 로컬 draft가 사라지므로 서버 값(= 저장 이전 상태)만 남는다.
@@ -644,6 +673,8 @@ export function CardDetailDrawer({
         isOpen={isUnsavedModalOpen}
         onCancel={() => setIsUnsavedModalOpen(false)}
         onConfirm={() => {
+          // 변경 없이 닫기나 계속 작성은 제외하고 명시적으로 버린 경우만 센다.
+          track('card_detail_discarded');
           setIsUnsavedModalOpen(false);
           onClose();
         }}
