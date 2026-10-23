@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { Header } from '@/components/layout/header';
@@ -38,6 +38,10 @@ import { formatCareer } from '@/features/feed/utils/formatCareer';
 import { formatJobCategory } from '@/features/feed/utils/formatJobCategory';
 import type { FeedQueryParams } from '@/types/api';
 import { track } from '@/lib/posthog';
+import {
+  buildFilterAppliedProperties,
+  type FeedFilterState,
+} from '@/features/feed/utils/filterAnalytics';
 
 type SortOption = NonNullable<FeedQueryParams['sort']>;
 
@@ -59,6 +63,8 @@ export default function FeedPage() {
   const [jobCategoryValue, setJobCategoryValue] = useState<SelectionValue | null>(null);
   const [regionValue, setRegionValue] = useState<SelectionValue | null>(null);
   const [careerTags, setCareerTags] = useState<CareerTagId[]>([]);
+  const pendingSearchRef = useRef<string | null>(null);
+  const filterState: FeedFilterState = { jobCategoryValue, regionValue, careerTags, deadlineSoon };
 
   // 스크랩 상태 로컬 오버라이드.
   // ⚠️ [백엔드 반영 완료] FeedItem 응답에 jobPostingId가 추가돼서, 더 이상 "이번
@@ -85,6 +91,26 @@ export default function FeedPage() {
   });
 
   const [syncedData, setSyncedData] = useState<typeof data>(undefined);
+
+  // 제출한 검색어의 첫 응답만 기록하고 페이지·필터 변경 응답은 중복 집계하지 않는다.
+  useEffect(() => {
+    if (pendingSearchRef.current === null || pendingSearchRef.current !== keyword) return;
+    if (data) {
+      track('feed_searched', { keyword: keyword.trim(), result_count: data.totalElements });
+      pendingSearchRef.current = null;
+    } else if (isError) {
+      pendingSearchRef.current = null;
+    }
+  }, [data, keyword, isError]);
+
+  function handleSearch(nextKeyword: string) {
+    if (nextKeyword.trim().length === 0) {
+      pendingSearchRef.current = null;
+    } else if (nextKeyword !== keyword) {
+      pendingSearchRef.current = nextKeyword;
+    }
+    setKeyword(nextKeyword);
+  }
 
   // effect의 추가 렌더 없이 캐시된 첫 데이터와 이후 변경을 맵에 누적한다.
   if (data !== syncedData) {
@@ -210,7 +236,9 @@ export default function FeedPage() {
 
   const isSearching = keyword.trim().length > 0;
 
-  function resetFilters() {
+  function resetFilters(source: 'toolbar' | 'empty_state') {
+    // 초기화는 필터별 적용 이벤트와 별도로 진입 위치만 기록한다.
+    track('feed_filter_reset', { source });
     setJobCategoryValue(null);
     setRegionValue(null);
     setCareerTags([]);
@@ -225,7 +253,7 @@ export default function FeedPage() {
 
       <main className="self-stretch flex-1 flex flex-col text-3 min-h-0 overflow-y-auto">
         <div className="sticky top-0 z-10 flex flex-col bg-base-white">
-          <Header onSearch={setKeyword} />
+          <Header onSearch={handleSearch} />
 
           {isSearching && (
             <div className="flex items-center justify-center pb-9 pt-12">
@@ -239,20 +267,71 @@ export default function FeedPage() {
             <div className="flex items-center gap-3">
               {/* QA-002: 직군·직무 / 지역 / 경력을 하나의 가로 바로 묶고, 각 세그먼트 아래에 드롭다운으로 연다. */}
               <FilterBar>
-                <JobCategoryFilterButton value={jobCategoryValue} onApply={setJobCategoryValue} />
-                <RegionFilterButton value={regionValue} onApply={setRegionValue} />
-                <CareerFilterChip appliedTags={careerTags} onApply={setCareerTags} />
+                <JobCategoryFilterButton
+                  value={jobCategoryValue}
+                  onApply={(value) => {
+                    setJobCategoryValue(value);
+                    track(
+                      'feed_filter_applied',
+                      buildFilterAppliedProperties('jobs', 'job_category', {
+                        ...filterState,
+                        jobCategoryValue: value,
+                      })
+                    );
+                  }}
+                />
+                <RegionFilterButton
+                  value={regionValue}
+                  onApply={(value) => {
+                    setRegionValue(value);
+                    track(
+                      'feed_filter_applied',
+                      buildFilterAppliedProperties('jobs', 'region', {
+                        ...filterState,
+                        regionValue: value,
+                      })
+                    );
+                  }}
+                />
+                <CareerFilterChip
+                  appliedTags={careerTags}
+                  onApply={(tags) => {
+                    setCareerTags(tags);
+                    track(
+                      'feed_filter_applied',
+                      buildFilterAppliedProperties('jobs', 'career', {
+                        ...filterState,
+                        careerTags: tags,
+                      })
+                    );
+                  }}
+                />
               </FilterBar>
-              <DeadlineSoonFilterButton isActive={deadlineSoon} onToggle={setDeadlineSoon} />
+              <DeadlineSoonFilterButton
+                isActive={deadlineSoon}
+                onToggle={(value) => {
+                  setDeadlineSoon(value);
+                  track(
+                    'feed_filter_applied',
+                    buildFilterAppliedProperties('jobs', 'deadline_soon', {
+                      ...filterState,
+                      deadlineSoon: value,
+                    })
+                  );
+                }}
+              />
               {/* 전체 초기화: 마감일 임박 버튼과 동일한 디자인, 필터 적용 여부와 무관하게 항상 노출 */}
-              <FilterTriggerButton showChevron={false} onClick={resetFilters}>
+              <FilterTriggerButton showChevron={false} onClick={() => resetFilters('toolbar')}>
                 초기화
               </FilterTriggerButton>
             </div>
             <div className="flex items-start gap-2 text-label-body">
               <button
                 type="button"
-                onClick={() => setSort('LATEST')}
+                onClick={() => {
+                  if (sort !== 'LATEST') track('feed_sort_changed', { sort: 'LATEST' });
+                  setSort('LATEST');
+                }}
                 className={sort === 'LATEST' ? 'font-semibold text-label-base' : ''}
               >
                 최신순
@@ -260,7 +339,10 @@ export default function FeedPage() {
               <div className="text-1">•</div>
               <button
                 type="button"
-                onClick={() => setSort('DEADLINE')}
+                onClick={() => {
+                  if (sort !== 'DEADLINE') track('feed_sort_changed', { sort: 'DEADLINE' });
+                  setSort('DEADLINE');
+                }}
                 className={sort === 'DEADLINE' ? 'font-semibold text-label-base' : ''}
               >
                 마감일순
@@ -292,7 +374,7 @@ export default function FeedPage() {
                     title="조건에 맞는 채용 공고가 없어요"
                     description="필터를 조정하거나 초기화해 보세요."
                     actionLabel="필터 초기화"
-                    onAction={resetFilters}
+                    onAction={() => resetFilters('empty_state')}
                   />
                 )}
                 {!isLoading &&
@@ -349,7 +431,10 @@ export default function FeedPage() {
         type={toastType}
         hasButton={toastType === 'success' && toastMessage === '지원 현황에 추가되었어요.'}
         actionLabel="지원 현황 이동"
-        onAction={() => router.push('/kanban')}
+        onAction={() => {
+          track('toast_kanban_link_clicked', { source: 'feed' });
+          router.push('/kanban');
+        }}
       />
     </div>
   );

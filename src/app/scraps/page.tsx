@@ -37,6 +37,10 @@ import { formatJobCategory } from '@/features/feed/utils/formatJobCategory';
 import type { ScrapCardData } from '@/features/scraps/types/scrap';
 import type { ScrapItem } from '@/types/api';
 import { track } from '@/lib/posthog';
+import {
+  buildFilterAppliedProperties,
+  type FeedFilterState,
+} from '@/features/feed/utils/filterAnalytics';
 
 // ⚠️ [QA 반영] 통합 공고 탐색(page.tsx)과 동일한 포맷 함수를 사용해 직무/경력/지역
 // 표시 문구가 두 화면에서 어긋나지 않도록 함(지역 미표기 fallback은 JobCard 내부의
@@ -64,6 +68,13 @@ const ScrapsPage: NextPage = () => {
   const [regionValue, setRegionValue] = useState<SelectionValue | null>(null);
   const [jobCategoryValue, setJobCategoryValue] = useState<SelectionValue | null>(null);
   const [isDeadlineSoon, setIsDeadlineSoon] = useState(false);
+  // 피드와 같은 기준으로 적용 후 필터 속성을 만든다.
+  const filterState: FeedFilterState = {
+    jobCategoryValue,
+    regionValue,
+    careerTags,
+    deadlineSoon: isDeadlineSoon,
+  };
 
   const { data, isLoading, isError, refetch } = useScrapsQuery({
     page: currentPage,
@@ -154,11 +165,59 @@ const ScrapsPage: NextPage = () => {
           <div className="flex items-center justify-between pt-7 px-12 pb-5 text-center">
             <div className="flex items-center gap-3">
               <FilterBar>
-                <JobCategoryFilterButton value={jobCategoryValue} onApply={setJobCategoryValue} />
-                <RegionFilterButton value={regionValue} onApply={setRegionValue} />
-                <CareerFilterChip appliedTags={careerTags} onApply={setCareerTags} />
+                <JobCategoryFilterButton
+                  value={jobCategoryValue}
+                  onApply={(value) => {
+                    setJobCategoryValue(value);
+                    track(
+                      'feed_filter_applied',
+                      buildFilterAppliedProperties('scraps', 'job_category', {
+                        ...filterState,
+                        jobCategoryValue: value,
+                      })
+                    );
+                  }}
+                />
+                <RegionFilterButton
+                  value={regionValue}
+                  onApply={(value) => {
+                    setRegionValue(value);
+                    track(
+                      'feed_filter_applied',
+                      buildFilterAppliedProperties('scraps', 'region', {
+                        ...filterState,
+                        regionValue: value,
+                      })
+                    );
+                  }}
+                />
+                <CareerFilterChip
+                  appliedTags={careerTags}
+                  onApply={(tags) => {
+                    setCareerTags(tags);
+                    track(
+                      'feed_filter_applied',
+                      buildFilterAppliedProperties('scraps', 'career', {
+                        ...filterState,
+                        careerTags: tags,
+                      })
+                    );
+                  }}
+                />
               </FilterBar>
-              <DeadlineSoonFilterButton isActive={isDeadlineSoon} onToggle={setIsDeadlineSoon} />
+              <DeadlineSoonFilterButton
+                isActive={isDeadlineSoon}
+                onToggle={(value) => {
+                  setIsDeadlineSoon(value);
+                  track(
+                    'feed_filter_applied',
+                    buildFilterAppliedProperties('scraps', 'deadline_soon', {
+                      ...filterState,
+                      deadlineSoon: value,
+                    })
+                  );
+                }}
+              />
             </div>
             <div className="flex items-start gap-2 text-label-body">
               <div className="font-semibold text-label-base">최신순</div>
@@ -213,7 +272,10 @@ const ScrapsPage: NextPage = () => {
         type={toastType}
         hasButton={toastType === 'success' && toastMessage === '지원 현황에 추가되었어요.'}
         actionLabel="지원 현황 이동"
-        onAction={() => router.push('/kanban')}
+        onAction={() => {
+          track('toast_kanban_link_clicked', { source: 'scraps_page' });
+          router.push('/kanban');
+        }}
       />
     </div>
   );
