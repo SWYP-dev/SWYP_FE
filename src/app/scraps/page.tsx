@@ -15,7 +15,10 @@ import {
   JobCategoryFilterButton,
   buildJobCategoryParam,
 } from '@/features/feed/components/JobCategoryFilterButton';
-import { RegionFilterButton, buildRegionParam } from '@/features/feed/components/RegionFilterButton';
+import {
+  RegionFilterButton,
+  buildRegionParam,
+} from '@/features/feed/components/RegionFilterButton';
 import {
   CareerFilterChip,
   buildCareerParam,
@@ -33,6 +36,7 @@ import { formatCareer } from '@/features/feed/utils/formatCareer';
 import { formatJobCategory } from '@/features/feed/utils/formatJobCategory';
 import type { ScrapCardData } from '@/features/scraps/types/scrap';
 import type { ScrapItem } from '@/types/api';
+import { track } from '@/lib/posthog';
 
 // ⚠️ [QA 반영] 통합 공고 탐색(page.tsx)과 동일한 포맷 함수를 사용해 직무/경력/지역
 // 표시 문구가 두 화면에서 어긋나지 않도록 함(지역 미표기 fallback은 JobCard 내부의
@@ -81,6 +85,8 @@ const ScrapsPage: NextPage = () => {
 
     try {
       await deleteScrap(jobPostingId);
+      // 해제 실패·낙관적 표시만으로는 이벤트를 보내지 않는다.
+      track('scrap_removed', { source: 'scraps_page' });
       refetch();
       queryClient.invalidateQueries({ queryKey: ['feed'] });
     } catch (err) {
@@ -97,14 +103,28 @@ const ScrapsPage: NextPage = () => {
 
   // 3.2 칸반 카드 등록 (jobPostingId 기준 — registerCard.ts 주석 참고)
   async function handleAddToKanban(jobPostingId: number) {
+    // 응답 이후 목록이 갱신돼도 클릭한 공고의 속성을 유지한다.
+    const item = data?.items.find((scrap) => scrap.jobPostingId === jobPostingId);
+    const properties = {
+      source: 'scraps_page',
+      platform: item?.platform ?? null,
+      job_category: item?.jobCategory ?? null,
+    } as const;
     try {
       await registerKanbanCard(jobPostingId);
+      track('kanban_card_added', properties);
       // HT-001: 목록의 isKanbanRegistered를 다시 받아와 '지원 완료' 버튼으로 바꿈
       refetch();
       queryClient.invalidateQueries({ queryKey: kanbanKeys.board() });
       setToastType('success');
       setToastMessage('지원 현황에 추가되었어요.');
     } catch (err) {
+      if (
+        err instanceof ApiClientError &&
+        (err.code === 'K003' || err.code === 'DUPLICATE_KANBAN_CARD')
+      ) {
+        track('kanban_card_add_duplicated', { source: 'scraps_page' });
+      }
       setToastType('error');
       if (
         err instanceof ApiClientError &&
@@ -151,8 +171,7 @@ const ScrapsPage: NextPage = () => {
         <div className="flex-1 flex flex-col px-12 py-7 bg-surface-card">
           <div className="flex flex-col gap-8">
             <div className="flex flex-col items-center gap-3 p-3 bg-base-white rounded-[20px]">
-              {isLoading &&
-                Array.from({ length: 5 }).map((_, i) => <JobCardSkeleton key={i} />)}
+              {isLoading && Array.from({ length: 5 }).map((_, i) => <JobCardSkeleton key={i} />)}
               {isError && (
                 <p className="py-11 text-status-negative">스크랩 목록을 불러오지 못했어요.</p>
               )}
@@ -165,6 +184,13 @@ const ScrapsPage: NextPage = () => {
                   data={scrap}
                   onRemoveScrap={handleRemoveScrap}
                   onAddToKanban={handleAddToKanban}
+                  onOriginalLinkClick={(jobPostingId) => {
+                    const item = data?.items.find((scrap) => scrap.jobPostingId === jobPostingId);
+                    track('original_posting_clicked', {
+                      source: 'scraps',
+                      platform: item?.platform ?? null,
+                    });
+                  }}
                 />
               ))}
             </div>

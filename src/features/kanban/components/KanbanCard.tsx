@@ -6,6 +6,7 @@ import { EditIcon, TrashIcon } from '@/components/ui/icons';
 import type { KanbanCard as KanbanCardType } from '@/types/api';
 import { DeadlineBadge } from '@/components/ui/badge';
 import { formatDeadlineText } from '../utils/formatDeadline';
+import { track } from '@/lib/posthog';
 
 interface KanbanCardProps {
   card: KanbanCardType;
@@ -18,6 +19,8 @@ interface KanbanCardProps {
 
 function handleOriginalLinkClick(event: React.MouseEvent<HTMLAnchorElement>) {
   event.stopPropagation();
+  // 원본 이동과 상세 드로어 열기를 분리한 기존 동작을 유지하며 클릭만 기록한다.
+  track('original_posting_clicked', { source: 'kanban_card' });
 }
 
 function CalendarSmallIcon() {

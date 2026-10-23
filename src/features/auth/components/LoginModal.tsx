@@ -4,10 +4,14 @@ import Image from 'next/image';
 import { CloseIcon } from '@/components/ui/icons';
 import { useEscapeKey } from '@/lib/hooks/useEscapeKey';
 import { getKakaoAuthorizeUrl } from '../utils/kakaoOAuth';
+import { saveLoginContext } from '../utils/loginContext';
+import { track } from '@/lib/posthog';
+import type { LoginTrigger } from '@/lib/analytics/events';
 
 interface LoginModalProps {
   isOpen: boolean;
   onClose: () => void;
+  trigger: LoginTrigger;
 }
 
 // Figma "로그인 화면"(node 111:23076) 내 Modal(node 111:23089) 스펙 그대로 반영.
@@ -19,13 +23,16 @@ interface LoginModalProps {
 //    (2/4/8/12/16/20/24/32px)까지만 정의돼 있어서, 그 범위를 벗어나는 숫자 클래스
 //    (gap-14, px-9 등)는 존재하지 않는 클래스로 조용히 무시되고 간격이 0이 됨.
 //    → Figma 스펙 그대로 전부 대괄호(arbitrary value)로 명시해서 스케일 범위 문제를 원천 차단.
-export function LoginModal({ isOpen, onClose }: LoginModalProps) {
+export function LoginModal({ isOpen, onClose, trigger }: LoginModalProps) {
   // ESC 키로 닫기 (훅은 조건부 return보다 먼저 호출해야 함)
   useEscapeKey(isOpen, onClose);
 
   if (!isOpen) return null;
 
   function handleKakaoLogin() {
+    // 외부 인가 페이지로 나가기 전에 시작 맥락을 기록하고 콜백에 전달한다.
+    track('kakao_login_started', { entry: 'login_modal', trigger });
+    saveLoginContext({ entry: 'login_modal', trigger });
     window.location.href = getKakaoAuthorizeUrl();
   }
 

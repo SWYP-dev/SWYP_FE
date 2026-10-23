@@ -22,6 +22,7 @@ import {
 import { UnsavedChangesModal } from './UnsavedChangesModal';
 import { ApiClientError } from '@/lib/api/api-client';
 import { isAlwaysHiring } from '@/lib/utils/deadline';
+import { track } from '@/lib/posthog';
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB (API 명세서 4.4.2 정책)
 const ALLOWED_FILE_EXTENSIONS = ['.pdf', '.docx', '.pptx'];
@@ -435,6 +436,8 @@ export function CardDetailDrawer({
 
               <a
                 href={detail.originalUrl}
+                // 칸반·마감일 화면 모두 같은 드로어 경로로 집계한다.
+                onClick={() => track('original_posting_clicked', { source: 'card_drawer' })}
                 target="_blank"
                 rel="noreferrer"
                 className="inline-block"

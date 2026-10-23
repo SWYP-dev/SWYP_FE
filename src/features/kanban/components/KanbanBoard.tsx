@@ -35,6 +35,7 @@ import {
 import { ApiClientError } from '@/lib/api/api-client';
 import { useDraftStageStore } from '@/features/kanban/store/draftStageStore';
 import { kanbanKeys } from '@/features/kanban/api/useKanbanQuery';
+import { track } from '@/lib/posthog';
 
 const MAX_STAGES = 10;
 
@@ -603,6 +604,13 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
               originalUrl: data.originalUrl,
               deadline: data.deadline,
             });
+            // 등록 성공을 바로 기록해 후속 이동 실패나 삭제 되돌리기와 구분한다.
+            track('kanban_card_added', {
+              source: 'manual',
+              target_stage_type: stages.find((stage) => stage.id === data.stageId)?.isDefault
+                ? 'default'
+                : 'custom',
+            });
             const targetStageId = data.stageId;
             const newCard = {
               id: res.cardId,
@@ -639,6 +647,9 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
             return undefined;
           } catch (err) {
             if (err instanceof ApiClientError) {
+              if (err.code === 'K003' || err.code === 'DUPLICATE_KANBAN_CARD') {
+                track('kanban_card_add_duplicated', { source: 'manual' });
+              }
               const mapped = mapCardErrorCode(err.code);
               if (mapped) return mapped;
             }
