@@ -70,7 +70,8 @@ export function useDeleteAccountMutation() {
     onSuccess: () => {
       clearTokens();
       clearUser();
-      // 탈퇴 후 랜딩에서 이전 사용자 식별 정보가 이어지지 않게 한다.
+      // 탈퇴 이벤트를 기존 사용자에 연결한 뒤 식별 정보를 초기화한다.
+      track('account_deleted');
       resetAnalytics();
       queryClient.clear();
       router.push('/');
@@ -89,7 +90,8 @@ export function useLogoutMutation() {
     onSettled: () => {
       clearTokens();
       clearUser();
-      // 로그아웃 후 이벤트는 계정 구분 없이 익명으로 수집한다.
+      // API 실패여도 실제 클라이언트 로그아웃을 초기화 전 사용자에 연결한다.
+      track('logged_out');
       resetAnalytics();
       // ⚠️ [QA 반영] 기존엔 토큰/로그인 상태만 지우고 React Query 캐시는 그대로 둬서,
       // 로그아웃 후에도 이전에 불러온 보호된 데이터(칸반/마감일 등)가 캐시에 남아

@@ -2,6 +2,7 @@
 
 import { useNotificationSettings } from '@/features/notification/api/useNotificationQuery';
 import { useUpdateNotificationSettings } from '@/features/notification/api/useNotificationMutations';
+import { track } from '@/lib/posthog';
 
 function ToggleSwitch({
   checked,
@@ -76,11 +77,18 @@ export default function SettingsNotificationsPage() {
               // 누르는 즉시 저장(QA-021). 저장 성공/실패 안내 문구는 두지 않는다(기획 확정).
               // 실패하면 스위치는 저장돼 있던 값으로 자동으로 돌아간다.
               onChange={(next) => {
-                updateMutation.mutate({
-                  emailEnabled: next,
-                  inAppEnabled: data.inAppEnabled,
-                  remindDays: data.remindDays,
-                });
+                // 화면의 임시 토글 상태가 아니라 서버 저장 성공만 기록한다.
+                updateMutation.mutate(
+                  {
+                    emailEnabled: next,
+                    inAppEnabled: data.inAppEnabled,
+                    remindDays: data.remindDays,
+                  },
+                  {
+                    onSuccess: () =>
+                      track('notification_setting_changed', { channel: 'email', enabled: next }),
+                  }
+                );
               }}
             />
           </div>
@@ -95,7 +103,12 @@ export default function SettingsNotificationsPage() {
               </p>
             </div>
             {/* ⚠️ 백엔드 API 없음(Phase 6/v1.7 미구현) — 비활성화 */}
-            <ToggleSwitch label="카카오톡 리마인드 알림" checked={false} disabled onChange={() => {}} />
+            <ToggleSwitch
+              label="카카오톡 리마인드 알림"
+              checked={false}
+              disabled
+              onChange={() => {}}
+            />
           </div>
         </div>
       </div>

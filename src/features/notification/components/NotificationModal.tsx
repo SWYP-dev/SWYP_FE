@@ -5,6 +5,7 @@ import { NotificationItem } from './NotificationItem';
 import { useNotificationInboxInfinite } from '../api/useNotificationQuery';
 import { useDeleteNotification, useDeleteAllNotifications } from '../api/useNotificationMutations';
 import { Spinner } from '@/components/ui/spinner';
+import { track } from '@/lib/posthog';
 
 // Figma "지원 마감일 알림 확인 후(알림 모달 등장)"(node 101:17610) 스펙 반영.
 // ⚠️ [2026-08-04] 백엔드 알림 API 변경(프론트 연동 공유) 반영: 인앱 알림 단일/전체 삭제
@@ -24,12 +25,22 @@ export function NotificationModal() {
   const items = data?.pages.flatMap((page) => page.items) ?? [];
 
   function handleDelete(id: number) {
-    deleteMutation.mutate(id);
+    // 재조회로 항목이 사라져도 클릭한 알림의 종류로 성공을 집계한다.
+    const reason = items.find((item) => item.id === id)?.reason;
+    deleteMutation.mutate(id, {
+      onSuccess: () => {
+        if (reason) track('notification_deleted', { reason });
+      },
+    });
   }
 
   function handleDeleteAll() {
     if (items.length === 0) return;
-    deleteAllMutation.mutate();
+    // 서버 전체 개수가 아니라 화면에 불러온 개수를 요청 전에 보존한다.
+    const itemCount = items.length;
+    deleteAllMutation.mutate(undefined, {
+      onSuccess: () => track('notification_all_cleared', { item_count: itemCount }),
+    });
   }
 
   return (
@@ -69,7 +80,10 @@ export function NotificationModal() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => router.push('/jobs')}
+                  onClick={() => {
+                    track('notification_empty_cta_clicked');
+                    router.push('/jobs');
+                  }}
                   className="flex items-center justify-center rounded-lg border border-line-primary bg-base-white px-4 py-2"
                 >
                   <span className="text-3 font-medium text-label-primary">공고 둘러보기</span>
