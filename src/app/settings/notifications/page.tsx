@@ -103,12 +103,7 @@ export default function SettingsNotificationsPage() {
               </p>
             </div>
             {/* ⚠️ 백엔드 API 없음(Phase 6/v1.7 미구현) — 비활성화 */}
-            <ToggleSwitch
-              label="카카오톡 리마인드 알림"
-              checked={false}
-              disabled
-              onChange={() => {}}
-            />
+            <ToggleSwitch label="카카오톡 리마인드 알림" checked={false} disabled onChange={() => {}} />
           </div>
         </div>
       </div>
