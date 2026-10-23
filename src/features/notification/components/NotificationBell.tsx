@@ -7,6 +7,7 @@ import { useNotificationInbox } from '../api/useNotificationQuery';
 import { useMarkAllNotificationsRead } from '../api/useNotificationMutations';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { LoginModal } from '@/features/auth/components/LoginModal';
+import { track } from '@/lib/posthog';
 
 // public/icons/bell.svg(Figma node 101:17618) 경로 그대로 — currentColor로 icon/default 적용
 function BellIcon() {
@@ -49,9 +50,14 @@ export function NotificationBell() {
 
   function handleClick() {
     if (!isAuthenticated) {
+      // 알림을 보려다 로그인한 경로를 모달 노출당 한 번 기록한다.
+      if (isLoginModalOpen) return;
+      track('login_prompt_shown', { trigger: 'notification_bell' });
       setIsLoginModalOpen(true);
       return;
     }
+    // 모두 읽음 처리로 개수가 바뀌기 전에 여는 시점의 미확인 개수를 기록한다.
+    if (!isOpen) track('notification_bell_opened', { unread_count: data?.unreadCount ?? 0 });
     // ⚠️ [QA-011] 알림창을 여는 시점에 안 읽은 알림을 모두 읽음 처리해 벨의 빨간 점을 제거.
     // 실패해도 알림창 열기는 막지 않고 빨간 점만 유지됨(다음에 열 때 다시 시도).
     if (!isOpen && hasUnread) markAllReadMutation.mutate();
@@ -67,15 +73,21 @@ export function NotificationBell() {
         aria-label="알림"
         className="relative flex size-7 items-center justify-center"
       >
-        {hasUnread && <span className="absolute left-6 top-0 size-2 rounded-max bg-status-negative" />}
+        {hasUnread && (
+          <span className="absolute left-6 top-0 size-2 rounded-max bg-status-negative" />
+        )}
         <BellIcon />
       </button>
 
       <Popover isOpen={isOpen} onClose={close} triggerRef={triggerRef} align="end">
-        <NotificationModal />
+        <NotificationModal onClose={close} />
       </Popover>
 
-      <LoginModal isOpen={isLoginModalOpen} onClose={() => setIsLoginModalOpen(false)} />
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        trigger="notification_bell"
+      />
     </>
   );
 }

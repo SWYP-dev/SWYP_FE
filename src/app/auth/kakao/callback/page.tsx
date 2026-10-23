@@ -4,6 +4,8 @@ import { Suspense, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useKakaoLoginMutation } from '@/features/auth/hooks/useAuthMutations';
 import { Spinner } from '@/components/ui/spinner';
+import { track } from '@/lib/posthog';
+import { consumeLoginContext } from '@/features/auth/utils/loginContext';
 
 // 카카오 인가 코드 콜백 처리 페이지.
 // NEXT_PUBLIC_KAKAO_REDIRECT_URI를 이 경로로 등록해야 함 (예: http://localhost:3000/auth/kakao/callback)
@@ -38,6 +40,11 @@ function CallbackHandler() {
     const kakaoError = searchParams.get('error');
 
     if (kakaoError) {
+      // 동의 취소도 StrictMode에서 한 번만 기록하고 다음 로그인 맥락을 비운다.
+      if (hasRequested.current) return;
+      hasRequested.current = true;
+      track('kakao_login_failed', { reason: 'kakao_denied' });
+      consumeLoginContext();
       router.replace('/?loginError=kakao_denied');
       return;
     }
@@ -47,7 +54,11 @@ function CallbackHandler() {
     // [QA 반영] 로그인 후 진입 화면은 통합 공고 탐색(/jobs)이 아닌 지원 현황 관리(/kanban)
     loginMutation.mutate(code, {
       onSuccess: () => router.replace('/kanban'),
-      onError: () => router.replace('/?loginError=1'),
+      onError: () => {
+        track('kakao_login_failed', { reason: 'server_error' });
+        consumeLoginContext();
+        router.replace('/?loginError=1');
+      },
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);

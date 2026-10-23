@@ -6,6 +6,7 @@ import { useState, type ComponentType } from 'react';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { LoginModal } from '@/features/auth/components/LoginModal';
 import { ProfileMenu } from '@/features/auth/components/ProfileMenu';
+import { track } from '@/lib/posthog';
 import { ChwihapWordmark } from '@/features/notification/components/icons';
 import {
   BookmarkNavIcon,
@@ -90,7 +91,12 @@ export function Sidebar() {
         ) : (
           <button
             type="button"
-            onClick={() => setIsLoginModalOpen(true)}
+            onClick={() => {
+              // 열린 모달의 반복 노출을 중복 집계하지 않는다.
+              if (isLoginModalOpen) return;
+              track('login_prompt_shown', { trigger: 'sidebar' });
+              setIsLoginModalOpen(true);
+            }}
             className="flex items-center justify-center rounded-lg border border-line-secondary bg-base-white px-[12px] py-[8px]"
           >
             <span className="text-3 font-medium leading-[1.5] text-label-primary">
@@ -100,7 +106,11 @@ export function Sidebar() {
         )}
       </div>
 
-      <LoginModal isOpen={isLoginModalOpen} onClose={() => setIsLoginModalOpen(false)} />
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        trigger="sidebar"
+      />
     </aside>
   );
 }

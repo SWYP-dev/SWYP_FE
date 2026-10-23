@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   DndContext,
@@ -35,6 +35,9 @@ import {
 import { ApiClientError } from '@/lib/api/api-client';
 import { useDraftStageStore } from '@/features/kanban/store/draftStageStore';
 import { kanbanKeys } from '@/features/kanban/api/useKanbanQuery';
+import { track } from '@/lib/posthog';
+import type { AnalyticsEventMap } from '@/lib/analytics/events';
+import { getStageType, getStageAnalyticsName } from '../utils/stageAnalytics';
 
 const MAX_STAGES = 10;
 
@@ -111,6 +114,8 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
   const [activeDragWidth, setActiveDragWidth] = useState<number | null>(null);
   // 카드 위에 있어도 놓일 컬럼을 강조하기 위해 별도로 추적한다(HT-002).
   const [dragOverStageId, setDragOverStageId] = useState<number | null>(null);
+  // 드래그 도중 로컬 소속이 바뀌기 전에 실제 출발 단계를 보관한다.
+  const dragStartStageIdRef = useRef<number | null>(null);
 
   // fix: initialStages 변경 시 stages 동기화 — 컬럼 너비 변형 버그 수정 (버그2)
   // useEffect에서 setState를 호출하면 리렌더링이 한 번 더 발생해 깜빡임(컬럼 너비
@@ -150,6 +155,7 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
   function handleDragStart(event: DragStartEvent) {
     const { active } = event;
     if (active.data.current?.type !== 'card') return;
+    dragStartStageIdRef.current = active.data.current.stageId ?? null;
     setActiveDragCard(active.data.current.card as KanbanCard);
     setActiveDragWidth(active.rect.current.initial?.width ?? null);
   }
@@ -198,6 +204,8 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
   }
 
   function handleDragEnd(event: DragEndEvent) {
+    const dragStartStageId = dragStartStageIdRef.current;
+    dragStartStageIdRef.current = null;
     setActiveDragCard(null);
     setDragOverStageId(null);
     setActiveDragWidth(null);
@@ -240,9 +248,21 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
         return finalOrder.map((s, idx) => ({ ...s, position: idx + 1 }));
       });
 
+      // 요청 전에 위치를 보존해 재조회 결과와 이전 위치가 섞이지 않게 한다.
+      const reorderProperties = fromStage
+        ? {
+            stage_type: getStageType(fromStage),
+            from_position: fromStage.position,
+            to_position: newPosition,
+            stage_count: stages.length,
+          }
+        : null;
       updateStageMutation.mutate(
         { stageId: fromStageId, position: newPosition },
         {
+          onSuccess: () => {
+            if (reorderProperties) track('kanban_stage_reordered', reorderProperties);
+          },
           onError: (err) => {
             setStages(initialStages);
             setToastType('error');
@@ -283,9 +303,28 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
 
     const newPosition = finalCards.findIndex((c) => c.id === cardId) + 1;
 
+    const fromStage = stages.find((stage) => stage.id === dragStartStageId);
+    const toStage = stages.find((stage) => stage.id === currentStageId);
+    const stageChangeProperties: AnalyticsEventMap['kanban_card_stage_changed'] | null =
+      fromStage && toStage && fromStage.id !== toStage.id
+        ? {
+            method: 'drag',
+            from_stage_type: getStageType(fromStage),
+            to_stage_type: getStageType(toStage),
+            from_stage_name: getStageAnalyticsName(fromStage),
+            to_stage_name: getStageAnalyticsName(toStage),
+            from_position: fromStage.position,
+            to_position: toStage.position,
+            stage_count: stages.length,
+          }
+        : null;
     moveCardMutation.mutate(
       { cardId, stageId: currentStageId, position: newPosition },
       {
+        // 같은 단계 안 정렬과 실패는 제외하고 서버에 반영된 단계 변경만 기록한다.
+        onSuccess: () => {
+          if (stageChangeProperties) track('kanban_card_stage_changed', stageChangeProperties);
+        },
         onError: () => {
           setStages(initialStages);
           showToast('error', '카드 이동에 실패했어요.');
@@ -296,6 +335,7 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
 
   function handleAddStageClick() {
     if (stages.length >= MAX_STAGES) {
+      track('kanban_stage_add_blocked', { reason: 'limit_reached' });
       showToast('error', '전형 단계는 최대 10개까지 추가할 수 있어요.');
       return;
     }
@@ -307,6 +347,7 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
       { name },
       {
         onSuccess: (res) => {
+          track('kanban_stage_added', { stage_count_after: stages.length + 1 });
           setStages((prev) => [
             ...prev,
             { id: res.id, name: res.name, position: res.position, isDefault: false, cards: [] },
@@ -319,6 +360,7 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
           if (mapped) {
             showToast('error', mapped);
           } else if (err instanceof ApiClientError && err.code === 'K001') {
+            track('kanban_stage_add_blocked', { reason: 'limit_reached' });
             showToast('error', '전형 단계는 최대 10개까지 추가할 수 있어요.');
           } else {
             showToast('error', '전형 단계 추가에 실패했어요.');
@@ -342,6 +384,8 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
       },
       {
         onSuccess: (res) => {
+          // 복구용 재등록은 신규 추가나 단계 변경으로 집계하지 않는다.
+          track('kanban_card_delete_undone');
           const restoredCard = {
             id: res.cardId,
             postingId: res.postingId,
@@ -385,6 +429,7 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
 
     deleteCardMutation.mutate(cardId, {
       onSuccess: () => {
+        track('kanban_card_deleted', { source: 'kanban' });
         setStages((prev) =>
           prev.map((s) => ({ ...s, cards: s.cards.filter((c) => c.id !== cardId) }))
         );
@@ -440,6 +485,8 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
       showToast('error', '되돌리기에 실패했어요.');
       return;
     }
+    // 단계 생성·위치 복원이 모두 끝난 경우만 되돌리기 성공으로 기록한다.
+    track('kanban_stage_delete_undone');
     queryClient.invalidateQueries({ queryKey: kanbanKeys.board() });
   }
 
@@ -462,6 +509,7 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
       onDragCancel={() => {
+        dragStartStageIdRef.current = null;
         setActiveDragCard(null);
         setDragOverStageId(null);
         setActiveDragWidth(null);
@@ -505,10 +553,18 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
                 }}
                 onDeleteStage={(stageId) => {
                   const target = stages.find((s) => s.id === stageId);
-                  if (target) setDeletingStage(target);
+                  if (target) {
+                    if (target.cards.length > 0) {
+                      track('kanban_stage_delete_blocked', { card_count: target.cards.length });
+                    }
+                    setDeletingStage(target);
+                  }
                 }}
                 onAddCard={(stageId) => setAddCardStageId(stageId)}
-                onCardClick={(cardId) => setViewingCardId(cardId)}
+                onCardClick={(cardId) => {
+                  if (cardId !== viewingCardId) track('kanban_card_opened', { source: 'kanban' });
+                  setViewingCardId(cardId);
+                }}
                 onEditCard={(card) => setEditingCard(card)}
                 onDeleteCard={(card) => setDeletingCard(card)}
               />
@@ -570,6 +626,7 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
             { stageId },
             {
               onSuccess: () => {
+                track('kanban_stage_deleted', { stage_count_after: stages.length - 1 });
                 setStages((prev) => prev.filter((s) => s.id !== stageId));
                 setDeletingStage(null);
                 showToast('success', `'${deletedName}' 단계를 삭제했어요.`, {
@@ -602,6 +659,12 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
               title: data.jobTitle,
               originalUrl: data.originalUrl,
               deadline: data.deadline,
+            });
+            // 등록 성공을 바로 기록해 후속 이동 실패나 삭제 되돌리기와 구분한다.
+            const targetStage = stages.find((stage) => stage.id === data.stageId);
+            track('kanban_card_added', {
+              source: 'manual',
+              target_stage_type: targetStage ? getStageType(targetStage) : 'custom',
             });
             const targetStageId = data.stageId;
             const newCard = {
@@ -639,6 +702,9 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
             return undefined;
           } catch (err) {
             if (err instanceof ApiClientError) {
+              if (err.code === 'K003' || err.code === 'DUPLICATE_KANBAN_CARD') {
+                track('kanban_card_add_duplicated', { source: 'manual' });
+              }
               const mapped = mapCardErrorCode(err.code);
               if (mapped) return mapped;
             }
@@ -716,6 +782,7 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
       />
 
       <CardDetailDrawer
+        source="kanban"
         isOpen={viewingCardId !== null}
         cardId={viewingCardId}
         onClose={() => setViewingCardId(null)}

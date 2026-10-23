@@ -4,6 +4,11 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { ChwihapWordmark } from '@/features/notification/components/icons';
 import KakaoLoginButton from './KakaoLoginButton';
+import { track } from '@/lib/posthog';
+import { FEATURE_FLAGS } from '@/lib/analytics/featureFlags';
+import { useFeatureFlagEnabled } from '@/lib/hooks/useFeatureFlagEnabled';
+import { useTestSessionMutation } from '@/features/auth/hooks/useAuthMutations';
+import { ButtonSpinnerIcon } from '@/components/ui/spinner';
 
 const links = [
   { label: '문제점', href: '#problem' },
@@ -24,6 +29,8 @@ interface NavbarProps {
 export default function Navbar({ variant = 'landing' }: NavbarProps) {
   const isDefault = variant === 'default';
   const [scrolled, setScrolled] = useState(false);
+  const testSessionEnabled = useFeatureFlagEnabled(FEATURE_FLAGS.testSessionLoginEntry);
+  const testSession = useTestSessionMutation();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
@@ -80,12 +87,37 @@ export default function Navbar({ variant = 'landing' }: NavbarProps) {
             h-[38px]: 로그인 버튼만 1px border가 있어 자연 높이가 39px/37px로 어긋남
             (Button lg가 h-10으로 고정한 것과 동일한 이유) → border-box 기준으로 고정. */}
         <div className="flex items-center gap-[12px]">
-          <KakaoLoginButton className="inline-flex h-[38px] items-center justify-center gap-[2px] rounded-lg border border-line-secondary bg-base-white px-4 text-3 font-medium leading-[1.5] text-label-primary transition-colors hover:bg-fill-primary-light">
+          <KakaoLoginButton
+            className="inline-flex h-[38px] items-center justify-center gap-[2px] rounded-lg border border-line-secondary bg-base-white px-4 text-3 font-medium leading-[1.5] text-label-primary transition-colors hover:bg-fill-primary-light"
+            onClick={() => {
+              // 법률 문서의 로그인 진입은 랜딩 CTA로 집계하지 않는다.
+              if (variant === 'landing') {
+                track('landing_cta_clicked', { cta_type: 'signup_login', cta_location: 'navbar' });
+              }
+            }}
+          >
             회원가입/로그인
           </KakaoLoginButton>
-          {isDefault ? null : (
+          {isDefault ? null : testSessionEnabled ? (
+            // 플래그 대상 방문자에게만 기존 테스트 세션 진입 버튼을 노출한다.
+            <button
+              type="button"
+              onClick={() => {
+                track('landing_cta_clicked', { cta_type: 'test_start', cta_location: 'navbar' });
+                testSession.mutate();
+              }}
+              disabled={testSession.isPending}
+              className="inline-flex h-[38px] items-center justify-center gap-[2px] rounded-lg bg-fill-primary px-4 text-3 font-semibold leading-[1.5] text-base-white transition-colors hover:bg-action-primary-hover disabled:bg-action-primary-disabled"
+            >
+              {testSession.isPending && <ButtonSpinnerIcon />}
+              {testSession.isPending ? '준비 중' : '테스트 시작하기'}
+            </button>
+          ) : (
             <Link
               href="/jobs"
+              onClick={() =>
+                track('landing_cta_clicked', { cta_type: 'start_free', cta_location: 'navbar' })
+              }
               className="inline-flex h-[38px] items-center justify-center gap-[2px] rounded-lg bg-fill-primary px-4 text-3 font-semibold leading-[1.5] text-base-white transition-colors hover:bg-action-primary-hover"
             >
               무료로 시작하기

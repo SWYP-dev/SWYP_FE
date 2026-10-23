@@ -21,6 +21,8 @@ interface JobCardProps {
   isScrapped: boolean;
   onToggleScrap?: () => void;
   onAddToKanban?: () => void;
+  /** 사용 가능한 원본 링크를 클릭한 경우에만 화면별 계측을 전달한다. */
+  onOriginalLinkClick?: () => void;
   /** 이미 지원 현황에 추가된 공고 — '지원 완료'로 표시하고 버튼을 비활성화 (HT-001) */
   isKanbanRegistered?: boolean;
   /** 스크랩 카드에서 원본 공고가 마감/삭제된 경우 (PRD 5.3) — jobCategory 대신 안내 문구를 표시하고 흐리게 처리 */
@@ -44,6 +46,7 @@ export function JobCard({
   isScrapped,
   onToggleScrap,
   onAddToKanban,
+  onOriginalLinkClick,
   isKanbanRegistered = false,
   isExpired = false,
 }: JobCardProps) {
@@ -99,9 +102,7 @@ export function JobCard({
             <p className="truncate text-6 font-semibold text-label-base">{title}</p>
           </div>
           {isExpired ? (
-            <p className="text-1 font-medium text-status-negative">
-              마감되었거나 삭제된 공고예요.
-            </p>
+            <p className="text-1 font-medium text-status-negative">마감되었거나 삭제된 공고예요.</p>
           ) : (
             <p className="text-1 font-medium text-label-description">{jobCategory}</p>
           )}
@@ -133,7 +134,13 @@ export function JobCard({
             두 버튼 중 더 넓은 쪽 기준으로 items-stretch가 폭을 맞춰줌 */}
         <div className="flex h-full w-fit shrink-0 flex-col items-stretch justify-center gap-[10px]">
           {originalUrl ? (
-            <a href={originalUrl} target="_blank" rel="noreferrer" className="block w-full">
+            <a
+              href={originalUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="block w-full"
+              onClick={onOriginalLinkClick}
+            >
               <Button variant="outline" size="sm" className="w-full whitespace-nowrap">
                 원본 공고 이동
               </Button>

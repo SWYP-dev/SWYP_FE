@@ -15,13 +15,13 @@ import {
 import { DropdownMenu } from '@/components/ui/dropdown-menu';
 import { Popover, usePopoverTrigger } from '@/components/ui/popover';
 import { pushDataLayerEvent } from '@/lib/gtm';
+import { getStageType } from '../utils/stageAnalytics';
 
 // ⚠️ 백엔드는 현재 "지원 전"만 isDefault:true로 내려주고(이동·이름변경 제한),
 // "면접"/"최종 결과"는 서버 차원 제한이 없어 이름 변경/삭제가 실제로 가능한 상태임.
 // 기획 확정(2026-07-26)에 따라 3개 기본 스테이지 모두 FE에서 이름 변경·삭제를
 // 비활성화 처리함. 완전한 보호를 위해선 백엔드도 이 두 스테이지에 동일한 제약을
 // 걸어야 함 — 별도 확인 요청 필요.
-const DEFAULT_STAGE_NAMES = ['지원 전', '면접', '최종 결과'];
 
 // 문자(한글/영문 등)나 숫자가 하나도 없으면 특수문자/이모지로만 이루어진 것으로 간주
 function hasNoLetterOrDigit(value: string): boolean {
@@ -114,7 +114,7 @@ export function KanbanColumn({
   // 취소 뒤 이어지는 blur가 단계 생성을 요청하지 않도록 기록한다(HT-004).
   const isDraftCancelledRef = useRef(false);
 
-  const isLocked = stage.isDefault || DEFAULT_STAGE_NAMES.includes(stage.name);
+  const isLocked = getStageType(stage) === 'default';
 
   // 헤더 더보기(···) 케밥 메뉴
   const {

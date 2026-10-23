@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { Header } from '@/components/layout/header';
@@ -18,8 +18,14 @@ import {
   buildCareerParam,
   type CareerTagId,
 } from '@/features/feed/components/CareerFilterChip';
-import { RegionFilterButton, buildRegionParam } from '@/features/feed/components/RegionFilterButton';
-import { JobCategoryFilterButton, buildJobCategoryParam } from '@/features/feed/components/JobCategoryFilterButton';
+import {
+  RegionFilterButton,
+  buildRegionParam,
+} from '@/features/feed/components/RegionFilterButton';
+import {
+  JobCategoryFilterButton,
+  buildJobCategoryParam,
+} from '@/features/feed/components/JobCategoryFilterButton';
 import { DeadlineSoonFilterButton } from '@/features/feed/components/DeadlineSoonFilterButton';
 import { useFeedQuery } from '@/features/feed/api/useFeedQuery';
 import { postScrap, deleteScrap } from '@/features/feed/api/scrap';
@@ -31,6 +37,11 @@ import { openLoginModalOutsideReact } from '@/features/auth/store/loginModalStor
 import { formatCareer } from '@/features/feed/utils/formatCareer';
 import { formatJobCategory } from '@/features/feed/utils/formatJobCategory';
 import type { FeedQueryParams } from '@/types/api';
+import { track } from '@/lib/posthog';
+import {
+  buildFilterAppliedProperties,
+  type FeedFilterState,
+} from '@/features/feed/utils/filterAnalytics';
 
 type SortOption = NonNullable<FeedQueryParams['sort']>;
 
@@ -52,6 +63,8 @@ export default function FeedPage() {
   const [jobCategoryValue, setJobCategoryValue] = useState<SelectionValue | null>(null);
   const [regionValue, setRegionValue] = useState<SelectionValue | null>(null);
   const [careerTags, setCareerTags] = useState<CareerTagId[]>([]);
+  const pendingSearchRef = useRef<string | null>(null);
+  const filterState: FeedFilterState = { jobCategoryValue, regionValue, careerTags, deadlineSoon };
 
   // 스크랩 상태 로컬 오버라이드.
   // ⚠️ [백엔드 반영 완료] FeedItem 응답에 jobPostingId가 추가돼서, 더 이상 "이번
@@ -79,6 +92,26 @@ export default function FeedPage() {
 
   const [syncedData, setSyncedData] = useState<typeof data>(undefined);
 
+  // 제출한 검색어의 첫 응답만 기록하고 페이지·필터 변경 응답은 중복 집계하지 않는다.
+  useEffect(() => {
+    if (pendingSearchRef.current === null || pendingSearchRef.current !== keyword) return;
+    if (data) {
+      track('feed_searched', { keyword: keyword.trim(), result_count: data.totalElements });
+      pendingSearchRef.current = null;
+    } else if (isError) {
+      pendingSearchRef.current = null;
+    }
+  }, [data, keyword, isError]);
+
+  function handleSearch(nextKeyword: string) {
+    if (nextKeyword.trim().length === 0) {
+      pendingSearchRef.current = null;
+    } else if (nextKeyword !== keyword) {
+      pendingSearchRef.current = nextKeyword;
+    }
+    setKeyword(nextKeyword);
+  }
+
   // effect의 추가 렌더 없이 캐시된 첫 데이터와 이후 변경을 맵에 누적한다.
   if (data !== syncedData) {
     setSyncedData(data);
@@ -98,9 +131,26 @@ export default function FeedPage() {
     // (기존엔 낙관적 업데이트 후 401 응답을 받고서야 롤백해서, 잠깐 아이콘이 채워졌다가
     // 되돌아가는 것처럼 보였음)
     if (!useAuthStore.getState().isAuthenticated) {
-      openLoginModalOutsideReact();
+      openLoginModalOutsideReact('scrap');
       return;
     }
+
+    // 응답을 기다리는 동안 필터·페이지가 바뀌어도 클릭 시점의 속성을 보낸다.
+    const item = data?.items.find((job) => job.id === feedId);
+    const scrapProperties = item
+      ? {
+          feed_id: feedId,
+          platform: item.platform,
+          job_category: item.jobCategory ?? null,
+          career: item.career,
+          has_active_filter:
+            buildJobCategoryParam(jobCategoryValue) !== undefined ||
+            buildRegionParam(regionValue) !== undefined ||
+            buildCareerParam(careerTags) !== undefined ||
+            deadlineSoon,
+          is_searching: isSearching,
+        }
+      : null;
 
     // 낙관적 업데이트: 서버 응답 기다리지 않고 먼저 화면 반영
     setScrapOverrides((prev) => ({ ...prev, [feedId]: !currentlyScrapped }));
@@ -108,6 +158,7 @@ export default function FeedPage() {
     try {
       if (!currentlyScrapped) {
         const res = await postScrap(feedId);
+        if (scrapProperties) track('job_scrapped', scrapProperties);
         setJobPostingIdMap((prev) => ({ ...prev, [feedId]: res.jobPostingId }));
       } else {
         const jobPostingId = jobPostingIdMap[feedId];
@@ -120,6 +171,7 @@ export default function FeedPage() {
           return;
         }
         await deleteScrap(jobPostingId);
+        track('scrap_removed', { source: 'feed' });
       }
       queryClient.invalidateQueries({ queryKey: ['feed'] });
       queryClient.invalidateQueries({ queryKey: ['scraps'] });
@@ -136,8 +188,16 @@ export default function FeedPage() {
   }
 
   async function handleAddToKanban(feedId: number) {
+    // 등록 API 분기와 클릭 시점의 항목을 성공·중복 이벤트에서 함께 사용한다.
+    const existingJobPostingId = jobPostingIdMap[feedId];
+    const source = existingJobPostingId ? 'feed_scrapped' : 'feed_direct';
+    const item = data?.items.find((job) => job.id === feedId);
+    const properties = {
+      source,
+      platform: item?.platform ?? null,
+      job_category: item?.jobCategory ?? null,
+    } as const;
     try {
-      const existingJobPostingId = jobPostingIdMap[feedId];
       if (existingJobPostingId) {
         // 이미 스크랩된 공고라면 기존 3.2 등록 그대로 사용
         await registerKanbanCard(existingJobPostingId);
@@ -145,11 +205,18 @@ export default function FeedPage() {
         // ⚠️ [QA 반영] 스크랩 처리 없이 바로 등록 (2.6) — 스크랩 탭에 노출되지 않음
         await registerKanbanCardDirect(feedId);
       }
+      track('kanban_card_added', properties);
       setRegisteredFeedIds((prev) => new Set(prev).add(feedId));
       queryClient.invalidateQueries({ queryKey: kanbanKeys.board() });
       setToastType('success');
       setToastMessage('지원 현황에 추가되었어요.');
     } catch (err) {
+      if (
+        err instanceof ApiClientError &&
+        (err.code === 'K003' || err.code === 'DUPLICATE_KANBAN_CARD')
+      ) {
+        track('kanban_card_add_duplicated', { source });
+      }
       // ⚠️ [QA 반영] 비로그인 상태면 apiFetch가 이미 전역 로그인 모달을 띄웠으므로
       // 에러 토스트는 띄우지 않음 (로그인 모달만 노출).
       if (err instanceof AuthRequiredError) return;
@@ -169,7 +236,9 @@ export default function FeedPage() {
 
   const isSearching = keyword.trim().length > 0;
 
-  function resetFilters() {
+  function resetFilters(source: 'toolbar' | 'empty_state') {
+    // 초기화는 필터별 적용 이벤트와 별도로 진입 위치만 기록한다.
+    track('feed_filter_reset', { source });
     setJobCategoryValue(null);
     setRegionValue(null);
     setCareerTags([]);
@@ -184,7 +253,7 @@ export default function FeedPage() {
 
       <main className="self-stretch flex-1 flex flex-col text-3 min-h-0 overflow-y-auto">
         <div className="sticky top-0 z-10 flex flex-col bg-base-white">
-          <Header onSearch={setKeyword} />
+          <Header onSearch={handleSearch} />
 
           {isSearching && (
             <div className="flex items-center justify-center pb-9 pt-12">
@@ -198,20 +267,71 @@ export default function FeedPage() {
             <div className="flex items-center gap-3">
               {/* QA-002: 직군·직무 / 지역 / 경력을 하나의 가로 바로 묶고, 각 세그먼트 아래에 드롭다운으로 연다. */}
               <FilterBar>
-                <JobCategoryFilterButton value={jobCategoryValue} onApply={setJobCategoryValue} />
-                <RegionFilterButton value={regionValue} onApply={setRegionValue} />
-                <CareerFilterChip appliedTags={careerTags} onApply={setCareerTags} />
+                <JobCategoryFilterButton
+                  value={jobCategoryValue}
+                  onApply={(value) => {
+                    setJobCategoryValue(value);
+                    track(
+                      'feed_filter_applied',
+                      buildFilterAppliedProperties('jobs', 'job_category', {
+                        ...filterState,
+                        jobCategoryValue: value,
+                      })
+                    );
+                  }}
+                />
+                <RegionFilterButton
+                  value={regionValue}
+                  onApply={(value) => {
+                    setRegionValue(value);
+                    track(
+                      'feed_filter_applied',
+                      buildFilterAppliedProperties('jobs', 'region', {
+                        ...filterState,
+                        regionValue: value,
+                      })
+                    );
+                  }}
+                />
+                <CareerFilterChip
+                  appliedTags={careerTags}
+                  onApply={(tags) => {
+                    setCareerTags(tags);
+                    track(
+                      'feed_filter_applied',
+                      buildFilterAppliedProperties('jobs', 'career', {
+                        ...filterState,
+                        careerTags: tags,
+                      })
+                    );
+                  }}
+                />
               </FilterBar>
-              <DeadlineSoonFilterButton isActive={deadlineSoon} onToggle={setDeadlineSoon} />
+              <DeadlineSoonFilterButton
+                isActive={deadlineSoon}
+                onToggle={(value) => {
+                  setDeadlineSoon(value);
+                  track(
+                    'feed_filter_applied',
+                    buildFilterAppliedProperties('jobs', 'deadline_soon', {
+                      ...filterState,
+                      deadlineSoon: value,
+                    })
+                  );
+                }}
+              />
               {/* 전체 초기화: 마감일 임박 버튼과 동일한 디자인, 필터 적용 여부와 무관하게 항상 노출 */}
-              <FilterTriggerButton showChevron={false} onClick={resetFilters}>
+              <FilterTriggerButton showChevron={false} onClick={() => resetFilters('toolbar')}>
                 초기화
               </FilterTriggerButton>
             </div>
             <div className="flex items-start gap-2 text-label-body">
               <button
                 type="button"
-                onClick={() => setSort('LATEST')}
+                onClick={() => {
+                  if (sort !== 'LATEST') track('feed_sort_changed', { sort: 'LATEST' });
+                  setSort('LATEST');
+                }}
                 className={sort === 'LATEST' ? 'font-semibold text-label-base' : ''}
               >
                 최신순
@@ -219,7 +339,10 @@ export default function FeedPage() {
               <div className="text-1">•</div>
               <button
                 type="button"
-                onClick={() => setSort('DEADLINE')}
+                onClick={() => {
+                  if (sort !== 'DEADLINE') track('feed_sort_changed', { sort: 'DEADLINE' });
+                  setSort('DEADLINE');
+                }}
                 className={sort === 'DEADLINE' ? 'font-semibold text-label-base' : ''}
               >
                 마감일순
@@ -232,8 +355,7 @@ export default function FeedPage() {
           <div className="flex flex-1 flex-col gap-6">
             <div className="flex flex-1 flex-col gap-8">
               <div className="flex flex-1 flex-col items-center gap-3 rounded-[20px] bg-base-white p-3">
-                {isLoading &&
-                  Array.from({ length: 5 }).map((_, i) => <JobCardSkeleton key={i} />)}
+                {isLoading && Array.from({ length: 5 }).map((_, i) => <JobCardSkeleton key={i} />)}
                 {isError && (
                   <p className="py-11 text-status-negative">
                     공고를 불러오지 못했어요. 잠시 후 다시 시도해주세요.
@@ -252,7 +374,7 @@ export default function FeedPage() {
                     title="조건에 맞는 채용 공고가 없어요"
                     description="필터를 조정하거나 초기화해 보세요."
                     actionLabel="필터 초기화"
-                    onAction={resetFilters}
+                    onAction={() => resetFilters('empty_state')}
                   />
                 )}
                 {!isLoading &&
@@ -273,6 +395,12 @@ export default function FeedPage() {
                         region={job.region ?? ''}
                         career={formatCareer(job.career)}
                         originalUrl={job.originalUrl}
+                        onOriginalLinkClick={() =>
+                          track('original_posting_clicked', {
+                            source: 'feed',
+                            platform: job.platform,
+                          })
+                        }
                         isScrapped={isScrapped}
                         onToggleScrap={() => handleToggleScrap(job.id, isScrapped)}
                         onAddToKanban={() => handleAddToKanban(job.id)}
@@ -303,7 +431,10 @@ export default function FeedPage() {
         type={toastType}
         hasButton={toastType === 'success' && toastMessage === '지원 현황에 추가되었어요.'}
         actionLabel="지원 현황 이동"
-        onAction={() => router.push('/kanban')}
+        onAction={() => {
+          track('toast_kanban_link_clicked', { source: 'feed' });
+          router.push('/kanban');
+        }}
       />
     </div>
   );

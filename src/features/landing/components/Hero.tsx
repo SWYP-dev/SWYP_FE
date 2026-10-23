@@ -4,6 +4,11 @@ import Link from 'next/link';
 import { useRef, useState } from 'react';
 import { motion, type Variants } from 'framer-motion';
 import HeroMockup from './mockups/HeroMockup';
+import { track } from '@/lib/posthog';
+import { FEATURE_FLAGS } from '@/lib/analytics/featureFlags';
+import { useFeatureFlagEnabled } from '@/lib/hooks/useFeatureFlagEnabled';
+import { useTestSessionMutation } from '@/features/auth/hooks/useAuthMutations';
+import { ButtonSpinnerIcon } from '@/components/ui/spinner';
 
 // custom={i}로 넘긴 순번만큼 등장이 지연된다.
 const rise: Variants = {
@@ -19,6 +24,8 @@ const rise: Variants = {
 export default function Hero() {
   const ref = useRef<HTMLDivElement>(null);
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
+  const testSessionEnabled = useFeatureFlagEnabled(FEATURE_FLAGS.testSessionLoginEntry);
+  const testSession = useTestSessionMutation();
 
   const onMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const r = ref.current?.getBoundingClientRect();
@@ -79,12 +86,32 @@ export default function Hero() {
           >
             {/* 크기는 디자인 시스템 Button lg 규격(h48/px28/py12/text16/radius12).
                 색상만 토큰을 쓰고 치수는 이 파일 컨벤션대로 arbitrary px로 표기. */}
-            <Link
-              href="/jobs"
-              className="inline-flex h-[48px] items-center justify-center gap-[2px] rounded-[12px] bg-fill-primary px-[28px] py-[12px] text-[16px] font-semibold leading-[1.5] text-base-white transition-colors hover:bg-action-primary-hover"
-            >
-              무료로 시작하기
-            </Link>
+            {/* 플래그가 켜진 경우에만 테스트 세션 발급 경로로 전환한다. */}
+            {testSessionEnabled ? (
+              <button
+                type="button"
+                onClick={() => {
+                  track('landing_cta_clicked', { cta_type: 'test_start', cta_location: 'hero' });
+                  testSession.mutate();
+                }}
+                disabled={testSession.isPending}
+                className="inline-flex h-[48px] items-center justify-center gap-[2px] rounded-[12px] bg-fill-primary px-[28px] py-[12px] text-[16px] font-semibold leading-[1.5] text-base-white transition-colors hover:bg-action-primary-hover disabled:bg-action-primary-disabled"
+              >
+                {testSession.isPending && <ButtonSpinnerIcon />}
+                {testSession.isPending ? '준비 중' : '테스트 시작하기'}
+              </button>
+            ) : (
+              <Link
+                href="/jobs"
+                // 같은 무료 시작이라도 헤더와 본문의 진입 경로를 구분한다.
+                onClick={() =>
+                  track('landing_cta_clicked', { cta_type: 'start_free', cta_location: 'hero' })
+                }
+                className="inline-flex h-[48px] items-center justify-center gap-[2px] rounded-[12px] bg-fill-primary px-[28px] py-[12px] text-[16px] font-semibold leading-[1.5] text-base-white transition-colors hover:bg-action-primary-hover"
+              >
+                무료로 시작하기
+              </Link>
+            )}
           </motion.div>
         </div>
 

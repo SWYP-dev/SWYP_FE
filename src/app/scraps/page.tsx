@@ -15,7 +15,10 @@ import {
   JobCategoryFilterButton,
   buildJobCategoryParam,
 } from '@/features/feed/components/JobCategoryFilterButton';
-import { RegionFilterButton, buildRegionParam } from '@/features/feed/components/RegionFilterButton';
+import {
+  RegionFilterButton,
+  buildRegionParam,
+} from '@/features/feed/components/RegionFilterButton';
 import {
   CareerFilterChip,
   buildCareerParam,
@@ -33,6 +36,11 @@ import { formatCareer } from '@/features/feed/utils/formatCareer';
 import { formatJobCategory } from '@/features/feed/utils/formatJobCategory';
 import type { ScrapCardData } from '@/features/scraps/types/scrap';
 import type { ScrapItem } from '@/types/api';
+import { track } from '@/lib/posthog';
+import {
+  buildFilterAppliedProperties,
+  type FeedFilterState,
+} from '@/features/feed/utils/filterAnalytics';
 
 // ⚠️ [QA 반영] 통합 공고 탐색(page.tsx)과 동일한 포맷 함수를 사용해 직무/경력/지역
 // 표시 문구가 두 화면에서 어긋나지 않도록 함(지역 미표기 fallback은 JobCard 내부의
@@ -60,6 +68,13 @@ const ScrapsPage: NextPage = () => {
   const [regionValue, setRegionValue] = useState<SelectionValue | null>(null);
   const [jobCategoryValue, setJobCategoryValue] = useState<SelectionValue | null>(null);
   const [isDeadlineSoon, setIsDeadlineSoon] = useState(false);
+  // 피드와 같은 기준으로 적용 후 필터 속성을 만든다.
+  const filterState: FeedFilterState = {
+    jobCategoryValue,
+    regionValue,
+    careerTags,
+    deadlineSoon: isDeadlineSoon,
+  };
 
   const { data, isLoading, isError, refetch } = useScrapsQuery({
     page: currentPage,
@@ -81,6 +96,8 @@ const ScrapsPage: NextPage = () => {
 
     try {
       await deleteScrap(jobPostingId);
+      // 해제 실패·낙관적 표시만으로는 이벤트를 보내지 않는다.
+      track('scrap_removed', { source: 'scraps_page' });
       refetch();
       queryClient.invalidateQueries({ queryKey: ['feed'] });
     } catch (err) {
@@ -97,14 +114,28 @@ const ScrapsPage: NextPage = () => {
 
   // 3.2 칸반 카드 등록 (jobPostingId 기준 — registerCard.ts 주석 참고)
   async function handleAddToKanban(jobPostingId: number) {
+    // 응답 이후 목록이 갱신돼도 클릭한 공고의 속성을 유지한다.
+    const item = data?.items.find((scrap) => scrap.jobPostingId === jobPostingId);
+    const properties = {
+      source: 'scraps_page',
+      platform: item?.platform ?? null,
+      job_category: item?.jobCategory ?? null,
+    } as const;
     try {
       await registerKanbanCard(jobPostingId);
+      track('kanban_card_added', properties);
       // HT-001: 목록의 isKanbanRegistered를 다시 받아와 '지원 완료' 버튼으로 바꿈
       refetch();
       queryClient.invalidateQueries({ queryKey: kanbanKeys.board() });
       setToastType('success');
       setToastMessage('지원 현황에 추가되었어요.');
     } catch (err) {
+      if (
+        err instanceof ApiClientError &&
+        (err.code === 'K003' || err.code === 'DUPLICATE_KANBAN_CARD')
+      ) {
+        track('kanban_card_add_duplicated', { source: 'scraps_page' });
+      }
       setToastType('error');
       if (
         err instanceof ApiClientError &&
@@ -134,11 +165,59 @@ const ScrapsPage: NextPage = () => {
           <div className="flex items-center justify-between pt-7 px-12 pb-5 text-center">
             <div className="flex items-center gap-3">
               <FilterBar>
-                <JobCategoryFilterButton value={jobCategoryValue} onApply={setJobCategoryValue} />
-                <RegionFilterButton value={regionValue} onApply={setRegionValue} />
-                <CareerFilterChip appliedTags={careerTags} onApply={setCareerTags} />
+                <JobCategoryFilterButton
+                  value={jobCategoryValue}
+                  onApply={(value) => {
+                    setJobCategoryValue(value);
+                    track(
+                      'feed_filter_applied',
+                      buildFilterAppliedProperties('scraps', 'job_category', {
+                        ...filterState,
+                        jobCategoryValue: value,
+                      })
+                    );
+                  }}
+                />
+                <RegionFilterButton
+                  value={regionValue}
+                  onApply={(value) => {
+                    setRegionValue(value);
+                    track(
+                      'feed_filter_applied',
+                      buildFilterAppliedProperties('scraps', 'region', {
+                        ...filterState,
+                        regionValue: value,
+                      })
+                    );
+                  }}
+                />
+                <CareerFilterChip
+                  appliedTags={careerTags}
+                  onApply={(tags) => {
+                    setCareerTags(tags);
+                    track(
+                      'feed_filter_applied',
+                      buildFilterAppliedProperties('scraps', 'career', {
+                        ...filterState,
+                        careerTags: tags,
+                      })
+                    );
+                  }}
+                />
               </FilterBar>
-              <DeadlineSoonFilterButton isActive={isDeadlineSoon} onToggle={setIsDeadlineSoon} />
+              <DeadlineSoonFilterButton
+                isActive={isDeadlineSoon}
+                onToggle={(value) => {
+                  setIsDeadlineSoon(value);
+                  track(
+                    'feed_filter_applied',
+                    buildFilterAppliedProperties('scraps', 'deadline_soon', {
+                      ...filterState,
+                      deadlineSoon: value,
+                    })
+                  );
+                }}
+              />
             </div>
             <div className="flex items-start gap-2 text-label-body">
               <div className="font-semibold text-label-base">최신순</div>
@@ -151,8 +230,7 @@ const ScrapsPage: NextPage = () => {
         <div className="flex-1 flex flex-col px-12 py-7 bg-surface-card">
           <div className="flex flex-col gap-8">
             <div className="flex flex-col items-center gap-3 p-3 bg-base-white rounded-[20px]">
-              {isLoading &&
-                Array.from({ length: 5 }).map((_, i) => <JobCardSkeleton key={i} />)}
+              {isLoading && Array.from({ length: 5 }).map((_, i) => <JobCardSkeleton key={i} />)}
               {isError && (
                 <p className="py-11 text-status-negative">스크랩 목록을 불러오지 못했어요.</p>
               )}
@@ -165,6 +243,13 @@ const ScrapsPage: NextPage = () => {
                   data={scrap}
                   onRemoveScrap={handleRemoveScrap}
                   onAddToKanban={handleAddToKanban}
+                  onOriginalLinkClick={(jobPostingId) => {
+                    const item = data?.items.find((scrap) => scrap.jobPostingId === jobPostingId);
+                    track('original_posting_clicked', {
+                      source: 'scraps',
+                      platform: item?.platform ?? null,
+                    });
+                  }}
                 />
               ))}
             </div>
@@ -187,7 +272,10 @@ const ScrapsPage: NextPage = () => {
         type={toastType}
         hasButton={toastType === 'success' && toastMessage === '지원 현황에 추가되었어요.'}
         actionLabel="지원 현황 이동"
-        onAction={() => router.push('/kanban')}
+        onAction={() => {
+          track('toast_kanban_link_clicked', { source: 'scraps_page' });
+          router.push('/kanban');
+        }}
       />
     </div>
   );

@@ -8,6 +8,7 @@ interface ScrapCardProps {
   data: ScrapCardData;
   onRemoveScrap: (jobPostingId: number) => void;
   onAddToKanban?: (jobPostingId: number) => void;
+  onOriginalLinkClick?: (jobPostingId: number) => void;
 }
 
 // ⚠️ [QA 반영] 통합 공고 탐색(JobCard)과 스크랩 카드가 서로 다른 마크업으로 복제되어
@@ -17,7 +18,12 @@ interface ScrapCardProps {
 // ⚠️ [PRD 5.3 반영] "원본 공고가 마감/삭제된 경우 — 스크랩: 유지하되, 회색으로 처리되며
 // '마감되었거나 삭제된 공고예요.' 표시". ScrapItem API 응답엔 isExpired 필드가 없어서
 // deadline 값으로 클라이언트에서 직접 판정함 (getFeed.ts의 isDeadlinePassed와 동일 유틸 재사용).
-export function ScrapCard({ data, onRemoveScrap, onAddToKanban }: ScrapCardProps) {
+export function ScrapCard({
+  data,
+  onRemoveScrap,
+  onAddToKanban,
+  onOriginalLinkClick,
+}: ScrapCardProps) {
   const isExpired = isDeadlinePassed(data.deadline);
 
   return (
@@ -35,6 +41,8 @@ export function ScrapCard({ data, onRemoveScrap, onAddToKanban }: ScrapCardProps
       isExpired={isExpired}
       onToggleScrap={() => onRemoveScrap(data.jobPostingId)}
       onAddToKanban={() => onAddToKanban?.(data.jobPostingId)}
+      // 스크랩 사본 ID로 화면에서 원본 클릭의 플랫폼을 조회한다.
+      onOriginalLinkClick={() => onOriginalLinkClick?.(data.jobPostingId)}
       isKanbanRegistered={data.isKanbanRegistered}
     />
   );
