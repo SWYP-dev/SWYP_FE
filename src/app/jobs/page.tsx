@@ -72,9 +72,8 @@ export default function FeedPage() {
   // 로드/갱신될 때마다 서버가 내려준 jobPostingId로 맵을 채워둠.
   const [scrapOverrides, setScrapOverrides] = useState<Record<number, boolean>>({});
   const [jobPostingIdMap, setJobPostingIdMap] = useState<Record<number, number>>({});
-  // HT-001: 지원 현황에 추가된 공고(feed id). 피드 응답(2.1)에 칸반 등록 여부 필드가 없어서
-  // 이 화면에서 추가에 성공했거나 '이미 등록됨' 응답을 받은 공고만 기억함 — 새로고침하면 초기화됨.
-  // TODO: 백엔드가 FeedItem에 isKanbanRegistered를 추가하면 응답값으로 교체.
+  // 이 화면에서 방금 추가했거나 '이미 등록됨' 응답을 받은 공고(feed id)의 즉시 반영용.
+  // 페이지 이동·새로고침 후에는 피드 응답의 isKanbanRegistered가 기준이다.
   const [registeredFeedIds, setRegisteredFeedIds] = useState<Set<number>>(new Set());
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
@@ -208,6 +207,7 @@ export default function FeedPage() {
       track('kanban_card_added', properties);
       setRegisteredFeedIds((prev) => new Set(prev).add(feedId));
       queryClient.invalidateQueries({ queryKey: kanbanKeys.board() });
+      queryClient.invalidateQueries({ queryKey: ['feed'] });
       setToastType('success');
       setToastMessage('지원 현황에 추가되었어요.');
     } catch (err) {
@@ -226,6 +226,7 @@ export default function FeedPage() {
         (err.code === 'K003' || err.code === 'DUPLICATE_KANBAN_CARD')
       ) {
         setRegisteredFeedIds((prev) => new Set(prev).add(feedId));
+        queryClient.invalidateQueries({ queryKey: ['feed'] });
         setToastMessage('이미 등록된 공고예요.');
       } else {
         console.error('지원 현황 추가 실패', err);
@@ -404,7 +405,7 @@ export default function FeedPage() {
                         isScrapped={isScrapped}
                         onToggleScrap={() => handleToggleScrap(job.id, isScrapped)}
                         onAddToKanban={() => handleAddToKanban(job.id)}
-                        isKanbanRegistered={registeredFeedIds.has(job.id)}
+                        isKanbanRegistered={job.isKanbanRegistered || registeredFeedIds.has(job.id)}
                       />
                     );
                   })}
