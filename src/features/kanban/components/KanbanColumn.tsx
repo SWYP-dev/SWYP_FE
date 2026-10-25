@@ -15,13 +15,10 @@ import {
 import { DropdownMenu } from '@/components/ui/dropdown-menu';
 import { Popover, usePopoverTrigger } from '@/components/ui/popover';
 import { pushDataLayerEvent } from '@/lib/gtm';
-import { getStageType } from '../utils/stageAnalytics';
 
-// ⚠️ 백엔드는 현재 "지원 전"만 isDefault:true로 내려주고(이동·이름변경 제한),
-// "면접"/"최종 결과"는 서버 차원 제한이 없어 이름 변경/삭제가 실제로 가능한 상태임.
-// 기획 확정(2026-07-26)에 따라 3개 기본 스테이지 모두 FE에서 이름 변경·삭제를
-// 비활성화 처리함. 완전한 보호를 위해선 백엔드도 이 두 스테이지에 동일한 제약을
-// 걸어야 함 — 별도 확인 요청 필요.
+// '지원 전'은 지원 마감 알림 대상 판단에 쓰여 백엔드도 이름 변경(K023)·삭제(K004)를
+// 막으므로 FE에서도 잠근다. '면접'·'최종 결과'는 HT-003 정책(2026-10-25)에 따라
+// 사용자 추가 단계와 같이 이름 수정·삭제를 허용한다.
 
 // 문자(한글/영문 등)나 숫자가 하나도 없으면 특수문자/이모지로만 이루어진 것으로 간주
 function hasNoLetterOrDigit(value: string): boolean {
@@ -114,7 +111,7 @@ export function KanbanColumn({
   // 취소 뒤 이어지는 blur가 단계 생성을 요청하지 않도록 기록한다(HT-004).
   const isDraftCancelledRef = useRef(false);
 
-  const isLocked = getStageType(stage) === 'default';
+  const isLocked = stage.name === '지원 전';
 
   // 헤더 더보기(···) 케밥 메뉴
   const {
@@ -279,7 +276,7 @@ export function KanbanColumn({
                   <PlusSmallIcon size={20} />
                 </button>
                 {/* QA-007: 이름 수정·삭제를 더보기(···) 케밥 메뉴로 통합. 카드 추가(+)는 헤더에 유지.
-                기본 3개 단계(isLocked)는 항목을 회색(비활성)으로 노출해 누를 수 없음을 보여준다. */}
+                '지원 전'(isLocked)은 항목을 회색(비활성)으로 노출해 누를 수 없음을 보여준다. */}
                 <button
                   ref={menuTriggerRef}
                   type="button"
