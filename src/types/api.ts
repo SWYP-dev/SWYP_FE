@@ -70,6 +70,8 @@ export interface FeedItem {
   thumbnailUrl: string;
   originalUrl: string;
   isScrapped: boolean; // v1.9: isFavorite → isScrapped
+  // 실제 응답(2.1)에 이미 내려오는 필드 — 지원 현황 등록 여부. API 명세서 2.1에는 아직 없어서 BE 문서 반영 필요.
+  isKanbanRegistered: boolean;
   isExpired: boolean;
   createdAt: string;
 }
