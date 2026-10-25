@@ -1238,7 +1238,7 @@ POST /api/v1/kanban/cards/{cardId}/documents/file
 
 | 필드   | 타입   | 설명                        |
 | ------ | ------ | --------------------------- |
-| `file` | binary | PDF, DOCX, PPTX (최대 10MB) |
+| `file` | binary | PDF, DOCX, PPTX, PNG, JPG, JPEG (최대 10MB) |
 
 > **v1.11 정정**: 명세서에 있던 `name`(파일 표시 이름) 필드는 실제로 없다. 표시 이름은 업로드한 파일의 원본 파일명(`file.getOriginalFilename()`)을 그대로 사용한다.
 > **v1.14 정정**: `name`은 원본 파일명을 그대로 반환하지 않고, `resolveDocumentName`이 항상 `{원본파일명}_v{version}.{확장자}` 형태로 버전 접미사를 붙여 반환한다(확장자가 없으면 `{파일명}_v{version}`). 최초 업로드도 `version: 1`이라 `_v1`이 붙는다.

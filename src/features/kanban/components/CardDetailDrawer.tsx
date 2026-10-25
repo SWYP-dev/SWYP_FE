@@ -26,14 +26,14 @@ import { track } from '@/lib/posthog';
 import type { CardDetailSource, LinkCategory } from '@/lib/analytics/events';
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB (API 명세서 4.4.2 정책)
-const ALLOWED_FILE_EXTENSIONS = ['.pdf', '.docx', '.pptx'];
+const ALLOWED_FILE_EXTENSIONS = ['.pdf', '.docx', '.pptx', '.png', '.jpg', '.jpeg'];
 
 // 파일 선택 즉시 검증한다 — 저장까지 갔다가 실패하는 헛걸음을 막기 위함.
 // 계정 저장 용량 초과처럼 서버만 알 수 있는 건 여기서 걸러지지 않는다.
 function validateFile(file: File): string | undefined {
   const lowerName = file.name.toLowerCase();
   if (!ALLOWED_FILE_EXTENSIONS.some((ext) => lowerName.endsWith(ext))) {
-    return 'PDF, DOCX, PPTX 파일만 첨부할 수 있어요.';
+    return 'PDF, DOCX, PPTX, PNG, JPG 파일만 첨부할 수 있어요.';
   }
   if (file.size > MAX_FILE_SIZE) return '파일 용량은 10MB를 초과할 수 없어요.';
   return undefined;
@@ -338,7 +338,7 @@ export function CardDetailDrawer({
     if (isSaving) return;
     const input = window.document.createElement('input');
     input.type = 'file';
-    input.accept = '.pdf,.docx,.pptx';
+    input.accept = ALLOWED_FILE_EXTENSIONS.join(',');
     input.onchange = () => {
       const file = input.files?.[0];
       if (!file) return;
@@ -533,6 +533,10 @@ export function CardDetailDrawer({
                       </span>
                     </span>
                   </button>
+                  {/* HT-008: 업로드 실패 전에 지원 형식과 용량을 알 수 있도록 안내한다. */}
+                  <p className="text-1 font-medium text-label-description">
+                    PDF, DOCX, PPTX, PNG, JPG 파일만 첨부할 수 있어요. (최대 10MB)
+                  </p>
                   {fileItems.length > 0 && (
                     <div className="flex min-w-0 flex-col gap-3">
                       {fileItems.map((item) => (
