@@ -81,26 +81,35 @@ export function KanbanCardContent({
                 {card.jobTitle}
               </p>
             </div>
-            <div
-              className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button
-                type="button"
-                onClick={() => onEditCard?.(card)}
-                aria-label="지원 현황 수정"
-                className="flex size-5 items-center justify-center text-icon-gray"
+            {/* QA-022: 뱃지와 수정·삭제 아이콘이 같은 우측 상단을 쓴다. 같은 칸에 겹쳐 두고
+                평소엔 뱃지, 호버 중엔 아이콘을 보여줘서 공고명 줄바꿈 폭이 바뀌지 않게 한다. */}
+            <div className="grid shrink-0 justify-items-end">
+              {showDeadlineBadge && (
+                <div className="col-start-1 row-start-1 transition-opacity group-hover:opacity-0">
+                  <DeadlineBadge deadline={card.deadline} alwaysHiringLabel="상시 채용" solid />
+                </div>
+              )}
+              <div
+                className="col-start-1 row-start-1 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100"
+                onClick={(e) => e.stopPropagation()}
               >
-                <EditIcon size={16} />
-              </button>
-              <button
-                type="button"
-                onClick={() => onDeleteCard?.(card)}
-                aria-label="지원 현황 삭제"
-                className="flex size-5 items-center justify-center text-icon-gray"
-              >
-                <TrashIcon size={16} />
-              </button>
+                <button
+                  type="button"
+                  onClick={() => onEditCard?.(card)}
+                  aria-label="지원 현황 수정"
+                  className="flex size-5 items-center justify-center text-icon-gray"
+                >
+                  <EditIcon size={16} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onDeleteCard?.(card)}
+                  aria-label="지원 현황 삭제"
+                  className="flex size-5 items-center justify-center text-icon-gray"
+                >
+                  <TrashIcon size={16} />
+                </button>
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-1">
@@ -112,9 +121,6 @@ export function KanbanCardContent({
               <span className="rounded px-1 py-[1px] text-0 font-medium bg-fill-negative-light text-status-negative">
                 마감일 변경
               </span>
-            )}
-            {showDeadlineBadge && (
-              <DeadlineBadge deadline={card.deadline} alwaysHiringLabel="상시 채용" />
             )}
           </div>
         </div>

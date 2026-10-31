@@ -1,10 +1,12 @@
 'use client';
 
+import { useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { Sidebar } from '@/components/layout/sidebar';
 import { Header } from '@/components/layout/header';
 import { useKanbanBoard } from '@/features/kanban/api/useKanbanQuery';
 import { KanbanBoardSkeleton } from '@/features/kanban/components/KanbanBoardSkeleton';
+import { saveKanbanLayoutCache } from '@/features/kanban/utils/kanbanLayoutCache';
 
 const KanbanBoard = dynamic(
   () => import('@/features/kanban/components/KanbanBoard').then((m) => m.KanbanBoard),
@@ -13,6 +15,10 @@ const KanbanBoard = dynamic(
 
 export default function KanbanPage() {
   const { data, isLoading, isError } = useKanbanBoard();
+
+  useEffect(() => {
+    if (data) saveKanbanLayoutCache(data.stages.map((stage) => stage.cards.length));
+  }, [data]);
 
   return (
     <div className="relative flex h-screen w-full overflow-hidden bg-base-white">
