@@ -35,20 +35,41 @@ export const FilterSegment = forwardRef<HTMLButtonElement, FilterSegmentProps>(
         type="button"
         onClick={onClick}
         aria-expanded={isOpen}
-        className={`flex min-w-[132px] cursor-pointer flex-col items-start gap-1 px-[20px] py-[8px] text-left ${
+        className={`flex min-w-[132px] cursor-pointer items-center justify-between gap-[var(--spacing-5)] px-[20px] py-[8px] text-left ${
           isOpen ? 'bg-[var(--color-neutral-50)]' : 'hover:bg-[var(--color-neutral-50)]'
         }`}
       >
-        <span className="whitespace-nowrap text-[length:var(--text-1)] font-medium leading-[1.5] text-[var(--color-label-description)]">
-          {label}
+        <span className="flex min-w-0 flex-col items-start gap-1">
+          <span className="whitespace-nowrap text-[length:var(--text-1)] font-medium leading-[1.5] text-[var(--color-label-description)]">
+            {label}
+          </span>
+          <span
+            className={`max-w-[180px] truncate text-[length:var(--text-3)] font-semibold leading-[1.5] ${
+              isApplied ? 'text-[var(--color-label-primary)]' : 'text-[var(--color-label-base)]'
+            }`}
+          >
+            {valueText}
+          </span>
         </span>
-        <span
-          className={`max-w-[180px] truncate text-[length:var(--text-3)] font-semibold leading-[1.5] ${
-            isApplied ? 'text-[var(--color-label-primary)]' : 'text-[var(--color-label-base)]'
+        {/* QA-023: 드롭다운이 열린다는 걸 보여주는 아이콘. 열려 있는 동안은 위로 뒤집는다. */}
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 16 16"
+          fill="none"
+          aria-hidden="true"
+          className={`shrink-0 text-[var(--color-label-description)] transition-transform ${
+            isOpen ? 'rotate-180' : ''
           }`}
         >
-          {valueText}
-        </span>
+          <path
+            d="M4 6L8 10L12 6"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
       </button>
     );
   }
