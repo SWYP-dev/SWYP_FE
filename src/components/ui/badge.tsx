@@ -70,22 +70,28 @@ export function PlatformBadge({ platform }: PlatformBadgeProps) {
 interface DeadlineBadgeProps {
   deadline: string | null; // "2026-07-15" 형식. null이면 상시채용 공고(원본 공고 확인 완료).
   alwaysHiringLabel?: string; // 상시채용 뱃지 문구. 화면별로 표기가 다를 때만 지정 (기본: 상시채용)
+  solid?: boolean; // 칸반 카드용 채움 뱃지. 상태와 무관하게 같은 색으로 표시 (QA-022)
 }
 
-export function DeadlineBadge({ deadline, alwaysHiringLabel = '상시채용' }: DeadlineBadgeProps) {
+const SOLID_BADGE_CLASS = 'bg-fill-primary text-base-white';
+
+export function DeadlineBadge({
+  deadline,
+  alwaysHiringLabel = '상시채용',
+  solid = false,
+}: DeadlineBadgeProps) {
   // CardThumbnail 위 흰 배경에서도 뱃지가 묻히지 않도록 shadow 적용 (Figma CardThumbnail 스펙)
   const cardShadow = 'shadow-normal-xsmall';
+  const inactiveClass = solid ? SOLID_BADGE_CLASS : `bg-base-white text-neutral-500 ${cardShadow}`;
 
   if (deadline === null) {
-    return (
-      <Badge className={`bg-base-white text-neutral-500 ${cardShadow}`}>{alwaysHiringLabel}</Badge>
-    );
+    return <Badge className={inactiveClass}>{alwaysHiringLabel}</Badge>;
   }
 
   const diffDays = getDeadlineDiffDays(deadline);
 
   if (diffDays < 0) {
-    return <Badge className={`bg-base-white text-neutral-500 ${cardShadow}`}>마감</Badge>;
+    return <Badge className={inactiveClass}>마감</Badge>;
   }
 
   // ⚠️ [QA 반영] 커스텀 red 컬러 대신 Badge에 이미 정의된 default/primary 타입을 그대로 사용.
@@ -94,7 +100,11 @@ export function DeadlineBadge({ deadline, alwaysHiringLabel = '상시채용' }: 
 
   return (
     <Badge
-      className={`${isUrgent ? TYPE_CLASS.primary : TYPE_CLASS.default} ${cardShadow}`}
+      className={
+        solid
+          ? SOLID_BADGE_CLASS
+          : `${isUrgent ? TYPE_CLASS.primary : TYPE_CLASS.default} ${cardShadow}`
+      }
     >
       {label}
     </Badge>
