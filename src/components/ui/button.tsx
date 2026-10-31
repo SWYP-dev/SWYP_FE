@@ -1,7 +1,7 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
 
 type ButtonVariant = 'primary' | 'secondary' | 'outline';
-type ButtonSize = 'sm' | 'md' | 'lg';
+type ButtonSize = 'sm' | 'md' | 'lg' | 'fab';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children: ReactNode;
@@ -29,6 +29,8 @@ const SIZE_CLASS: Record<ButtonSize, string> = {
   // h-10(48px, border-box): border 유무(secondary만 1px border)로 인해 버튼 높이가
   // 48px/50px로 어긋나던 문제 방지 — 명시적 높이를 줘서 border까지 포함해 항상 48px 고정.
   lg: 'h-10 px-[28px] py-4 text-5 rounded-xl',
+  // fab: 화면에 떠 있는 주요 버튼. 일반적인 Extended FAB 높이(56px)를 따른다 (QA-024).
+  fab: 'h-[56px] px-[24px] text-5 rounded-max',
 };
 
 export function Button({

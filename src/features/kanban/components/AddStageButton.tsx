@@ -13,8 +13,9 @@ export function AddStageButton({ onClick }: AddStageButtonProps) {
   return (
     <Button
       variant="primary"
+      size="fab"
       onClick={onClick}
-      className="fixed bottom-6 right-6 gap-[2px] rounded-max shadow-normal-medium"
+      className="fixed bottom-6 right-6 shadow-normal-medium"
     >
       <PlusIcon />
       전형 단계 추가
@@ -24,7 +25,14 @@ export function AddStageButton({ onClick }: AddStageButtonProps) {
 
 function PlusIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 16 16"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className="mr-2"
+    >
       <path d="M8 3v10M3 8h10" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
     </svg>
   );
