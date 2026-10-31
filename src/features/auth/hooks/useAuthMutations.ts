@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { loginWithKakao, logoutRequest, deleteAccount, createTestSession } from '../api/authApi';
 import { useAuthStore } from '../store/authStore';
 import { setTokens, clearTokens } from '@/lib/api/token';
+import { clearKanbanLayoutCache } from '@/features/kanban/utils/kanbanLayoutCache';
 import { queryClient } from '@/lib/api/query-client';
 import { identifyUser, resetAnalytics, track } from '@/lib/posthog';
 import { consumeLoginContext } from '../utils/loginContext';
@@ -74,6 +75,7 @@ export function useDeleteAccountMutation() {
     mutationFn: deleteAccount,
     onSuccess: () => {
       clearTokens();
+      clearKanbanLayoutCache();
       clearUser();
       // 탈퇴 이벤트를 기존 사용자에 연결한 뒤 식별 정보를 초기화한다.
       track('account_deleted');
@@ -94,6 +96,7 @@ export function useLogoutMutation() {
     // API 실패 여부와 무관하게 클라이언트 로그아웃(토큰 삭제)은 항상 수행한다.
     onSettled: () => {
       clearTokens();
+      clearKanbanLayoutCache();
       clearUser();
       // API 실패여도 실제 클라이언트 로그아웃을 초기화 전 사용자에 연결한다.
       track('logged_out');
