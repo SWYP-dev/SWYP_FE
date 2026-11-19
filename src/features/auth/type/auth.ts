@@ -19,12 +19,9 @@ export interface KakaoLoginResponse {
 // nickname이 '테스트유저_xxxx' 형태로 내려오므로 필요하면 이걸로 테스트 계정 배너를 띄울 수 있다.
 export type TestSessionResponse = KakaoLoginResponse;
 
-// API 명세서 v1.9 - 6.1 내 정보 조회 응답 중 사이드바에 필요한 부분만 발췌
+// 6.1 내 정보 조회 응답 — 실제 응답은 email 하나, 대체 이메일이면 null
 export interface CurrentUserResponse {
-  id: number;
-  nickname: string;
-  profileImage: string;
-  email: string;
+  email: string | null;
 }
 
 // Sidebar/authStore에서 쓰는 사용자 표시 정보.
