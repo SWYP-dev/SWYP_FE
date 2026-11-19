@@ -246,19 +246,6 @@ export interface InAppNotificationInbox {
 }
 
 // ===================================
-// 6. 사용자 (User)
-// ===================================
-export interface UserMe {
-  id: number;
-  nickname: string;
-  profileImage: string;
-  email: string;
-  storageUsed: number; // byte 단위
-  storageLimit: number; // byte 단위
-  createdAt: string;
-}
-
-// ===================================
 // 액션(수정/등록/삭제) 응답 타입
 // ===================================
 

@@ -3,25 +3,50 @@
 import { useId, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { AttachIcon, CloseIcon } from '@/components/ui/icons';
+import { useCurrentUserQuery } from '@/features/auth/hooks/useCurrentUserQuery';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { AttachedFileItem } from '@/features/documents/components/AttachedFileItem';
+import { ApiClientError } from '@/lib/api/api-client';
 import { useEscapeKey } from '@/lib/hooks/useEscapeKey';
-import { mockSubmitFeedback, mockUploadFeedbackImage } from '../mock/feedbackMock';
-import { FEEDBACK_CATEGORY_LABELS, type FeedbackCategory } from '../types/feedback';
+import { useSubmitFeedbackMutation } from '../api/useFeedbackMutations';
+import { FEEDBACK_TYPE_LABELS, type FeedbackType } from '../types/feedback';
 
 interface FeedbackModalProps {
   onClose: () => void;
   onShowToast: (type: 'success' | 'error', message: string) => void;
 }
 
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const EMAIL_PATTERN = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+const EMAIL_MAX_LENGTH = 254;
 const CONTENT_LIMIT = 1000;
 const IMAGE_SIZE_LIMIT = 10 * 1024 * 1024;
+// 응답 code에 에러 번호와 이름 중 어느 쪽이 오는지 명세에 없어 둘 다 처리한다.
+const FEEDBACK_IMAGE_ERROR_CODES = new Set([
+  'FB006',
+  'FB007',
+  'FB008',
+  'FEEDBACK_IMAGE_UNSUPPORTED_TYPE',
+  'FEEDBACK_IMAGE_SIZE_EXCEEDED',
+  'FEEDBACK_IMAGE_UPLOAD_FAILED',
+]);
 const FIELD_LABEL_CLASS = 'text-3 font-semibold text-label-base';
 const REQUIRED_CLASS = 'text-3 font-bold text-status-negative';
 const HINT_CLASS = 'text-1 font-medium text-label-caption';
 const INPUT_CLASS =
   'h-10 box-border w-full rounded-xl border px-5 text-5 font-medium text-label-base placeholder:text-label-placeholder outline-none';
+
+function isValidEmail(value: string): boolean {
+  const trimmed = value.trim();
+  return trimmed.length <= EMAIL_MAX_LENGTH && EMAIL_PATTERN.test(trimmed);
+}
+
+function hasImageSignature(bytes: Uint8Array): boolean {
+  const pngSignature = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+  return (
+    pngSignature.every((byte, index) => bytes[index] === byte) ||
+    (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff)
+  );
+}
 
 export function FeedbackModal({ onClose, onShowToast }: FeedbackModalProps) {
   const headingId = useId();
@@ -30,47 +55,36 @@ export function FeedbackModal({ onClose, onShowToast }: FeedbackModalProps) {
   const emailHintId = useId();
   const imageInputRef = useRef<HTMLInputElement>(null);
   const isClosed = useRef(false);
-  const accountEmail = useAuthStore((state) => state.user?.email);
-  const [category, setCategory] = useState<FeedbackCategory | null>(null);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const [type, setType] = useState<FeedbackType | null>(null);
   const [content, setContent] = useState('');
   const [isContentFocused, setIsContentFocused] = useState(false);
-  const [email, setEmail] = useState('');
+  const [emailInput, setEmailInput] = useState<string | null>(null);
   const [hasEmailError, setHasEmailError] = useState(false);
   const [image, setImage] = useState<File | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCheckingImage, setIsCheckingImage] = useState(false);
+  const mutation = useSubmitFeedbackMutation();
 
-  const needsEmail = category === 'service_inquiry';
+  const needsEmail = type === 'SERVICE_INQUIRY';
+  const currentUserQuery = useCurrentUserQuery(isAuthenticated && needsEmail);
+  const currentUser = isAuthenticated && currentUserQuery.isSuccess ? currentUserQuery.data : null;
+  const email = emailInput ?? currentUser?.email ?? '';
   const trimmedContent = content.trim();
-  const trimmedEmail = email.trim();
-  const isEmailValid = EMAIL_PATTERN.test(trimmedEmail);
+  const isEmailValid = isValidEmail(email);
   const canSubmit =
-    category !== null &&
+    type !== null &&
     trimmedContent.length > 0 &&
     (!needsEmail || isEmailValid) &&
-    !isUploading &&
-    !isSubmitting;
+    !isCheckingImage &&
+    !mutation.isPending;
 
   function closeModal() {
-    // 이전 모달의 mock 요청이 뒤늦게 완료돼도 새 모달에 영향을 주지 않는다.
+    // 이전 모달의 검사나 요청이 뒤늦게 완료돼도 새 모달에 영향을 주지 않는다.
     isClosed.current = true;
     onClose();
   }
 
   useEscapeKey(true, closeModal);
-
-  function selectCategory(nextCategory: FeedbackCategory) {
-    if (
-      nextCategory === 'service_inquiry' &&
-      category !== nextCategory &&
-      email === '' &&
-      accountEmail
-    ) {
-      setEmail(accountEmail);
-      setHasEmailError(false);
-    }
-    setCategory(nextCategory);
-  }
 
   async function handleImageChange(event: ChangeEvent<HTMLInputElement>) {
     const input = event.currentTarget;
@@ -83,45 +97,51 @@ export function FeedbackModal({ onClose, onShowToast }: FeedbackModalProps) {
       onShowToast('error', 'PNG, JPG 파일만 첨부할 수 있어요.');
       return;
     }
-    if (file.size > IMAGE_SIZE_LIMIT) {
-      onShowToast('error', '10MB 이하의 이미지만 첨부할 수 있어요.');
-      return;
-    }
-
-    setIsUploading(true);
+    setIsCheckingImage(true);
     try {
-      await mockUploadFeedbackImage(file);
-      if (!isClosed.current) setImage(file);
+      const bytes = new Uint8Array(await file.slice(0, 8).arrayBuffer());
+      if (isClosed.current) return;
+
+      // 확장자만 바꾼 WebP·HEIC·GIF는 서버도 매직바이트로 FB006을 반환하므로 선택 시 막는다.
+      if (!hasImageSignature(bytes)) {
+        onShowToast('error', 'PNG, JPG 파일만 첨부할 수 있어요.');
+        return;
+      }
+      if (file.size > IMAGE_SIZE_LIMIT) {
+        onShowToast('error', '10MB 이하의 이미지만 첨부할 수 있어요.');
+        return;
+      }
+      setImage(file);
     } catch {
       if (!isClosed.current) {
         onShowToast('error', '이미지 첨부에 실패했어요. 다시 시도해 주세요.');
       }
     } finally {
-      if (!isClosed.current) setIsUploading(false);
+      if (!isClosed.current) setIsCheckingImage(false);
     }
   }
 
   async function submitFeedback(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!canSubmit || category === null) return;
+    if (!canSubmit || type === null) return;
 
-    setIsSubmitting(true);
     try {
-      await mockSubmitFeedback({
-        category,
+      await mutation.mutateAsync({
+        type,
         content: trimmedContent,
-        email: needsEmail ? trimmedEmail : null,
-        imageFileName: image?.name ?? null,
+        email: needsEmail ? email.trim() : null,
+        image,
       });
       if (isClosed.current) return;
       onShowToast('success', '의견이 정상적으로 접수되었어요.');
       closeModal();
-    } catch {
-      if (!isClosed.current) {
-        onShowToast('error', '의견 제출에 실패했어요. 다시 시도해 주세요.');
-      }
-    } finally {
-      if (!isClosed.current) setIsSubmitting(false);
+    } catch (err) {
+      if (isClosed.current) return;
+      const message =
+        err instanceof ApiClientError && FEEDBACK_IMAGE_ERROR_CODES.has(err.code)
+          ? err.message
+          : '의견 제출에 실패했어요. 다시 시도해 주세요.';
+      onShowToast('error', message);
     }
   }
 
@@ -154,17 +174,17 @@ export function FeedbackModal({ onClose, onShowToast }: FeedbackModalProps) {
               </span>
             </legend>
             <div className="grid grid-cols-2 gap-3">
-              {(Object.keys(FEEDBACK_CATEGORY_LABELS) as FeedbackCategory[]).map((value) => (
+              {(Object.keys(FEEDBACK_TYPE_LABELS) as FeedbackType[]).map((value) => (
                 <Button
                   key={value}
                   type="button"
                   size="md"
-                  variant={category === value ? 'outline' : 'secondary'}
-                  aria-pressed={category === value}
-                  onClick={() => selectCategory(value)}
+                  variant={type === value ? 'outline' : 'secondary'}
+                  aria-pressed={type === value}
+                  onClick={() => setType(value)}
                   className="w-full"
                 >
-                  {FEEDBACK_CATEGORY_LABELS[value]}
+                  {FEEDBACK_TYPE_LABELS[value]}
                 </Button>
               ))}
             </div>
@@ -225,7 +245,7 @@ export function FeedbackModal({ onClose, onShowToast }: FeedbackModalProps) {
                 type="button"
                 variant="secondary"
                 size="md"
-                disabled={isUploading}
+                disabled={isCheckingImage}
                 onClick={() => imageInputRef.current?.click()}
                 className="self-start"
               >
@@ -251,9 +271,8 @@ export function FeedbackModal({ onClose, onShowToast }: FeedbackModalProps) {
                 value={email}
                 onChange={(event) => {
                   const nextEmail = event.target.value;
-                  setEmail(nextEmail);
-                  if (hasEmailError && EMAIL_PATTERN.test(nextEmail.trim()))
-                    setHasEmailError(false);
+                  setEmailInput(nextEmail);
+                  if (hasEmailError && isValidEmail(nextEmail)) setHasEmailError(false);
                 }}
                 onBlur={() => setHasEmailError(!isEmailValid)}
                 placeholder="이메일을 입력해 주세요."

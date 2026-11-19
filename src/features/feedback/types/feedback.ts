@@ -1,15 +1,19 @@
-export type FeedbackCategory = 'bug_report' | 'feature_suggestion' | 'service_inquiry' | 'other';
+export type FeedbackType = 'BUG_REPORT' | 'FEATURE_SUGGESTION' | 'SERVICE_INQUIRY' | 'ETC';
 
-export const FEEDBACK_CATEGORY_LABELS: Record<FeedbackCategory, string> = {
-  bug_report: '오류 제보',
-  feature_suggestion: '기능 개선 제안',
-  service_inquiry: '서비스 이용 문의',
-  other: '기타',
+export const FEEDBACK_TYPE_LABELS: Record<FeedbackType, string> = {
+  BUG_REPORT: '오류 제보',
+  FEATURE_SUGGESTION: '기능 개선 제안',
+  SERVICE_INQUIRY: '서비스 이용 문의',
+  ETC: '기타',
 };
 
-export interface FeedbackSubmitPayload {
-  category: FeedbackCategory;
+export interface FeedbackCreateRequest {
+  type: FeedbackType;
   content: string;
   email: string | null;
-  imageFileName: string | null;
+  image: File | null;
+}
+
+export interface FeedbackCreateResponse {
+  feedbackId: number;
 }

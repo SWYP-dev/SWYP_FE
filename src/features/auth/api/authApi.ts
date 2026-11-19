@@ -30,7 +30,7 @@ export function logoutRequest(): Promise<null> {
 }
 
 // 6.1 내 정보 조회 (GET /api/v1/users/me)
-// 1.1 응답엔 email이 없어서, 로그인 직후 이 API로 이메일을 보완한다.
+// 의견 보내기 '서비스 이용 문의'의 이메일 자동 입력에 쓴다.
 export function fetchCurrentUser(): Promise<CurrentUserResponse> {
   return apiFetch<CurrentUserResponse>('/api/v1/users/me');
 }
