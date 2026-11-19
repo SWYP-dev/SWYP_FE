@@ -1,6 +1,6 @@
 # 취합(Chwihap) API 명세서 — 설명 보완본
 
-**버전:** v1.14.0 | **작성일:** 2026-07-26 | **Base URL:** `https://api.chwihap.com`
+**버전:** v1.15.0 | **작성일:** 2026-11-19 | **Base URL:** `https://api.chwihap.com`
 
 - 변경 사항
 
@@ -85,6 +85,12 @@
   > - **5.4 인앱 알림 목록**: “페이지네이션 없이 최근 N건” 설명을 삭제하고, 5.3과 동일한 `cursor`/`nextCursor`/`hasNext` 커서 기반 더보기 방식으로 정정(실제 `InAppNotificationListResponse` 기준).
   > - **Appendix**: `Platform`→`JobPlatform`(`SARAMIN, WORKNET, PUBLIC, PUBLIC_PERSONNEL, DIRECT`), `Career`→`CareerType`으로 실제 클래스명 반영, `JobCategory`는 Enum이 아닌 자유 문자열임을 명시, `Region` Enum 신규 추가, 구현되지 않은 `ParseStatus` 제거.
   > - **스케줄러 동작 명세**: “만료 공고 정리(0시)”, “탈퇴 계정 정리(2시)”는 실제 코드베이스에 구현되어 있지 않아 제거. 공고 수집을 워크넷/공공기관 수집(`JobFeedSyncScheduler`)과 공공취업정보 수집(`JobFeedPersonnelJobSyncScheduler`)으로 분리 반영(각각 매일 08/20시, 독립된 분산락 키 사용). 명세서에 없던 알림 이력 정리 스케줄러(`NotificationCleanupScheduler`, 매일 03시, 기본 보관기간 90일) 신규 반영.
+  >
+  > **v1.14 → v1.15 변경 사항 (2026-11-19, 백엔드 답변 기준)**
+  >
+  > - **7.1 의견 제출 API 신규 추가**: `POST /api/v1/feedback`. `multipart/form-data` 필드별 전송, 비로그인 제출 가능(만료 토큰도 비로그인 건으로 접수), 10분 5회 제한, 에러 코드 `FB001`~`FB009`.
+  > - **6.1 내 정보 조회: 응답을 실제 `UserMeResponse` 기준으로 정정.** 응답 필드는 `email` 하나뿐이며, 서비스가 부여한 대체 이메일이면 `null`이다.
+  > - **Appendix**: `FeedbackType` Enum 추가.
   >
   > **v1.13 → v1.14 변경 사항 (2026-07-26)**
   >
@@ -1804,29 +1810,28 @@ GET /api/v1/users/me
 ```
 
 **설명**
-로그인한 사용자의 프로필 정보와 파일 저장 용량 현황을 반환한다. 마이페이지 렌더링 및 서류 업로드 전 용량 초과 여부 사전 확인에 활용된다.
+로그인한 사용자의 계정 이메일을 조회한다. 의견 보내기(7.1)에서 '서비스 이용 문의'를 골랐을 때 이메일 입력란 자동 입력에 사용한다.
 
 **응답값 설계 의도**
 
-- `storageUsed` / `storageLimit`: 바이트 단위로 반환해 프론트엔드가 직접 MB/GB 단위로 변환해 표시. 서버가 문자열(“10.5 MB”)로 변환해 내려주면 프론트 표시 형식 변경 시 유연성이 떨어지므로, 숫자 원형 데이터로 반환.
-- `email`: 알림 수신 이메일 표시용. 카카오 계정과 연동된 이메일.
+- `email`: 연락 가능한 실제 이메일일 때만 반환한다. 카카오 이메일 미동의 등으로 서비스가 부여한 대체 이메일(`@users.chwihap.local`)이면 `null`이다. 프론트는 `null`이면 입력란을 비워 둔다.
+
+> **v1.15 정정**: 실제 응답(`UserMeResponse`)은 `email` 필드 하나뿐이다. 기존 명세의 `id`·`nickname`·`profileImage`·`storageUsed`·`storageLimit`·`createdAt`은 내려오지 않는다 (백엔드 답변, 2026-11-19).
 
 **Response 200**
 
 ```json
 {
   "success": true,
+  "code": "SUCCESS",
+  "message": "요청에 성공했습니다.",
   "data": {
-    "id": 1,
-    "nickname": "동섭",
-    "profileImage": "https://k.kakaocdn.net/...",
-    "email": "user@example.com",
-    "storageUsed": 10485760,
-    "storageLimit": 104857600,
-    "createdAt": "2026-06-01T00:00:00"
+    "email": "user@example.com"
   }
 }
 ```
+
+실제 이메일이 없는 계정은 `"email": null`이다.
 
 ---
 
@@ -1856,6 +1861,77 @@ DELETE /api/v1/users/me
 
 ---
 
+## 7. 의견 보내기 (Feedback)
+
+> 의견 보내기(Q&A 창구) API. 접수된 의견은 관리자가 확인할 수 있도록 저장된다. (v1.15 신규, 백엔드 답변 2026-11-19 기준)
+
+### 7.1 의견 제출
+
+```
+POST /api/v1/feedback
+```
+
+**설명**
+오류 제보 / 기능 개선 제안 / 서비스 이용 문의 / 기타 의견을 접수한다. **로그인하지 않아도 제출할 수 있으며**, 로그인 상태면 작성자가 연결된다. 이미지는 별도 업로드 API 없이 이 요청에 함께 보낸다.
+
+**인증**: 선택. `SecurityConfig`에서 `permitAll`이다. 만료되거나 위변조된 토큰을 보내도 401을 반환하지 않고 **비로그인 건으로 접수(201)** 한다 (`FeedbackControllerTest.만료된_토큰으로_제출하면_비로그인_건으로_접수한다()`로 보장). 따라서 이 API에서는 401 → 토큰 재발급 → 로그인 모달 흐름이 일어나지 않는다.
+
+**요청 형식**: `multipart/form-data`, **필드별 전송**. 컨트롤러가 `@ModelAttribute FeedbackCreateRequest`로 받으므로 `request` JSON 파트로 묶지 않는다 (Swagger 스키마에 `request`로 묶여 보이는 것은 Springdoc 표기일 뿐이다).
+
+```js
+const formData = new FormData();
+formData.append('type', 'SERVICE_INQUIRY');
+formData.append('content', '문의 내용...');
+formData.append('email', 'user@example.com'); // SERVICE_INQUIRY일 때만
+if (file) formData.append('image', file); // 선택
+```
+
+**Request (multipart)**
+
+| 필드      | 타입   | 필수                      | 설명                                                                                                        |
+| --------- | ------ | ------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `type`    | string | ✅                        | `FeedbackType` Enum (`BUG_REPORT` / `FEATURE_SUGGESTION` / `SERVICE_INQUIRY` / `ETC`)                       |
+| `content` | string | ✅                        | 문의 내용. `trim` 기준 1~1,000자                                                                            |
+| `email`   | string | `SERVICE_INQUIRY`일 때 ✅ | 답변 받을 이메일. 254자 이하, 정규식 `^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$`. 다른 유형이면 저장하지 않는다 |
+| `image`   | binary | -                         | PNG·JPG·JPEG 1장, 10MB(10,485,760 bytes) 이하. 확장자와 파일 첫 바이트(매직바이트)를 모두 검사한다           |
+
+**제출 횟수 제한**: 10분에 5회 (로그인 시 userId 기준, 비로그인 시 IP 기준). 초과하면 `FB009`(429).
+
+**업로드 크기 설정**: Nginx `client_max_body_size 11M`, Spring `max-file-size: 10MB`·`max-request-size: 11MB`. 10MB를 조금 넘는 파일은 `FB007` JSON으로 응답하지만, 11MB를 넘으면 Nginx가 413 HTML을 반환할 수 있으므로 프론트에서 10MB 검사를 유지한다.
+
+**응답값 설계 의도**
+
+- `feedbackId`: 접수된 의견 ID. 프론트는 성공 여부만 쓰고 화면에 표시하지 않는다.
+
+**Response 201**
+
+```json
+{
+  "success": true,
+  "data": {
+    "feedbackId": 1
+  }
+}
+```
+
+**에러**
+
+| 코드                                     | HTTP | message                                          | 발생 조건                                                                 |
+| ---------------------------------------- | ---- | ------------------------------------------------ | ------------------------------------------------------------------------- |
+| `FEEDBACK_TYPE_REQUIRED` (FB001)         | 400  | 문의 유형을 선택해 주세요.                       | `type` 누락 (잘못된 Enum 문자열이면 `INVALID_INPUT_VALUE`(C001) 400)      |
+| `FEEDBACK_CONTENT_REQUIRED` (FB002)      | 400  | 문의 내용을 입력해 주세요.                       | `content`가 null이거나 공백만 있음                                        |
+| `FEEDBACK_CONTENT_TOO_LONG` (FB003)      | 400  | 문의 내용은 최대 1,000자까지 입력할 수 있어요.   | `content.trim().length() > 1000`                                          |
+| `FEEDBACK_EMAIL_REQUIRED` (FB004)        | 400  | 이메일을 입력해 주세요.                          | `SERVICE_INQUIRY`인데 `email`이 비어 있음                                 |
+| `FEEDBACK_EMAIL_INVALID` (FB005)         | 400  | 올바른 이메일 주소를 입력해 주세요.              | `email`이 254자 초과이거나 정규식 불일치                                  |
+| `FEEDBACK_IMAGE_UNSUPPORTED_TYPE` (FB006) | 400  | PNG, JPG 파일만 첨부할 수 있어요.                | 확장자 또는 파일 헤더(매직바이트)가 PNG/JPG가 아님 (확장자만 바꾼 WebP·HEIC·GIF, 이름이 `blob`인 파일 등) |
+| `FEEDBACK_IMAGE_SIZE_EXCEEDED` (FB007)   | 400  | 10MB 이하의 이미지만 첨부할 수 있어요.           | 10MB 초과 (`MaxUploadSizeExceededException`도 이 코드로 변환)             |
+| `FEEDBACK_IMAGE_UPLOAD_FAILED` (FB008)   | 500  | 이미지 첨부에 실패했어요. 다시 시도해 주세요.    | S3 업로드 중 I/O·스토리지 오류                                            |
+| `FEEDBACK_RATE_LIMITED` (FB009)          | 429  | 요청이 너무 많아요. 잠시 후 다시 시도해 주세요.  | 10분 내 5회 제한 초과                                                     |
+
+**프론트 표시 기준**: `FB006`·`FB007`·`FB008`은 응답 `message`를 그대로 표시한다. 그 외 실패(`FB009` 포함)는 "의견 제출에 실패했어요. 다시 시도해 주세요."로 표시한다.
+
+---
+
 ## Appendix. 도메인 Enum
 
 > v1.11: 실제 코드의 Enum 클래스명·값 기준으로 전면 정정. `ParseStatus`(2.6 OG 파싱)는 해당 기능이 구현되지 않아 제거.
@@ -1870,6 +1946,7 @@ DELETE /api/v1/users/me
 | `NotificationStatus`                     | `SUCCESS`, `FAILED`                                                                                                                                                                                                                                                             |
 | `NotificationType`                       | `EMAIL`, `IN_APP`                                                                                                                                                                                                                                                               |
 | `DocumentLinkCategory`                   | `RESUM` , `PROTFOLIO`, `PERSONAL_CHANNEL` , `OTHER`                                                                                                                                                                                                                             |
+| `FeedbackType` (v1.15 신규)              | `BUG_REPORT`(오류 제보), `FEATURE_SUGGESTION`(기능 개선 제안), `SERVICE_INQUIRY`(서비스 이용 문의), `ETC`(기타)                                                                                                                                                                  |
 
 ### 추가(작성: 손세영, 7월 30일 작성)
 
