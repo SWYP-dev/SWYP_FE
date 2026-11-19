@@ -1,6 +1,6 @@
 ---
 spec_id: FEEDBACK-0002
-revision: 0
+revision: 1
 ---
 
 # FEEDBACK-0002 — 의견 보내기 실제 API 연동 (mock 교체·이미지 매직바이트 검사·이메일 규칙 서버 일치)
@@ -96,10 +96,10 @@ revision: 0
 
 ## 수용 기준
 
-- AC-01 `src/features/feedback/types/feedback.ts`에 `FeedbackType`(4개 대문자 값), `FEEDBACK_TYPE_LABELS`, `FeedbackCreateRequest`, `FeedbackCreateResponse`가 있고 `FeedbackCategory`·`FEEDBACK_CATEGORY_LABELS`·`FeedbackSubmitPayload`는 저장소 어디에도 없다
+- AC-01 `src/features/feedback/types/feedback.ts`에 `FeedbackType`(4개 대문자 값), `FEEDBACK_TYPE_LABELS`, `FeedbackCreateRequest`, `FeedbackCreateResponse`가 있고 `src/` 아래에 `FeedbackCategory`·`FEEDBACK_CATEGORY_LABELS`·`FeedbackSubmitPayload` 문자열이 없다 (`docs/specs/`의 기존 명세는 변경 금지 경로라 검사 범위에서 제외)
 - AC-02 `src/features/feedback/api/feedbackApi.ts`의 `submitFeedback`이 `FormData`에 `type`·`content`와 (값이 있을 때) `email`·`image`를 개별 필드로 넣어 `apiFetch`로 `POST /api/v1/feedback`을 호출하고, `request` 파트를 만들지 않는다
 - AC-03 `src/features/feedback/api/useFeedbackMutations.ts`에 `useSubmitFeedbackMutation`이, `src/features/auth/hooks/useCurrentUserQuery.ts`에 `userKeys`와 `useCurrentUserQuery(enabled)`가 설계 결정대로 있다
-- AC-04 `src/features/feedback/mock/`이 없고, 저장소에 `mockSubmitFeedback`·`mockUploadFeedbackImage`·`MOCK_FAIL_KEYWORD` 문자열이 없다
+- AC-04 `src/features/feedback/mock/`이 없고, `src/` 아래에 `mockSubmitFeedback`·`mockUploadFeedbackImage`·`MOCK_FAIL_KEYWORD` 문자열이 없다 (`docs/specs/`의 기존 명세는 변경 금지 경로라 검사 범위에서 제외)
 - AC-05 `FeedbackModal.tsx`의 이메일 검증이 `^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$` 정규식과 254자 제한을 쓴다
 - AC-06 `FeedbackModal.tsx`의 이메일 자동 입력은 `useCurrentUserQuery`의 `email`을 쓰고(`useAuthStore`의 `user?.email`을 쓰지 않음), `emailInput ?? currentUser?.email ?? ''` 방식으로 계산하며, 자동 입력을 위한 `useEffect`가 없다
 - AC-07 이미지 선택 시 확장자 → 매직바이트(PNG 8바이트·JPEG 3바이트) → 10MB 순으로 검사하고, 통과한 파일은 업로드 없이 첨부 상태가 된다
@@ -112,7 +112,7 @@ revision: 0
   - 이메일에 `user@example`이나 `a@b.c`를 입력하고 칸 밖을 누르면 "올바른 이메일 주소를 입력해 주세요."가 보이고 '제출하기'가 비활성이다
   - `.gif`를 `.png`로 이름만 바꾼 파일을 고르면 "PNG, JPG 파일만 첨부할 수 있어요." 토스트가 뜨고 첨부되지 않는다. 정상 PNG·JPG는 첨부되고 지울 수 있다. 10MB를 넘는 PNG는 "10MB 이하의 이미지만 첨부할 수 있어요."
   - 로그인·비로그인 각각 이미지 없이 1건, 이미지 포함 1건을 제출하면 "의견이 정상적으로 접수되었어요." 토스트가 뜨고 모달이 닫힌다. 브라우저 개발자 도구 Network에서 `POST /api/v1/feedback` 응답이 201이고 요청 본문에 `type`·`content`(·`email`·`image`)가 개별 필드로 들어 있다
-  - 10분 안에 6번째 제출을 하면 "의견 제출에 실패했어요. 다시 시도해 주세요." 토스트가 뜨고 입력값이 남는다
+  - 횟수 제한: 제한은 로그인 시 계정(userId)별, 비로그인 시 IP별로 따로 집계된다. **같은 계정 하나**(또는 **같은 비로그인 IP 하나**)에서 10분 안에 5건이 접수된 뒤 6번째로 제출하면, Network의 `POST /api/v1/feedback` 응답이 429이고 "의견 제출에 실패했어요. 다시 시도해 주세요." 토스트가 뜨며 모달이 열린 채 입력값·첨부 이미지가 남는다. 위 항목에서 같은 계정·IP로 이미 접수한 건수도 5건에 포함된다
   - 제출한 테스트 의견은 백엔드 담당자에게 정리를 요청한다
 
 ## 테스트 계획
@@ -120,7 +120,7 @@ revision: 0
 구현 후 **커밋하기 전에** 아래를 실행하고 명령과 결과를 PR 본문에 남긴다. 변경 파일을 `git add`(삭제는 `git rm`) 한 뒤 실행한다.
 
 ```bash
-# (AC-01) 앞의 4개는 각 1줄 이상, 마지막은 출력이 없어야 한다
+# (AC-01) 앞의 4개는 각 1줄 이상, 마지막은 출력이 없어야 한다 (검사 범위는 src/)
 git grep -n "export type FeedbackType" -- src/features/feedback/types/feedback.ts
 git grep -n "FEEDBACK_TYPE_LABELS" -- src/features/feedback/types/feedback.ts
 git grep -n "export interface FeedbackCreateRequest" -- src/features/feedback/types/feedback.ts
@@ -136,7 +136,7 @@ git grep -n "append('request'" -- src/features/feedback/api/feedbackApi.ts
 git grep -n "export function useSubmitFeedbackMutation" -- src/features/feedback/api/useFeedbackMutations.ts
 git grep -n "export function useCurrentUserQuery" -- src/features/auth/hooks/useCurrentUserQuery.ts
 
-# (AC-04) 출력이 없어야 한다
+# (AC-04) 출력이 없어야 한다 (문자열 검사 범위는 src/)
 git ls-files src/features/feedback/mock
 git grep -nE "mockSubmitFeedback|mockUploadFeedbackImage|MOCK_FAIL_KEYWORD" -- src
 
