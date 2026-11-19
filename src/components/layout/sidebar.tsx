@@ -3,9 +3,12 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, type ComponentType } from 'react';
+import { EditIcon } from '@/components/ui/icons';
+import { Toast } from '@/components/ui/toast';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { LoginModal } from '@/features/auth/components/LoginModal';
 import { ProfileMenu } from '@/features/auth/components/ProfileMenu';
+import { FeedbackModal } from '@/features/feedback/components/FeedbackModal';
 import { track } from '@/lib/posthog';
 import { ChwihapWordmark } from '@/features/notification/components/icons';
 import {
@@ -36,6 +39,11 @@ export function Sidebar() {
   const router = useRouter();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+  const [feedbackToast, setFeedbackToast] = useState<{
+    type: 'success' | 'error';
+    message: string;
+  } | null>(null);
 
   // ⚠️ TODO: 통합 공고 탐색(page.tsx)의 검색어/필터가 아직 로컬 useState 기반이라
   // (URL 쿼리 파라미터 연동 전 — 추후 고도화 예정 항목), 이미 '/'에 있을 때
@@ -85,25 +93,37 @@ export function Sidebar() {
         </nav>
       </div>
 
-      <div className="flex w-full flex-col items-start px-6 py-5">
-        {isAuthenticated ? (
-          <ProfileMenu />
-        ) : (
+      <div className="flex w-full flex-col">
+        <div className="w-full px-6">
           <button
             type="button"
-            onClick={() => {
-              // 열린 모달의 반복 노출을 중복 집계하지 않는다.
-              if (isLoginModalOpen) return;
-              track('login_prompt_shown', { trigger: 'sidebar' });
-              setIsLoginModalOpen(true);
-            }}
-            className="flex items-center justify-center rounded-lg border border-line-secondary bg-base-white px-[12px] py-[8px]"
+            onClick={() => setIsFeedbackOpen(true)}
+            className="flex h-9 w-full items-center gap-3 rounded-xl border border-transparent px-5 py-4 text-label-body transition-colors hover:border-line-secondary hover:bg-neutral-100 hover:text-label-base"
           >
-            <span className="text-3 font-medium leading-[1.5] text-label-primary">
-              회원가입/로그인
-            </span>
+            <EditIcon size={16} />
+            <span className="flex-1 truncate text-left text-3 font-medium">의견 보내기</span>
           </button>
-        )}
+        </div>
+        <div className="flex w-full flex-col items-start px-6 py-5">
+          {isAuthenticated ? (
+            <ProfileMenu />
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                // 열린 모달의 반복 노출을 중복 집계하지 않는다.
+                if (isLoginModalOpen) return;
+                track('login_prompt_shown', { trigger: 'sidebar' });
+                setIsLoginModalOpen(true);
+              }}
+              className="flex items-center justify-center rounded-lg border border-line-secondary bg-base-white px-[12px] py-[8px]"
+            >
+              <span className="text-3 font-medium leading-[1.5] text-label-primary">
+                회원가입/로그인
+              </span>
+            </button>
+          )}
+        </div>
       </div>
 
       <LoginModal
@@ -111,6 +131,20 @@ export function Sidebar() {
         onClose={() => setIsLoginModalOpen(false)}
         trigger="sidebar"
       />
+      {isFeedbackOpen && (
+        <FeedbackModal
+          onClose={() => setIsFeedbackOpen(false)}
+          onShowToast={(type, message) => setFeedbackToast({ type, message })}
+        />
+      )}
+      {feedbackToast && (
+        <Toast
+          type={feedbackToast.type}
+          message={feedbackToast.message}
+          isVisible
+          onDismiss={() => setFeedbackToast(null)}
+        />
+      )}
     </aside>
   );
 }
