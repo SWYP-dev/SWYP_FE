@@ -8,11 +8,15 @@ function ToggleSwitch({
   checked,
   onChange,
   disabled,
+  busy,
   label,
 }: {
   checked: boolean;
   onChange: (next: boolean) => void;
   disabled?: boolean;
+  // 저장 요청 중. disabled로 처리하면 누르는 순간 금지 커서·반투명이 깜빡이므로
+  // 버튼은 활성 상태로 두고 클릭만 무시한다.
+  busy?: boolean;
   label: string;
 }) {
   return (
@@ -21,8 +25,12 @@ function ToggleSwitch({
       role="switch"
       aria-checked={checked}
       aria-label={label}
+      aria-busy={busy}
       disabled={disabled}
-      onClick={() => onChange(!checked)}
+      onClick={() => {
+        if (busy) return;
+        onChange(!checked);
+      }}
       className={`relative h-[24px] w-[40px] shrink-0 rounded-max transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
         checked ? 'bg-fill-primary' : 'bg-neutral-200'
       }`}
@@ -73,7 +81,7 @@ export default function SettingsNotificationsPage() {
             <ToggleSwitch
               label="이메일 알림"
               checked={emailEnabled}
-              disabled={updateMutation.isPending}
+              busy={updateMutation.isPending}
               // 누르는 즉시 저장(QA-021). 저장 성공/실패 안내 문구는 두지 않는다(기획 확정).
               // 실패하면 스위치는 저장돼 있던 값으로 자동으로 돌아간다.
               onChange={(next) => {
@@ -103,7 +111,12 @@ export default function SettingsNotificationsPage() {
               </p>
             </div>
             {/* ⚠️ 백엔드 API 없음(Phase 6/v1.7 미구현) — 비활성화 */}
-            <ToggleSwitch label="카카오톡 리마인드 알림" checked={false} disabled onChange={() => {}} />
+            <ToggleSwitch
+              label="카카오톡 리마인드 알림"
+              checked={false}
+              disabled
+              onChange={() => {}}
+            />
           </div>
         </div>
       </div>
