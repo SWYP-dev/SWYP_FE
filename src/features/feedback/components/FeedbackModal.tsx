@@ -1,8 +1,8 @@
 'use client';
 
-import { useId, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
+import { useId, useRef, useState, type ChangeEvent, type DragEvent, type FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
-import { AttachIcon, CloseIcon } from '@/components/ui/icons';
+import { CloseIcon, UploadIcon } from '@/components/ui/icons';
 import { useCurrentUserQuery } from '@/features/auth/hooks/useCurrentUserQuery';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { AttachedFileItem } from '@/features/documents/components/AttachedFileItem';
@@ -63,6 +63,7 @@ export function FeedbackModal({ onClose, onShowToast }: FeedbackModalProps) {
   const [hasEmailError, setHasEmailError] = useState(false);
   const [image, setImage] = useState<File | null>(null);
   const [isCheckingImage, setIsCheckingImage] = useState(false);
+  const [isDraggingImage, setIsDraggingImage] = useState(false);
   const mutation = useSubmitFeedbackMutation();
 
   const needsEmail = type === 'SERVICE_INQUIRY';
@@ -86,12 +87,22 @@ export function FeedbackModal({ onClose, onShowToast }: FeedbackModalProps) {
 
   useEscapeKey(true, closeModal);
 
-  async function handleImageChange(event: ChangeEvent<HTMLInputElement>) {
+  function handleImageChange(event: ChangeEvent<HTMLInputElement>) {
     const input = event.currentTarget;
     const file = input.files?.[0];
     input.value = '';
-    if (!file) return;
+    if (file) void attachImage(file);
+  }
 
+  // 첨부 영역에 "끌어다 놓기"를 안내하므로 드롭도 클릭 선택과 같은 검사를 거쳐 첨부한다.
+  function handleImageDrop(event: DragEvent<HTMLButtonElement>) {
+    event.preventDefault();
+    setIsDraggingImage(false);
+    const file = event.dataTransfer.files[0];
+    if (file && !isCheckingImage) void attachImage(file);
+  }
+
+  async function attachImage(file: File) {
     const fileName = file.name.toLowerCase();
     if (!['.png', '.jpg', '.jpeg'].some((extension) => fileName.endsWith(extension))) {
       onShowToast('error', 'PNG, JPG 파일만 첨부할 수 있어요.');
@@ -156,13 +167,22 @@ export function FeedbackModal({ onClose, onShowToast }: FeedbackModalProps) {
         onSubmit={submitFeedback}
         className="relative flex w-[394px] flex-col gap-7 rounded-[20px] bg-base-white py-7 shadow-spread-small"
       >
-        <div className="flex items-center justify-between px-8">
-          <h2 id={headingId} className="text-7 font-semibold text-label-base">
-            의견 보내기
-          </h2>
-          <button type="button" onClick={closeModal} aria-label="닫기">
-            <CloseIcon size={24} />
-          </button>
+        {/* Figma 수정안(node 40156:4455): 타이틀 아래 8px 간격으로 안내·감사 문구 */}
+        <div className="flex flex-col gap-3 px-8">
+          <div className="flex items-center justify-between">
+            <h2 id={headingId} className="text-7 font-semibold text-label-base">
+              의견 보내기
+            </h2>
+            <button type="button" onClick={closeModal} aria-label="닫기">
+              <CloseIcon size={24} />
+            </button>
+          </div>
+          <p className="text-1 font-medium text-label-body">
+            <span className="block">
+              취합을 이용하며 불편했던 점이나 개선 아이디어를 알려주세요.
+            </span>
+            <span className="block">보내주신 의견은 더 나은 취합을 만드는 데 큰 힘이 돼요 🙌</span>
+          </p>
         </div>
 
         <div className="flex flex-col gap-6 px-8">
@@ -224,7 +244,7 @@ export function FeedbackModal({ onClose, onShowToast }: FeedbackModalProps) {
 
           <div className="flex flex-col gap-3">
             <div className="flex items-center gap-2">
-              <span className={FIELD_LABEL_CLASS}>이미지</span>
+              <span className={FIELD_LABEL_CLASS}>이미지 첨부</span>
               <span className="text-3 font-medium text-label-caption">(선택)</span>
             </div>
             <input
@@ -241,17 +261,27 @@ export function FeedbackModal({ onClose, onShowToast }: FeedbackModalProps) {
                 onDelete={() => setImage(null)}
               />
             ) : (
-              <Button
+              // Figma 수정안(node 40155:4459): 점선 첨부 영역. 끌어다 놓는 중에는 테두리를 primary로 바꿔 놓을 수 있음을 알린다.
+              <button
                 type="button"
-                variant="secondary"
-                size="md"
                 disabled={isCheckingImage}
                 onClick={() => imageInputRef.current?.click()}
-                className="self-start"
+                onDragOver={(event) => {
+                  event.preventDefault();
+                  setIsDraggingImage(true);
+                }}
+                onDragLeave={() => setIsDraggingImage(false)}
+                onDrop={handleImageDrop}
+                className={`flex w-full items-center justify-center gap-[6px] rounded-xl border border-dashed bg-base-white px-5 py-6 text-3 font-medium text-label-description ${
+                  isDraggingImage ? 'border-line-primary' : 'border-neutral-400'
+                }`}
               >
-                <AttachIcon size={16} />
-                이미지 첨부
-              </Button>
+                {/* 아이콘 위로 드래그가 지나갈 때 dragleave가 발생해 테두리가 깜빡이지 않도록 한다 */}
+                <span className="pointer-events-none text-icon-gray">
+                  <UploadIcon size={16} />
+                </span>
+                클릭하거나 파일을 끌어다 놓으세요
+              </button>
             )}
             <p className={HINT_CLASS}>PNG, JPG 파일 1장, 10MB 이하로 첨부할 수 있어요.</p>
           </div>

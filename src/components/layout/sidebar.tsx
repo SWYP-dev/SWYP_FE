@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, type ComponentType } from 'react';
-import { EditIcon } from '@/components/ui/icons';
+import { MegaphoneIcon } from '@/components/ui/icons';
 import { Toast } from '@/components/ui/toast';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { LoginModal } from '@/features/auth/components/LoginModal';
@@ -94,14 +94,15 @@ export function Sidebar() {
       </div>
 
       <div className="flex w-full flex-col">
-        <div className="w-full px-6">
+        {/* Figma 수정안(node 40150:4479): 흰 배경과 구분되도록 테두리 + 그림자를 둔 알약 버튼 */}
+        <div className="flex w-full justify-center px-6 py-3">
           <button
             type="button"
             onClick={() => setIsFeedbackOpen(true)}
-            className="flex h-9 w-full items-center gap-3 rounded-xl border border-transparent px-5 py-4 text-label-body transition-colors hover:border-line-secondary hover:bg-neutral-100 hover:text-label-base"
+            className="flex items-center gap-[6px] rounded-max border border-line-secondary bg-base-white px-5 py-3 text-icon-primary shadow-normal-medium"
           >
-            <EditIcon size={16} />
-            <span className="flex-1 truncate text-left text-3 font-medium">의견 보내기</span>
+            <MegaphoneIcon size={20} />
+            <span className="text-3 font-semibold text-label-primary">의견 보내기</span>
           </button>
         </div>
         <div className="flex w-full flex-col items-start px-6 py-5">
