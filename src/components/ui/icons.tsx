@@ -159,6 +159,49 @@ export function AttachIcon({ size = 18 }: { size?: number }) {
   );
 }
 
+// 사이드바 "의견 보내기" 버튼(Figma node 40150:4479, 20x20). 디자인 아이콘 세트에 없어
+// lucide megaphone(ISC)을 Figma 수정안과 같은 모양으로 옮김. 진영님 아이콘 확정 시 교체.
+export function MegaphoneIcon({ size = 20 }: { size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path d="m3 11 18-5v12L3 14v-3z" />
+      <path d="M11.6 16.8a3 3 0 1 1-5.8-1.6" />
+    </svg>
+  );
+}
+
+// 의견 보내기 모달 이미지 첨부 영역(Figma node 40155:4460, 16x16). 디자인 아이콘 세트에 없어
+// lucide upload(ISC)를 Figma 수정안과 같은 모양으로 옮김.
+export function UploadIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+      <path d="M17 8l-5-5-5 5" />
+      <path d="M12 3v12" />
+    </svg>
+  );
+}
+
 // name="plus" — KanbanColumn "지원 현황 추가" 버튼에서 사용.
 export function PlusSmallIcon({ size = 16 }: { size?: number }) {
   return <Image src="/icons/plus.svg" alt="" width={size} height={size} />;
