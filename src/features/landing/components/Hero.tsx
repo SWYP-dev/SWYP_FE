@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRef, useState } from 'react';
 import { motion, type Variants } from 'framer-motion';
 import HeroMockup from './mockups/HeroMockup';
+import { pushDataLayerEvent } from '@/lib/gtm';
 import { track } from '@/lib/posthog';
 import { FEATURE_FLAGS } from '@/lib/analytics/featureFlags';
 import { useFeatureFlagEnabled } from '@/lib/hooks/useFeatureFlagEnabled';
@@ -92,6 +93,10 @@ export default function Hero() {
                 type="button"
                 onClick={() => {
                   track('landing_cta_clicked', { cta_type: 'test_start', cta_location: 'hero' });
+                  pushDataLayerEvent('landing_cta_clicked', {
+                    cta_type: 'test_start',
+                    cta_location: 'hero',
+                  });
                   testSession.mutate();
                 }}
                 disabled={testSession.isPending}
@@ -104,9 +109,13 @@ export default function Hero() {
               <Link
                 href="/jobs"
                 // 같은 무료 시작이라도 헤더와 본문의 진입 경로를 구분한다.
-                onClick={() =>
-                  track('landing_cta_clicked', { cta_type: 'start_free', cta_location: 'hero' })
-                }
+                onClick={() => {
+                  track('landing_cta_clicked', { cta_type: 'start_free', cta_location: 'hero' });
+                  pushDataLayerEvent('landing_cta_clicked', {
+                    cta_type: 'start_free',
+                    cta_location: 'hero',
+                  });
+                }}
                 className="inline-flex h-[48px] items-center justify-center gap-[2px] rounded-[12px] bg-fill-primary px-[28px] py-[12px] text-[16px] font-semibold leading-[1.5] text-base-white transition-colors hover:bg-action-primary-hover"
               >
                 무료로 시작하기

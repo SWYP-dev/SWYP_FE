@@ -7,6 +7,7 @@ import { useAuthStore } from '../store/authStore';
 import { setTokens, clearTokens } from '@/lib/api/token';
 import { clearKanbanLayoutCache } from '@/features/kanban/utils/kanbanLayoutCache';
 import { queryClient } from '@/lib/api/query-client';
+import { pushDataLayerEvent } from '@/lib/gtm';
 import { identifyUser, resetAnalytics, track } from '@/lib/posthog';
 import { consumeLoginContext } from '../utils/loginContext';
 
@@ -28,6 +29,15 @@ export function useKakaoLoginMutation() {
       // 저장된 맥락이 있을 때만 속성을 추가해 이전 로그인 시도와 섞이지 않게 한다.
       const context = consumeLoginContext();
       track('kakao_login_completed', { is_new_user: data.isNewUser, ...(context ?? {}) });
+      // GA4 회원가입 완료는 신규 계정이 만들어진 경우에만 보낸다. 기존 회원 로그인은 제외한다.
+      // 인가 코드는 1회용이라 같은 계정의 isNewUser=true 응답은 한 번뿐이고,
+      // 콜백 페이지가 StrictMode 이중 호출을 막아 중복 발송되지 않는다.
+      if (data.isNewUser) {
+        pushDataLayerEvent('sign_up', {
+          method: 'kakao',
+          ...(context ? { entry: context.entry } : {}),
+        });
+      }
       // ⚠️ [QA 반영] 로그인 성공 시, 비로그인 상태로 캐시된 "빈 데이터"가 남아있을 수
       // 있으니 전체 쿼리를 무효화해서 로그인된 사용자 기준으로 다시 불러오도록 함.
       queryClient.invalidateQueries();
@@ -79,6 +89,8 @@ export function useDeleteAccountMutation() {
       clearUser();
       // 탈퇴 이벤트를 기존 사용자에 연결한 뒤 식별 정보를 초기화한다.
       track('account_deleted');
+      // 탈퇴 API가 성공한 경우에만 보낸다. 확인 모달에서 취소하면 mutation 자체가 실행되지 않는다.
+      pushDataLayerEvent('account_deleted');
       resetAnalytics();
       queryClient.clear();
       router.push('/');
