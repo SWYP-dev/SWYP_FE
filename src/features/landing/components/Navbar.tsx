@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { ChwihapWordmark } from '@/features/notification/components/icons';
 import KakaoLoginButton from './KakaoLoginButton';
+import { pushDataLayerEvent } from '@/lib/gtm';
 import { track } from '@/lib/posthog';
 import { FEATURE_FLAGS } from '@/lib/analytics/featureFlags';
 import { useFeatureFlagEnabled } from '@/lib/hooks/useFeatureFlagEnabled';
@@ -93,6 +94,10 @@ export default function Navbar({ variant = 'landing' }: NavbarProps) {
               // 법률 문서의 로그인 진입은 랜딩 CTA로 집계하지 않는다.
               if (variant === 'landing') {
                 track('landing_cta_clicked', { cta_type: 'signup_login', cta_location: 'navbar' });
+                pushDataLayerEvent('landing_cta_clicked', {
+                  cta_type: 'signup_login',
+                  cta_location: 'navbar',
+                });
               }
             }}
           >
@@ -104,6 +109,10 @@ export default function Navbar({ variant = 'landing' }: NavbarProps) {
               type="button"
               onClick={() => {
                 track('landing_cta_clicked', { cta_type: 'test_start', cta_location: 'navbar' });
+                pushDataLayerEvent('landing_cta_clicked', {
+                  cta_type: 'test_start',
+                  cta_location: 'navbar',
+                });
                 testSession.mutate();
               }}
               disabled={testSession.isPending}
@@ -115,9 +124,13 @@ export default function Navbar({ variant = 'landing' }: NavbarProps) {
           ) : (
             <Link
               href="/jobs"
-              onClick={() =>
-                track('landing_cta_clicked', { cta_type: 'start_free', cta_location: 'navbar' })
-              }
+              onClick={() => {
+                track('landing_cta_clicked', { cta_type: 'start_free', cta_location: 'navbar' });
+                pushDataLayerEvent('landing_cta_clicked', {
+                  cta_type: 'start_free',
+                  cta_location: 'navbar',
+                });
+              }}
               className="inline-flex h-[38px] items-center justify-center gap-[2px] rounded-lg bg-fill-primary px-4 text-3 font-semibold leading-[1.5] text-base-white transition-colors hover:bg-action-primary-hover"
             >
               무료로 시작하기
