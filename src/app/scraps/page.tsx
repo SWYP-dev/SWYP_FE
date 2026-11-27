@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import type { NextPage } from 'next';
@@ -36,6 +36,8 @@ import { formatCareer } from '@/features/feed/utils/formatCareer';
 import { formatJobCategory } from '@/features/feed/utils/formatJobCategory';
 import type { ScrapCardData } from '@/features/scraps/types/scrap';
 import type { ScrapItem } from '@/types/api';
+import { useAuthStore } from '@/features/auth/store/authStore';
+import { pushDataLayerEvent } from '@/lib/gtm';
 import { track } from '@/lib/posthog';
 import {
   buildFilterAppliedProperties,
@@ -76,6 +78,18 @@ const ScrapsPage: NextPage = () => {
     deadlineSoon: isDeadlineSoon,
   };
 
+  const hasHydrated = useAuthStore((s) => s.hasHydrated);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const hasTrackedViewRef = useRef(false);
+
+  // 로그인 상태 복원 후 로그인 사용자에게 화면이 표시되면 1회만 보낸다.
+  // ref로 재렌더링·StrictMode 재실행에 의한 중복을 막는다.
+  useEffect(() => {
+    if (!hasHydrated || !isAuthenticated || hasTrackedViewRef.current) return;
+    hasTrackedViewRef.current = true;
+    pushDataLayerEvent('scrap_list_viewed');
+  }, [hasHydrated, isAuthenticated]);
+
   const { data, isLoading, isError, refetch } = useScrapsQuery({
     page: currentPage,
     size: 20,
@@ -98,6 +112,7 @@ const ScrapsPage: NextPage = () => {
       await deleteScrap(jobPostingId);
       // 해제 실패·낙관적 표시만으로는 이벤트를 보내지 않는다.
       track('scrap_removed', { source: 'scraps_page' });
+      pushDataLayerEvent('scrap_removed', { source: 'scraps_page' });
       refetch();
       queryClient.invalidateQueries({ queryKey: ['feed'] });
     } catch (err) {
@@ -124,6 +139,7 @@ const ScrapsPage: NextPage = () => {
     try {
       await registerKanbanCard(jobPostingId);
       track('kanban_card_added', properties);
+      pushDataLayerEvent('kanban_card_added', properties);
       // HT-001: 목록의 isKanbanRegistered를 다시 받아와 '지원 완료' 버튼으로 바꿈
       refetch();
       queryClient.invalidateQueries({ queryKey: kanbanKeys.board() });
@@ -135,6 +151,7 @@ const ScrapsPage: NextPage = () => {
         (err.code === 'K003' || err.code === 'DUPLICATE_KANBAN_CARD')
       ) {
         track('kanban_card_add_duplicated', { source: 'scraps_page' });
+        pushDataLayerEvent('kanban_card_add_duplicated', { source: 'scraps_page' });
       }
       setToastType('error');
       if (
@@ -245,10 +262,12 @@ const ScrapsPage: NextPage = () => {
                   onAddToKanban={handleAddToKanban}
                   onOriginalLinkClick={(jobPostingId) => {
                     const item = data?.items.find((scrap) => scrap.jobPostingId === jobPostingId);
-                    track('original_posting_clicked', {
+                    const properties = {
                       source: 'scraps',
                       platform: item?.platform ?? null,
-                    });
+                    } as const;
+                    track('original_posting_clicked', properties);
+                    pushDataLayerEvent('original_posting_clicked', properties);
                   }}
                 />
               ))}
@@ -274,6 +293,7 @@ const ScrapsPage: NextPage = () => {
         actionLabel="지원 현황 이동"
         onAction={() => {
           track('toast_kanban_link_clicked', { source: 'scraps_page' });
+          pushDataLayerEvent('toast_kanban_link_clicked', { source: 'scraps_page' });
           router.push('/kanban');
         }}
       />
