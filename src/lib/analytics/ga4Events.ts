@@ -2,17 +2,8 @@
 // 노션 「GA4 이벤트 설계」 문서와 일치시킨다. 이름·속성을 바꿀 때는 노션을 먼저 고친다.
 // pushDataLayerEvent(src/lib/gtm.ts)가 이 목록을 기준으로 이벤트 이름·속성을 검사한다.
 // PostHog와 같은 행동은 이름·속성을 맞춰 두 도구 수치를 비교할 수 있게 한다.
-import type { InAppNotificationReason, Platform } from '@/types/api';
 
-export type AccountType = 'kakao' | 'test';
-export type LoginTrigger = 'scrap' | 'notification_bell' | 'sidebar' | 'api_401';
 export type LoginEntry = 'landing_navbar' | 'login_modal';
-export type CardAddSource = 'feed_direct' | 'feed_scrapped' | 'scraps_page' | 'manual';
-export type DefaultStageName = '지원 전' | '면접' | '최종 결과';
-export type StageType = 'default' | 'custom';
-export type CardDetailSource = 'kanban' | 'deadlines';
-export type LinkCategory = 'RESUME' | 'PORTFOLIO' | 'PERSONAL_CHANNEL' | 'OTHER';
-export type FilterPage = 'jobs' | 'scraps';
 
 export interface Ga4EventMap {
   // 비로그인 상태로 랜딩(/) 진입
