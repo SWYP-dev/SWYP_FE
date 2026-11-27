@@ -161,6 +161,17 @@ export interface Ga4EventMap {
   // 바뀐 항목이 없으면 보내지 않는다. PostHog는 같은 저장을 kanban_card_deadline_changed·
   // kanban_card_stage_changed 두 이벤트로 나눠 보낸다.
   deadline_card_edited: { deadline_changed: 'true' | 'false'; stage_changed: 'true' | 'false' };
+
+  // 알림. 아래 두 이벤트는 PostHog와 이름·속성·발송 시점을 맞춘다.
+  // 상단 알림 아이콘으로 인앱 알림 패널을 연 순간 (여는 시점의 미확인 개수)
+  notification_bell_opened: AnalyticsEventMap['notification_bell_opened'];
+  // 이메일 알림 토글 저장 성공. 토글마다 바로 저장되므로 저장된 변경 1회당 1번 보낸다.
+  notification_setting_changed: AnalyticsEventMap['notification_setting_changed'];
+  // 마감 알림 메일의 카드 링크(/deadlines?cardId=)로 지원 마감일 화면에 도착한 순간 1회.
+  // 메일 안의 클릭은 프론트가 직접 잴 수 없어 도착 시점으로 측정한다. card_found는 카드를 찾았는지 여부.
+  deadline_deeplink_opened: AnalyticsEventMap['deadline_deeplink_opened'];
+  // 알림 설정 화면 표시 1회 (로그인 확인 후). PostHog에 기준 이벤트가 없어 GA4에서만 보낸다.
+  notification_settings_viewed: Record<string, never>;
   kanban_card_edited: {
     company_name_changed: 'true' | 'false';
     title_changed: 'true' | 'false';
