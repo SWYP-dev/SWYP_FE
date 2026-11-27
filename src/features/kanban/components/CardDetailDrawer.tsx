@@ -25,18 +25,24 @@ import { isAlwaysHiring } from '@/lib/utils/deadline';
 import { pushDataLayerEvent } from '@/lib/gtm';
 import { track } from '@/lib/posthog';
 import type { CardDetailSource, LinkCategory } from '@/lib/analytics/events';
+import type { Ga4EventMap } from '@/lib/analytics/ga4Events';
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB (API 명세서 4.4.2 정책)
 const ALLOWED_FILE_EXTENSIONS = ['.pdf', '.docx', '.pptx', '.png', '.jpg', '.jpeg'];
 
 // 파일 선택 즉시 검증한다 — 저장까지 갔다가 실패하는 헛걸음을 막기 위함.
 // 계정 저장 용량 초과처럼 서버만 알 수 있는 건 여기서 걸러지지 않는다.
-function validateFile(file: File): string | undefined {
+// 실패 원인을 GA4에도 남기려고 안내 문구와 함께 오류 코드를 돌려준다.
+function validateFile(
+  file: File
+): { code: 'INVALID_TYPE' | 'FILE_TOO_LARGE'; message: string } | undefined {
   const lowerName = file.name.toLowerCase();
   if (!ALLOWED_FILE_EXTENSIONS.some((ext) => lowerName.endsWith(ext))) {
-    return 'PDF, DOCX, PPTX, PNG, JPG 파일만 첨부할 수 있어요.';
+    return { code: 'INVALID_TYPE', message: 'PDF, DOCX, PPTX, PNG, JPG 파일만 첨부할 수 있어요.' };
   }
-  if (file.size > MAX_FILE_SIZE) return '파일 용량은 10MB를 초과할 수 없어요.';
+  if (file.size > MAX_FILE_SIZE) {
+    return { code: 'FILE_TOO_LARGE', message: '파일 용량은 10MB를 초과할 수 없어요.' };
+  }
   return undefined;
 }
 
@@ -79,6 +85,8 @@ interface LinkDraft {
   id: number | null;
   category: string;
   url: string;
+  // 이번에 새로 등록한 링크만 가진다(서버에서 받은 링크는 없음).
+  categorySource?: 'selected' | 'default';
 }
 
 interface FileDraft {
@@ -151,6 +159,8 @@ export function CardDetailDrawer({
 
   const [memoDraft, setMemoDraft] = useState('');
   const [isMemoFocused, setIsMemoFocused] = useState(false);
+  // 드로어를 열 때마다 메모 입력 시작(memo_input_started)을 한 번만 보낸다.
+  const [hasTrackedMemoStart, setHasTrackedMemoStart] = useState(false);
   const [linkItems, setLinkItems] = useState<LinkDraft[]>([]);
   const [fileItems, setFileItems] = useState<FileDraft[]>([]);
 
@@ -195,6 +205,7 @@ export function CardDetailDrawer({
   if (!isOpen && syncRequest !== 'all') {
     setSyncRequest('all');
     setIsMemoFocused(false);
+    setHasTrackedMemoStart(false);
     setMemoDraft('');
     setLinkItems([]);
     setFileItems([]);
@@ -290,19 +301,54 @@ export function CardDetailDrawer({
       link_categories_added: linkCategoriesAdded,
       source,
     };
+    // GA4용 값도 요청 시점 기준으로 보존한다.
+    const isMemoEdit = memoChanged && (detail?.memo ?? '') !== '';
+    const savedFileCount = createdFiles.length;
+    const savedLinks = linkItems
+      .filter((item) => item.id === null)
+      .map((item) => ({
+        category: item.category,
+        category_source: item.categorySource ?? ('default' as const),
+      }));
     setFileError(null);
     try {
       await saveCardDetail.mutateAsync(payload);
       track('card_detail_saved', saveProperties);
+      // 빈 메모를 처음 채운 저장은 메모 수정이 아니다(노션: 기존 메모를 수정한 경우만).
+      if (isMemoEdit) pushDataLayerEvent('memo_edited', { screen: source });
+      if (savedFileCount > 0) {
+        pushFileAttached({ step: 'saved', error_code: undefined, file_count: savedFileCount });
+      }
+      savedLinks.forEach((link) =>
+        pushDataLayerEvent('card_link_registered', {
+          step: 'saved',
+          screen: source,
+          category: link.category,
+          category_source: link.category_source,
+          error_code: undefined,
+        })
+      );
       setSyncRequest('all'); // 갱신된 상세 데이터로 draft 재동기화
       setToast({ message: '저장되었어요.', type: 'success' });
     } catch (err) {
-      track('card_detail_save_failed', {
-        error_code:
-          err instanceof ApiClientError && err.code === 'STORAGE_LIMIT_EXCEEDED'
-            ? 'STORAGE_LIMIT_EXCEEDED'
-            : 'unknown',
-      });
+      const errorCode =
+        err instanceof ApiClientError && err.code === 'STORAGE_LIMIT_EXCEEDED'
+          ? 'STORAGE_LIMIT_EXCEEDED'
+          : 'unknown';
+      track('card_detail_save_failed', { error_code: errorCode });
+      // 파일·URL은 한 번의 저장으로 함께 전송되므로, 이번 저장에 포함된 항목 기준으로 실패를 남긴다.
+      if (savedFileCount > 0) {
+        pushFileAttached({ step: 'failed', error_code: errorCode, file_count: savedFileCount });
+      }
+      if (savedLinks.length > 0) {
+        pushDataLayerEvent('card_link_registered', {
+          step: 'failed',
+          screen: source,
+          category: undefined,
+          category_source: undefined,
+          error_code: errorCode,
+        });
+      }
       // 실패하면 서버는 저장 이전 상태로 되돌아가 있고(보상 요청), 화면의 입력값은 그대로 둔다.
       // 파일을 다시 고르지 않고 용량만 줄여서 바로 재시도할 수 있게 하기 위함 —
       // 새로고침하면 로컬 draft가 사라지므로 서버 값(= 저장 이전 상태)만 남는다.
@@ -313,6 +359,20 @@ export function CardDetailDrawer({
       }
       setToast({ message: '저장에 실패했어요. 입력한 내용은 그대로 있어요.', type: 'error' });
     }
+  }
+
+  // 첨부 파일 단계 이벤트. 드로어를 지원 현황·지원 마감일이 함께 써서 화면(screen)을 싣는다.
+  function pushFileAttached(params: Omit<Ga4EventMap['card_file_attached'], 'screen'>) {
+    pushDataLayerEvent('card_file_attached', { ...params, screen: source });
+  }
+
+  // 비어 있던 메모에 첫 글자를 입력한 순간 1회. 기존 메모를 지우고 다시 쓴 경우는 메모 수정으로 본다.
+  function handleMemoChange(value: string) {
+    if (!hasTrackedMemoStart && (detail?.memo ?? '') === '' && memoDraft === '' && value !== '') {
+      setHasTrackedMemoStart(true);
+      pushDataLayerEvent('memo_input_started', { screen: source });
+    }
+    setMemoDraft(value);
   }
 
   // URL 슬롯 → 누적 리스트. 카테고리 미선택 시 기타(OTHER)로 저장된다.
@@ -327,6 +387,8 @@ export function CardDetailDrawer({
         id: null,
         category: slotCategory ?? 'OTHER',
         url: normalizeUrl(slotUrl.trim()),
+        // '기타'를 직접 고른 경우와 선택하지 않아 기타가 된 경우를 GA4에서 구분한다.
+        categorySource: slotCategory ? 'selected' : 'default',
       },
     ]);
     setSlotCategory(null);
@@ -340,13 +402,22 @@ export function CardDetailDrawer({
     const input = window.document.createElement('input');
     input.type = 'file';
     input.accept = ALLOWED_FILE_EXTENSIONS.join(',');
+    // 파일 선택창을 그냥 닫으면 브라우저가 cancel 이벤트를 보낸다(지원하지 않는 브라우저는 집계 안 됨).
+    input.addEventListener('cancel', () =>
+      pushFileAttached({ step: 'canceled', error_code: undefined, file_count: undefined })
+    );
     input.onchange = () => {
       const file = input.files?.[0];
       if (!file) return;
 
       const validationError = validateFile(file);
       if (validationError) {
-        setFileError(validationError);
+        setFileError(validationError.message);
+        pushFileAttached({
+          step: 'failed',
+          error_code: validationError.code,
+          file_count: undefined,
+        });
         return;
       }
 
@@ -358,6 +429,7 @@ export function CardDetailDrawer({
       ]);
     };
     input.click();
+    pushFileAttached({ step: 'picker_opened', error_code: undefined, file_count: undefined });
   }
 
   return (
@@ -472,6 +544,8 @@ export function CardDetailDrawer({
                   pushDataLayerEvent('original_posting_clicked', {
                     source: 'card_drawer',
                     platform: undefined,
+                    // 드로어를 지원 현황·지원 마감일이 함께 써서 화면을 따로 싣는다.
+                    screen: source,
                   });
                 }}
                 target="_blank"
@@ -500,7 +574,7 @@ export function CardDetailDrawer({
                         있다는 행동 안내가 드러나도록 플레이스홀더 문구를 변경 */}
                     <textarea
                       value={memoDraft}
-                      onChange={(e) => setMemoDraft(e.target.value)}
+                      onChange={(e) => handleMemoChange(e.target.value)}
                       onFocus={() => setIsMemoFocused(true)}
                       onBlur={() => setIsMemoFocused(false)}
                       placeholder="여기를 눌러 공고에 대한 메모를 남겨보세요."

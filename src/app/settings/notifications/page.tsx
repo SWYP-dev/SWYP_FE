@@ -2,6 +2,9 @@
 
 import { useNotificationSettings } from '@/features/notification/api/useNotificationQuery';
 import { useUpdateNotificationSettings } from '@/features/notification/api/useNotificationMutations';
+import { useEffect, useRef } from 'react';
+import { useAuthStore } from '@/features/auth/store/authStore';
+import { pushDataLayerEvent } from '@/lib/gtm';
 import { track } from '@/lib/posthog';
 
 function ToggleSwitch({
@@ -50,6 +53,18 @@ function ToggleSwitch({
 // 없어 비활성화 처리 — 백엔드에 카카오 알림 API 추가되면 연동 필요.
 export default function SettingsNotificationsPage() {
   const { data, isLoading } = useNotificationSettings();
+
+  const hasHydrated = useAuthStore((s) => s.hasHydrated);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const hasTrackedViewRef = useRef(false);
+
+  // 로그인 상태 복원 후 로그인 사용자에게 화면이 표시되면 1회만 보낸다.
+  // ref로 재렌더링·StrictMode 재실행에 의한 중복을 막는다.
+  useEffect(() => {
+    if (!hasHydrated || !isAuthenticated || hasTrackedViewRef.current) return;
+    hasTrackedViewRef.current = true;
+    pushDataLayerEvent('notification_settings_viewed');
+  }, [hasHydrated, isAuthenticated]);
   const updateMutation = useUpdateNotificationSettings();
 
   if (isLoading || !data) {
@@ -93,8 +108,13 @@ export default function SettingsNotificationsPage() {
                     remindDays: data.remindDays,
                   },
                   {
-                    onSuccess: () =>
-                      track('notification_setting_changed', { channel: 'email', enabled: next }),
+                    onSuccess: () => {
+                      track('notification_setting_changed', { channel: 'email', enabled: next });
+                      pushDataLayerEvent('notification_setting_changed', {
+                        channel: 'email',
+                        enabled: next,
+                      });
+                    },
                   }
                 );
               }}
