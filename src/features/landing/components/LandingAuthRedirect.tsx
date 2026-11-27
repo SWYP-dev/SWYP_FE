@@ -3,6 +3,7 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/features/auth/store/authStore';
+import { pushDataLayerEvent } from '@/lib/gtm';
 import { track } from '@/lib/posthog';
 
 /**
@@ -30,6 +31,7 @@ export default function LandingAuthRedirect({ children }: { children: ReactNode 
     if (!hasHydrated || isAuthenticated || hasTrackedLandingRef.current) return;
     hasTrackedLandingRef.current = true;
     track('landing_viewed');
+    pushDataLayerEvent('landing_viewed');
   }, [hasHydrated, isAuthenticated]);
 
   // hydration 전이거나 이미 로그인이면 랜딩 콘텐츠를 그리지 않음 (블랭크)
