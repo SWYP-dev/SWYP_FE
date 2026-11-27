@@ -267,7 +267,10 @@ const ScrapsPage: NextPage = () => {
                       platform: item?.platform ?? null,
                     } as const;
                     track('original_posting_clicked', properties);
-                    pushDataLayerEvent('original_posting_clicked', properties);
+                    pushDataLayerEvent('original_posting_clicked', {
+                      ...properties,
+                      screen: undefined,
+                    });
                   }}
                 />
               ))}

@@ -444,7 +444,10 @@ export default function FeedPage() {
                         onOriginalLinkClick={() => {
                           const properties = { source: 'feed', platform: job.platform } as const;
                           track('original_posting_clicked', properties);
-                          pushDataLayerEvent('original_posting_clicked', properties);
+                          pushDataLayerEvent('original_posting_clicked', {
+                            ...properties,
+                            screen: undefined,
+                          });
                         }}
                         isScrapped={isScrapped}
                         onToggleScrap={() => handleToggleScrap(job.id, isScrapped)}
