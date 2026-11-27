@@ -266,7 +266,8 @@ export default function FeedPage() {
         await registerKanbanCardDirect(feedId);
       }
       track('kanban_card_added', properties);
-      pushDataLayerEvent('kanban_card_added', properties);
+      // 직접 등록 경로의 target_stage_type이 이전 push에서 남지 않게 비운다.
+      pushDataLayerEvent('kanban_card_added', { ...properties, target_stage_type: undefined });
       setRegisteredFeedIds((prev) => new Set(prev).add(feedId));
       queryClient.invalidateQueries({ queryKey: kanbanKeys.board() });
       queryClient.invalidateQueries({ queryKey: ['feed'] });

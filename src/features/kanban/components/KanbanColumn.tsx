@@ -47,7 +47,12 @@ interface KanbanColumnProps {
   isCardDropTarget?: boolean;
   draftName?: string;
   onDraftNameChange?: (name: string) => void;
-  onRenameStage?: (stageId: number, newName: string, position: number) => void;
+  onRenameStage?: (
+    stageId: number,
+    newName: string,
+    position: number,
+    method: 'button' | 'double_click'
+  ) => void;
   onDeleteStage?: (stageId: number) => void;
   onConfirmDraft?: (name: string) => void;
   onCancelDraft?: () => void;
@@ -110,6 +115,7 @@ export function KanbanColumn({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   // 취소 뒤 이어지는 blur가 단계 생성을 요청하지 않도록 기록한다(HT-004).
   const isDraftCancelledRef = useRef(false);
+  const editMethodRef = useRef<'button' | 'double_click'>('button');
 
   const isLocked = stage.name === '지원 전';
 
@@ -138,6 +144,8 @@ export function KanbanColumn({
   function startEditing(method: 'button' | 'double_click') {
     if (isDraft || isLocked) return;
     pushDataLayerEvent('stage_name_edit_trigger', { method });
+    // 저장 성공 이벤트(kanban_stage_renamed)에 같은 진입 방식을 싣기 위해 기억해 둔다.
+    editMethodRef.current = method;
     setLocalDraftName(stage.name);
     setIsEditingName(true);
   }
@@ -162,7 +170,7 @@ export function KanbanColumn({
       setErrorMessage(validationError);
       return;
     }
-    onRenameStage?.(stage.id, trimmed, stage.position);
+    onRenameStage?.(stage.id, trimmed, stage.position, editMethodRef.current);
     setIsEditingName(false);
   }
 

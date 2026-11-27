@@ -16,6 +16,7 @@ import { flattenKanbanCards, groupCardsByDeadline } from '../utils/groupByDeadli
 import { DeadlineGroup } from './DeadlineGroup';
 import { DeadlineListSkeleton } from './DeadlineListSkeleton';
 import { EditDeadlineCardModal } from './EditDeadlineCardModal';
+import { pushDataLayerEvent } from '@/lib/gtm';
 import { track } from '@/lib/posthog';
 import type { AnalyticsEventMap } from '@/lib/analytics/events';
 import { getStageType, getStageAnalyticsName } from '@/features/kanban/utils/stageAnalytics';
@@ -42,7 +43,10 @@ export function DeadlineList() {
     hasTrackedDeeplinkRef.current = true;
     // 찾지 못한 딥링크도 기록하되 상세 열기는 실제 카드가 있을 때만 센다.
     track('deadline_deeplink_opened', { card_found: deeplinkCardFound });
-    if (deeplinkCardFound) track('kanban_card_opened', { source: 'email_deeplink' });
+    if (deeplinkCardFound) {
+      track('kanban_card_opened', { source: 'email_deeplink' });
+      pushDataLayerEvent('kanban_card_opened', { source: 'email_deeplink' });
+    }
   }, [deeplinkCardFound]);
 
   const entries = useMemo(() => flattenKanbanCards(data?.stages ?? []), [data]);
@@ -174,7 +178,10 @@ export function DeadlineList() {
             group={group}
             selectedCardId={viewingCardId}
             onCardClick={(cardId) => {
-              if (cardId !== viewingCardId) track('kanban_card_opened', { source: 'deadlines' });
+              if (cardId !== viewingCardId) {
+                track('kanban_card_opened', { source: 'deadlines' });
+                pushDataLayerEvent('kanban_card_opened', { source: 'deadlines' });
+              }
               setViewingCardId(cardId);
             }}
             onEditCard={handleEditCard}
