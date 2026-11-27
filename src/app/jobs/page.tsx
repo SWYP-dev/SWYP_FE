@@ -37,11 +37,14 @@ import { openLoginModalOutsideReact } from '@/features/auth/store/loginModalStor
 import { formatCareer } from '@/features/feed/utils/formatCareer';
 import { formatJobCategory } from '@/features/feed/utils/formatJobCategory';
 import type { FeedQueryParams } from '@/types/api';
+import { pushDataLayerEvent } from '@/lib/gtm';
 import { track } from '@/lib/posthog';
 import {
   buildFilterAppliedProperties,
+  buildGa4FilterAppliedParams,
   type FeedFilterState,
 } from '@/features/feed/utils/filterAnalytics';
+import type { FeedFilterType } from '@/lib/analytics/ga4Events';
 
 type SortOption = NonNullable<FeedQueryParams['sort']>;
 
@@ -91,16 +94,70 @@ export default function FeedPage() {
 
   const [syncedData, setSyncedData] = useState<typeof data>(undefined);
 
+  const hasHydrated = useAuthStore((s) => s.hasHydrated);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const hasTrackedViewRef = useRef(false);
+
+  // 로그인 상태 복원이 끝난 뒤 한 번만 보낸다. 복원 전에는 isAuthenticated가 항상 false라
+  // 회원이 비로그인으로 잘못 집계되고, ref로 재렌더링·StrictMode 재실행·화면 안 로그인에 의한 중복을 막는다.
+  useEffect(() => {
+    if (!hasHydrated || hasTrackedViewRef.current) return;
+    hasTrackedViewRef.current = true;
+    pushDataLayerEvent('job_feed_viewed', { is_logged_in: isAuthenticated });
+  }, [hasHydrated, isAuthenticated]);
+
   // 제출한 검색어의 첫 응답만 기록하고 페이지·필터 변경 응답은 중복 집계하지 않는다.
   useEffect(() => {
     if (pendingSearchRef.current === null || pendingSearchRef.current !== keyword) return;
     if (data) {
       track('feed_searched', { keyword: keyword.trim(), result_count: data.totalElements });
+      pushDataLayerEvent(
+        'feed_searched',
+        data.totalElements === 0
+          ? { has_result: 'false', zero_result_keyword: keyword.trim() }
+          : { has_result: 'true', zero_result_keyword: undefined }
+      );
       pendingSearchRef.current = null;
     } else if (isError) {
       pendingSearchRef.current = null;
     }
   }, [data, keyword, isError]);
+
+  // 필터 적용 시점의 조건을 기억해 두었다가, 그 조건의 결과가 도착하면 GA4로 한 번 보낸다.
+  // 같은 값을 다시 적용하면 데이터가 바뀌지 않으므로 버전 값으로 effect를 다시 실행시킨다.
+  const pendingFilterRef = useRef<{
+    filterType: FeedFilterType;
+    next: FeedFilterState;
+    isSearching: boolean;
+  } | null>(null);
+  const [filterApplyVersion, setFilterApplyVersion] = useState(0);
+
+  useEffect(() => {
+    const pending = pendingFilterRef.current;
+    if (!pending) return;
+    if (data) {
+      pushDataLayerEvent(
+        'feed_filter_applied',
+        buildGa4FilterAppliedParams(
+          pending.filterType,
+          pending.next,
+          pending.isSearching,
+          data.totalElements
+        )
+      );
+      pendingFilterRef.current = null;
+    } else if (isError) {
+      // 조회 실패는 노션 예외 조건대로 보내지 않는다.
+      pendingFilterRef.current = null;
+    }
+  }, [data, isError, filterApplyVersion]);
+
+  function applyFilter(filterType: FeedFilterType, next: FeedFilterState) {
+    // PostHog는 적용 시점에, GA4는 결과 갱신 후에 보낸다.
+    track('feed_filter_applied', buildFilterAppliedProperties('jobs', filterType, next));
+    pendingFilterRef.current = { filterType, next, isSearching: keyword.trim().length > 0 };
+    setFilterApplyVersion((v) => v + 1);
+  }
 
   function handleSearch(nextKeyword: string) {
     if (nextKeyword.trim().length === 0) {
@@ -157,7 +214,10 @@ export default function FeedPage() {
     try {
       if (!currentlyScrapped) {
         const res = await postScrap(feedId);
-        if (scrapProperties) track('job_scrapped', scrapProperties);
+        if (scrapProperties) {
+          track('job_scrapped', scrapProperties);
+          pushDataLayerEvent('job_scrapped', scrapProperties);
+        }
         setJobPostingIdMap((prev) => ({ ...prev, [feedId]: res.jobPostingId }));
       } else {
         const jobPostingId = jobPostingIdMap[feedId];
@@ -171,6 +231,7 @@ export default function FeedPage() {
         }
         await deleteScrap(jobPostingId);
         track('scrap_removed', { source: 'feed' });
+        pushDataLayerEvent('scrap_removed', { source: 'feed' });
       }
       queryClient.invalidateQueries({ queryKey: ['feed'] });
       queryClient.invalidateQueries({ queryKey: ['scraps'] });
@@ -205,6 +266,7 @@ export default function FeedPage() {
         await registerKanbanCardDirect(feedId);
       }
       track('kanban_card_added', properties);
+      pushDataLayerEvent('kanban_card_added', properties);
       setRegisteredFeedIds((prev) => new Set(prev).add(feedId));
       queryClient.invalidateQueries({ queryKey: kanbanKeys.board() });
       queryClient.invalidateQueries({ queryKey: ['feed'] });
@@ -216,6 +278,7 @@ export default function FeedPage() {
         (err.code === 'K003' || err.code === 'DUPLICATE_KANBAN_CARD')
       ) {
         track('kanban_card_add_duplicated', { source });
+        pushDataLayerEvent('kanban_card_add_duplicated', { source });
       }
       // ⚠️ [QA 반영] 비로그인 상태면 apiFetch가 이미 전역 로그인 모달을 띄웠으므로
       // 에러 토스트는 띄우지 않음 (로그인 모달만 노출).
@@ -272,39 +335,21 @@ export default function FeedPage() {
                   value={jobCategoryValue}
                   onApply={(value) => {
                     setJobCategoryValue(value);
-                    track(
-                      'feed_filter_applied',
-                      buildFilterAppliedProperties('jobs', 'job_category', {
-                        ...filterState,
-                        jobCategoryValue: value,
-                      })
-                    );
+                    applyFilter('job_category', { ...filterState, jobCategoryValue: value });
                   }}
                 />
                 <RegionFilterButton
                   value={regionValue}
                   onApply={(value) => {
                     setRegionValue(value);
-                    track(
-                      'feed_filter_applied',
-                      buildFilterAppliedProperties('jobs', 'region', {
-                        ...filterState,
-                        regionValue: value,
-                      })
-                    );
+                    applyFilter('region', { ...filterState, regionValue: value });
                   }}
                 />
                 <CareerFilterChip
                   appliedTags={careerTags}
                   onApply={(tags) => {
                     setCareerTags(tags);
-                    track(
-                      'feed_filter_applied',
-                      buildFilterAppliedProperties('jobs', 'career', {
-                        ...filterState,
-                        careerTags: tags,
-                      })
-                    );
+                    applyFilter('career', { ...filterState, careerTags: tags });
                   }}
                 />
               </FilterBar>
@@ -312,13 +357,7 @@ export default function FeedPage() {
                 isActive={deadlineSoon}
                 onToggle={(value) => {
                   setDeadlineSoon(value);
-                  track(
-                    'feed_filter_applied',
-                    buildFilterAppliedProperties('jobs', 'deadline_soon', {
-                      ...filterState,
-                      deadlineSoon: value,
-                    })
-                  );
+                  applyFilter('deadline_soon', { ...filterState, deadlineSoon: value });
                 }}
               />
               {/* 전체 초기화: 마감일 임박 버튼과 동일한 디자인, 필터 적용 여부와 무관하게 항상 노출 */}
@@ -330,7 +369,10 @@ export default function FeedPage() {
               <button
                 type="button"
                 onClick={() => {
-                  if (sort !== 'LATEST') track('feed_sort_changed', { sort: 'LATEST' });
+                  if (sort !== 'LATEST') {
+                    track('feed_sort_changed', { sort: 'LATEST' });
+                    pushDataLayerEvent('feed_sort_changed', { sort: 'LATEST' });
+                  }
                   setSort('LATEST');
                 }}
                 className={sort === 'LATEST' ? 'font-semibold text-label-base' : ''}
@@ -341,7 +383,10 @@ export default function FeedPage() {
               <button
                 type="button"
                 onClick={() => {
-                  if (sort !== 'DEADLINE') track('feed_sort_changed', { sort: 'DEADLINE' });
+                  if (sort !== 'DEADLINE') {
+                    track('feed_sort_changed', { sort: 'DEADLINE' });
+                    pushDataLayerEvent('feed_sort_changed', { sort: 'DEADLINE' });
+                  }
                   setSort('DEADLINE');
                 }}
                 className={sort === 'DEADLINE' ? 'font-semibold text-label-base' : ''}
@@ -396,12 +441,11 @@ export default function FeedPage() {
                         region={job.region ?? ''}
                         career={formatCareer(job.career)}
                         originalUrl={job.originalUrl}
-                        onOriginalLinkClick={() =>
-                          track('original_posting_clicked', {
-                            source: 'feed',
-                            platform: job.platform,
-                          })
-                        }
+                        onOriginalLinkClick={() => {
+                          const properties = { source: 'feed', platform: job.platform } as const;
+                          track('original_posting_clicked', properties);
+                          pushDataLayerEvent('original_posting_clicked', properties);
+                        }}
                         isScrapped={isScrapped}
                         onToggleScrap={() => handleToggleScrap(job.id, isScrapped)}
                         onAddToKanban={() => handleAddToKanban(job.id)}
@@ -434,6 +478,7 @@ export default function FeedPage() {
         actionLabel="지원 현황 이동"
         onAction={() => {
           track('toast_kanban_link_clicked', { source: 'feed' });
+          pushDataLayerEvent('toast_kanban_link_clicked', { source: 'feed' });
           router.push('/kanban');
         }}
       />
