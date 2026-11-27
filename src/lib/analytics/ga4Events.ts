@@ -122,6 +122,39 @@ export interface Ga4EventMap {
   // 전형 단계 이름 변경 저장 성공. method는 수정 진입 방식(stage_name_edit_trigger와 같은 값).
   kanban_stage_renamed: { method: 'button' | 'double_click' };
   // 지원 현황 수정 모달 저장 성공. 항목별 변경 여부를 보내며, 바뀐 항목이 없으면 보내지 않는다.
+  // 공고 상세 드로어(지원 현황·지원 마감일 공용). screen은 드로어가 열린 화면이다.
+  // PostHog는 저장 전체를 card_detail_saved 하나로 보내므로, 노션 설계에 맞춰 GA4 전용으로 나눈다.
+  // 비어 있던 메모에 첫 글자를 입력한 순간 (드로어를 열 때마다 1회)
+  memo_input_started: { screen: CardDetailSource };
+  // 기존 메모를 수정해 저장에 성공한 순간 (빈 메모를 처음 채운 저장은 제외)
+  memo_edited: { screen: CardDetailSource };
+  // 첨부 파일 단계. picker_opened: 파일 선택창 열림, canceled: 선택 없이 닫음,
+  // saved/failed: 저장 결과(file_count는 이번 저장의 새 파일 수), failed는 선택 단계 검증 실패도 포함.
+  card_file_attached: {
+    step: 'picker_opened' | 'canceled' | 'saved' | 'failed';
+    screen: CardDetailSource;
+    error_code:
+      'INVALID_TYPE' | 'FILE_TOO_LARGE' | 'STORAGE_LIMIT_EXCEEDED' | 'unknown' | undefined;
+    file_count: number | undefined;
+  };
+  // URL 등록 저장 결과. saved는 새로 등록한 URL마다 1회, failed는 저장 1회당 1회.
+  // category_source: selected(카테고리를 직접 고름, '기타' 포함) / default(선택 없이 자동 '기타').
+  card_link_registered:
+    | {
+        step: 'saved';
+        screen: CardDetailSource;
+        category: string;
+        category_source: 'selected' | 'default';
+        error_code: undefined;
+      }
+    | {
+        step: 'failed';
+        screen: CardDetailSource;
+        category: undefined;
+        category_source: undefined;
+        error_code: 'STORAGE_LIMIT_EXCEEDED' | 'unknown';
+      };
+
   // 지원 마감일 화면 표시 1회 (로그인 확인 후)
   deadlines_viewed: Record<string, never>;
   // 지원 마감일 화면의 수정 모달 저장 성공. 마감일(상시 채용 전환 포함)·전형 단계 변경 여부를 함께 보내며,
