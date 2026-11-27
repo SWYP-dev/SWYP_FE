@@ -36,7 +36,9 @@ import { ApiClientError } from '@/lib/api/api-client';
 import { useDraftStageStore } from '@/features/kanban/store/draftStageStore';
 import { kanbanKeys } from '@/features/kanban/api/useKanbanQuery';
 import { track } from '@/lib/posthog';
+import { pushDataLayerEvent } from '@/lib/gtm';
 import type { AnalyticsEventMap } from '@/lib/analytics/events';
+import type { Ga4EventMap } from '@/lib/analytics/ga4Events';
 import { getStageType, getStageAnalyticsName } from '../utils/stageAnalytics';
 
 const MAX_STAGES = 10;
@@ -261,7 +263,13 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
         { stageId: fromStageId, position: newPosition },
         {
           onSuccess: () => {
-            if (reorderProperties) track('kanban_stage_reordered', reorderProperties);
+            if (reorderProperties) {
+              track('kanban_stage_reordered', reorderProperties);
+              // 노션 예외 조건: 드래그 후 기존 순서와 같으면 GA4에는 보내지 않는다.
+              if (reorderProperties.from_position !== reorderProperties.to_position) {
+                pushDataLayerEvent('kanban_stage_reordered', reorderProperties);
+              }
+            }
           },
           onError: (err) => {
             setStages(initialStages);
@@ -323,7 +331,13 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
       {
         // 같은 단계 안 정렬과 실패는 제외하고 서버에 반영된 단계 변경만 기록한다.
         onSuccess: () => {
-          if (stageChangeProperties) track('kanban_card_stage_changed', stageChangeProperties);
+          if (stageChangeProperties) {
+            track('kanban_card_stage_changed', stageChangeProperties);
+            pushDataLayerEvent('kanban_card_stage_changed', {
+              ...stageChangeProperties,
+              method: 'drag',
+            });
+          }
         },
         onError: () => {
           setStages(initialStages);
@@ -336,6 +350,7 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
   function handleAddStageClick() {
     if (stages.length >= MAX_STAGES) {
       track('kanban_stage_add_blocked', { reason: 'limit_reached' });
+      pushDataLayerEvent('kanban_stage_add_blocked', { reason: 'limit_reached' });
       showToast('error', '전형 단계는 최대 10개까지 추가할 수 있어요.');
       return;
     }
@@ -348,6 +363,7 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
       {
         onSuccess: (res) => {
           track('kanban_stage_added', { stage_count_after: stages.length + 1 });
+          pushDataLayerEvent('kanban_stage_added', { stage_count_after: stages.length + 1 });
           setStages((prev) => [
             ...prev,
             { id: res.id, name: res.name, position: res.position, isDefault: false, cards: [] },
@@ -361,6 +377,7 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
             showToast('error', mapped);
           } else if (err instanceof ApiClientError && err.code === 'K001') {
             track('kanban_stage_add_blocked', { reason: 'limit_reached' });
+            pushDataLayerEvent('kanban_stage_add_blocked', { reason: 'limit_reached' });
             showToast('error', '전형 단계는 최대 10개까지 추가할 수 있어요.');
           } else {
             showToast('error', '전형 단계 추가에 실패했어요.');
@@ -526,11 +543,12 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
                 key={stage.id}
                 stage={stage}
                 isCardDropTarget={activeDragCard !== null && dragOverStageId === stage.id}
-                onRenameStage={(stageId, newName, position) => {
+                onRenameStage={(stageId, newName, position, method) => {
                   updateStageMutation.mutate(
                     { stageId, name: newName, position },
                     {
                       onSuccess: () => {
+                        pushDataLayerEvent('kanban_stage_renamed', { method });
                         setStages((prev) =>
                           prev.map((s) => (s.id === stageId ? { ...s, name: newName } : s))
                         );
@@ -562,7 +580,10 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
                 }}
                 onAddCard={(stageId) => setAddCardStageId(stageId)}
                 onCardClick={(cardId) => {
-                  if (cardId !== viewingCardId) track('kanban_card_opened', { source: 'kanban' });
+                  if (cardId !== viewingCardId) {
+                    track('kanban_card_opened', { source: 'kanban' });
+                    pushDataLayerEvent('kanban_card_opened', { source: 'kanban' });
+                  }
                   setViewingCardId(cardId);
                 }}
                 onEditCard={(card) => setEditingCard(card)}
@@ -627,6 +648,9 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
             {
               onSuccess: () => {
                 track('kanban_stage_deleted', { stage_count_after: stages.length - 1 });
+                pushDataLayerEvent('kanban_stage_deleted', {
+                  stage_count_after: stages.length - 1,
+                });
                 setStages((prev) => prev.filter((s) => s.id !== stageId));
                 setDeletingStage(null);
                 showToast('success', `'${deletedName}' 단계를 삭제했어요.`, {
@@ -662,9 +686,13 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
             });
             // 등록 성공을 바로 기록해 후속 이동 실패나 삭제 되돌리기와 구분한다.
             const targetStage = stages.find((stage) => stage.id === data.stageId);
-            track('kanban_card_added', {
+            const targetStageType = targetStage ? getStageType(targetStage) : 'custom';
+            track('kanban_card_added', { source: 'manual', target_stage_type: targetStageType });
+            pushDataLayerEvent('kanban_card_added', {
               source: 'manual',
-              target_stage_type: targetStage ? getStageType(targetStage) : 'custom',
+              target_stage_type: targetStageType,
+              platform: undefined,
+              job_category: undefined,
             });
             const targetStageId = data.stageId;
             const newCard = {
@@ -724,6 +752,17 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
         onClose={() => setEditingCard(null)}
         onConfirm={async (data) => {
           if (!data.cardId) return undefined;
+          // 저장 전 값과 비교해 항목별 변경 여부를 만든다. 마감일은 날짜 부분(YYYY-MM-DD)만 비교한다.
+          const before = editingCard;
+          const toFlag = (changed: boolean) => (changed ? ('true' as const) : ('false' as const));
+          const editedProperties: Ga4EventMap['kanban_card_edited'] | null = before
+            ? {
+                company_name_changed: toFlag(before.companyName !== data.companyName),
+                title_changed: toFlag(before.jobTitle !== data.jobTitle),
+                url_changed: toFlag((before.originalUrl ?? '') !== data.originalUrl),
+                deadline_changed: toFlag((before.deadline?.slice(0, 10) ?? null) !== data.deadline),
+              }
+            : null;
           try {
             await updateCardMutation.mutateAsync({
               cardId: data.cardId,
@@ -748,6 +787,10 @@ export function KanbanBoard({ initialStages }: KanbanBoardProps) {
                 ),
               }))
             );
+            // 노션 예외 조건: 바뀐 항목 없이 확인을 누른 경우는 보내지 않는다.
+            if (editedProperties && Object.values(editedProperties).includes('true')) {
+              pushDataLayerEvent('kanban_card_edited', editedProperties);
+            }
             setEditingCard(null);
             showToast('success', '지원 현황이 수정되었어요.');
             return undefined;

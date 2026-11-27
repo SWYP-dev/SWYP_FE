@@ -1,7 +1,10 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
+import { useAuthStore } from '@/features/auth/store/authStore';
+import { pushDataLayerEvent } from '@/lib/gtm';
+import { consumeEntryType } from '@/lib/analytics/sessionEntry';
 import { Sidebar } from '@/components/layout/sidebar';
 import { Header } from '@/components/layout/header';
 import { useKanbanBoard } from '@/features/kanban/api/useKanbanQuery';
@@ -19,6 +22,18 @@ export default function KanbanPage() {
   useEffect(() => {
     if (data) saveKanbanLayoutCache(data.stages.map((stage) => stage.cards.length));
   }, [data]);
+
+  const hasHydrated = useAuthStore((s) => s.hasHydrated);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const hasTrackedViewRef = useRef(false);
+
+  // 로그인 상태 복원 후 로그인 사용자에게 화면이 표시되면 1회만 보낸다.
+  // ref로 재렌더링·StrictMode 재실행에 의한 중복을 막는다.
+  useEffect(() => {
+    if (!hasHydrated || !isAuthenticated || hasTrackedViewRef.current) return;
+    hasTrackedViewRef.current = true;
+    pushDataLayerEvent('kanban_viewed', { entry_type: consumeEntryType('/kanban') });
+  }, [hasHydrated, isAuthenticated]);
 
   return (
     <div className="relative flex h-screen w-full overflow-hidden bg-base-white">

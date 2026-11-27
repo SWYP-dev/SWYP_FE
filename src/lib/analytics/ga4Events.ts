@@ -64,17 +64,25 @@ export interface Ga4EventMap {
   // 스크랩·해제 API 성공 후
   job_scrapped: AnalyticsEventMap['job_scrapped'];
   scrap_removed: AnalyticsEventMap['scrap_removed'];
-  // 원본 공고 이동 버튼 클릭. 칸반 화면 source는 platform이 없어 GTM에 이전 값이 남을 수 있으므로 아직 제외한다.
-  original_posting_clicked: Extract<
-    AnalyticsEventMap['original_posting_clicked'],
-    { source: 'feed' | 'scraps' }
-  >;
+  // 원본 공고 이동 버튼 클릭. GTM dataLayer는 이전 push 값을 기억하므로, 값이 없는 매개변수도
+  // undefined로 명시해 다른 화면의 platform이 섞이지 않게 한다.
+  // 카드 상세 드로어(card_drawer)는 지원 현황·지원 마감일 화면이 함께 쓴다.
+  // 칸반 카드 자체의 바로가기(kanban_card)는 노션 설계 범위 밖이라 PostHog로만 보낸다.
+  original_posting_clicked:
+    | Extract<AnalyticsEventMap['original_posting_clicked'], { source: 'feed' | 'scraps' }>
+    | { source: 'card_drawer'; platform: undefined };
   // 지원 현황 추가 API 성공 후. 이미 등록된 공고 응답(kanban_card_add_duplicated)은
-  // 노션 설계 범위 밖이라 PostHog로만 보낸다.
-  kanban_card_added: Extract<
-    AnalyticsEventMap['kanban_card_added'],
-    { source: 'feed_direct' | 'feed_scrapped' | 'scraps_page' }
-  >;
+  // 노션 설계 범위 밖이라 PostHog로만 보낸다. 직접 등록(manual)은 외부 링크 공고 등록이다.
+  // 경로별로 없는 매개변수는 undefined로 비워 이전 push 값이 남지 않게 한다.
+  kanban_card_added:
+    | (Extract<
+        AnalyticsEventMap['kanban_card_added'],
+        { source: 'feed_direct' | 'feed_scrapped' | 'scraps_page' }
+      > & { target_stage_type: undefined })
+    | (Extract<AnalyticsEventMap['kanban_card_added'], { source: 'manual' }> & {
+        platform: undefined;
+        job_category: undefined;
+      });
   // 정렬을 실제로 바꾼 클릭 (같은 정렬 재클릭·최초 기본값 제외)
   feed_sort_changed: AnalyticsEventMap['feed_sort_changed'];
   // 지원 현황 추가 토스트의 '지원 현황 이동' 클릭
@@ -86,6 +94,37 @@ export interface Ga4EventMap {
 
   // 전형 단계 이름 수정 진입. GA4 전용 이벤트 (PostHog에는 없음)
   stage_name_edit_trigger: { method: 'button' | 'double_click' };
+
+  // 지원 현황 관리(칸반). 아래 이벤트는 PostHog와 이름·속성·발송 시점을 맞춘다.
+  // 카드를 드래그해 다른 전형 단계로 옮기고 서버에 반영된 순간 (같은 단계 안 정렬·실패 제외).
+  // 지원 마감일 화면의 수정 모달 경로(deadline_edit_modal)는 노션 설계 범위 밖이라 PostHog로만 보낸다.
+  kanban_card_stage_changed: Omit<AnalyticsEventMap['kanban_card_stage_changed'], 'method'> & {
+    method: 'drag';
+  };
+  // 사용자 정의 전형 단계 추가 저장 성공
+  kanban_stage_added: AnalyticsEventMap['kanban_stage_added'];
+  // 전형 단계 삭제 성공
+  kanban_stage_deleted: AnalyticsEventMap['kanban_stage_deleted'];
+  // 전형 단계를 드래그해 순서 변경 성공 (같은 위치로 놓은 경우 제외)
+  kanban_stage_reordered: AnalyticsEventMap['kanban_stage_reordered'];
+  // 전형 단계 최대 개수(10개)에 걸려 추가가 막힌 순간
+  kanban_stage_add_blocked: AnalyticsEventMap['kanban_stage_add_blocked'];
+  // 공고 카드 상세 드로어 열기. 지원 현황(kanban)·지원 마감일(deadlines)·메일 딥링크 진입을 source로 나눈다.
+  kanban_card_opened: AnalyticsEventMap['kanban_card_opened'];
+
+  // 아래는 PostHog에 기준 이벤트가 없어 GA4에서만 보낸다.
+  // 지원 현황 화면 표시 1회. 앱을 처음 연 화면(로그인·자동 로그인·새로고침)이면 session_start,
+  // 서비스 안 다른 메뉴에서 이동해 왔으면 internal_nav.
+  kanban_viewed: { entry_type: 'session_start' | 'internal_nav' };
+  // 전형 단계 이름 변경 저장 성공. method는 수정 진입 방식(stage_name_edit_trigger와 같은 값).
+  kanban_stage_renamed: { method: 'button' | 'double_click' };
+  // 지원 현황 수정 모달 저장 성공. 항목별 변경 여부를 보내며, 바뀐 항목이 없으면 보내지 않는다.
+  kanban_card_edited: {
+    company_name_changed: 'true' | 'false';
+    title_changed: 'true' | 'false';
+    url_changed: 'true' | 'false';
+    deadline_changed: 'true' | 'false';
+  };
 }
 
 export type Ga4EventName = keyof Ga4EventMap;

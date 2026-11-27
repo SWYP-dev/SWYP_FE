@@ -22,6 +22,7 @@ import {
 import { UnsavedChangesModal } from './UnsavedChangesModal';
 import { ApiClientError } from '@/lib/api/api-client';
 import { isAlwaysHiring } from '@/lib/utils/deadline';
+import { pushDataLayerEvent } from '@/lib/gtm';
 import { track } from '@/lib/posthog';
 import type { CardDetailSource, LinkCategory } from '@/lib/analytics/events';
 
@@ -466,7 +467,13 @@ export function CardDetailDrawer({
               <a
                 href={detail.originalUrl}
                 // 칸반·마감일 화면 모두 같은 드로어 경로로 집계한다.
-                onClick={() => track('original_posting_clicked', { source: 'card_drawer' })}
+                onClick={() => {
+                  track('original_posting_clicked', { source: 'card_drawer' });
+                  pushDataLayerEvent('original_posting_clicked', {
+                    source: 'card_drawer',
+                    platform: undefined,
+                  });
+                }}
                 target="_blank"
                 rel="noreferrer"
                 className="inline-block"
