@@ -43,6 +43,7 @@ export function DeadlineList() {
     hasTrackedDeeplinkRef.current = true;
     // 찾지 못한 딥링크도 기록하되 상세 열기는 실제 카드가 있을 때만 센다.
     track('deadline_deeplink_opened', { card_found: deeplinkCardFound });
+    pushDataLayerEvent('deadline_deeplink_opened', { card_found: deeplinkCardFound });
     if (deeplinkCardFound) {
       track('kanban_card_opened', { source: 'email_deeplink' });
       pushDataLayerEvent('kanban_card_opened', { source: 'email_deeplink' });
