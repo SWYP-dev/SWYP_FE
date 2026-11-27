@@ -151,7 +151,6 @@ const ScrapsPage: NextPage = () => {
         (err.code === 'K003' || err.code === 'DUPLICATE_KANBAN_CARD')
       ) {
         track('kanban_card_add_duplicated', { source: 'scraps_page' });
-        pushDataLayerEvent('kanban_card_add_duplicated', { source: 'scraps_page' });
       }
       setToastType('error');
       if (

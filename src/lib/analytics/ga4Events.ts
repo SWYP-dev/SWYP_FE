@@ -69,12 +69,12 @@ export interface Ga4EventMap {
     AnalyticsEventMap['original_posting_clicked'],
     { source: 'feed' | 'scraps' }
   >;
-  // 지원 현황 추가 API 성공 후 / 이미 등록된 공고라는 응답을 받았을 때
+  // 지원 현황 추가 API 성공 후. 이미 등록된 공고 응답(kanban_card_add_duplicated)은
+  // 노션 설계 범위 밖이라 PostHog로만 보낸다.
   kanban_card_added: Extract<
     AnalyticsEventMap['kanban_card_added'],
     { source: 'feed_direct' | 'feed_scrapped' | 'scraps_page' }
   >;
-  kanban_card_add_duplicated: AnalyticsEventMap['kanban_card_add_duplicated'];
   // 정렬을 실제로 바꾼 클릭 (같은 정렬 재클릭·최초 기본값 제외)
   feed_sort_changed: AnalyticsEventMap['feed_sort_changed'];
   // 지원 현황 추가 토스트의 '지원 현황 이동' 클릭

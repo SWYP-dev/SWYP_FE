@@ -278,7 +278,6 @@ export default function FeedPage() {
         (err.code === 'K003' || err.code === 'DUPLICATE_KANBAN_CARD')
       ) {
         track('kanban_card_add_duplicated', { source });
-        pushDataLayerEvent('kanban_card_add_duplicated', { source });
       }
       // ⚠️ [QA 반영] 비로그인 상태면 apiFetch가 이미 전역 로그인 모달을 띄웠으므로
       // 에러 토스트는 띄우지 않음 (로그인 모달만 노출).
