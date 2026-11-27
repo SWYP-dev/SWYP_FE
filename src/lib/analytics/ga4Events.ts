@@ -3,7 +3,7 @@
 // pushDataLayerEvent(src/lib/gtm.ts)가 이 목록을 기준으로 이벤트 이름·속성을 검사한다.
 // PostHog와 같은 행동은 이름·속성을 맞춰 두 도구 수치를 비교할 수 있게 한다.
 
-import type { AnalyticsEventMap } from './events';
+import type { AnalyticsEventMap, CardDetailSource } from './events';
 
 export type LoginEntry = 'landing_navbar' | 'login_modal';
 export type FeedFilterType = 'job_category' | 'region' | 'career' | 'deadline_soon';
@@ -68,9 +68,12 @@ export interface Ga4EventMap {
   // undefined로 명시해 다른 화면의 platform이 섞이지 않게 한다.
   // 카드 상세 드로어(card_drawer)는 지원 현황·지원 마감일 화면이 함께 쓴다.
   // 칸반 카드 자체의 바로가기(kanban_card)는 노션 설계 범위 밖이라 PostHog로만 보낸다.
+  // screen은 드로어가 열린 화면(지원 현황 kanban / 지원 마감일 deadlines)이며 드로어에서만 보낸다.
   original_posting_clicked:
-    | Extract<AnalyticsEventMap['original_posting_clicked'], { source: 'feed' | 'scraps' }>
-    | { source: 'card_drawer'; platform: undefined };
+    | (Extract<AnalyticsEventMap['original_posting_clicked'], { source: 'feed' | 'scraps' }> & {
+        screen: undefined;
+      })
+    | { source: 'card_drawer'; platform: undefined; screen: CardDetailSource };
   // 지원 현황 추가 API 성공 후. 이미 등록된 공고 응답(kanban_card_add_duplicated)은
   // 노션 설계 범위 밖이라 PostHog로만 보낸다. 직접 등록(manual)은 외부 링크 공고 등록이다.
   // 경로별로 없는 매개변수는 undefined로 비워 이전 push 값이 남지 않게 한다.
@@ -119,6 +122,12 @@ export interface Ga4EventMap {
   // 전형 단계 이름 변경 저장 성공. method는 수정 진입 방식(stage_name_edit_trigger와 같은 값).
   kanban_stage_renamed: { method: 'button' | 'double_click' };
   // 지원 현황 수정 모달 저장 성공. 항목별 변경 여부를 보내며, 바뀐 항목이 없으면 보내지 않는다.
+  // 지원 마감일 화면 표시 1회 (로그인 확인 후)
+  deadlines_viewed: Record<string, never>;
+  // 지원 마감일 화면의 수정 모달 저장 성공. 마감일(상시 채용 전환 포함)·전형 단계 변경 여부를 함께 보내며,
+  // 바뀐 항목이 없으면 보내지 않는다. PostHog는 같은 저장을 kanban_card_deadline_changed·
+  // kanban_card_stage_changed 두 이벤트로 나눠 보낸다.
+  deadline_card_edited: { deadline_changed: 'true' | 'false'; stage_changed: 'true' | 'false' };
   kanban_card_edited: {
     company_name_changed: 'true' | 'false';
     title_changed: 'true' | 'false';

@@ -472,6 +472,8 @@ export function CardDetailDrawer({
                   pushDataLayerEvent('original_posting_clicked', {
                     source: 'card_drawer',
                     platform: undefined,
+                    // 드로어를 지원 현황·지원 마감일이 함께 써서 화면을 따로 싣는다.
+                    screen: source,
                   });
                 }}
                 target="_blank"
